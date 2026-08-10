@@ -5,10 +5,7 @@ import com.psytrance.psytrance_tracker_backend.service.UserService;
 import com.psytrance.psytrance_tracker_backend.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -34,5 +31,9 @@ public class AuthController {
         } else {
             return ResponseEntity.status(401).body("Invalid username or password");
         }
+    }
+    @GetMapping("/me")
+    public ResponseEntity<?> me(@RequestHeader("Authorization") String authHeader) {
+        return ResponseEntity.ok("You are logged!");
     }
 }
