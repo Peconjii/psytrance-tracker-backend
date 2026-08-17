@@ -26,16 +26,30 @@ public class JwtFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
+        String path = request.getRequestURI();
+        System.out.println(">>> JwtFilter: " + path + " | Method: " + request.getMethod());
+
+        // WHITELIST: pusti bez provere tokena
+        if (path.startsWith("/api/auth/")) {
+            System.out.println(">>> WHITELISTED, skipping JWT check");
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         String authHeader = request.getHeader("Authorization");
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7);
-            String username = jwtUtil.extractUsername(token);
+            try {
+                String token = authHeader.substring(7);
+                String username = jwtUtil.extractUsername(token);
 
-            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                UsernamePasswordAuthenticationToken auth =
-                        new UsernamePasswordAuthenticationToken(username, null, List.of());
-                SecurityContextHolder.getContext().setAuthentication(auth);
+                if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                    UsernamePasswordAuthenticationToken auth =
+                            new UsernamePasswordAuthenticationToken(username, null, List.of());
+                    SecurityContextHolder.getContext().setAuthentication(auth);
+                }
+            } catch (Exception e) {
+                System.out.println(">>> Invalid JWT: " + e.getMessage());
             }
         }
 

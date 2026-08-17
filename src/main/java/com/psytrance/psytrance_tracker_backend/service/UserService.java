@@ -18,7 +18,9 @@ public class UserService {
     private PasswordEncoder passwordEncoder;
 
     public User registerUser(User user) {
+        System.out.println("Password pre encode: " + user.getPassword());
         user.setPassword(passwordEncoder.encode(user.getPassword()));
+        System.out.println("Password posle encode: " + user.getPassword());
         return userRepository.save(user);
     }
 
