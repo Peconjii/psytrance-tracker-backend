@@ -1,0 +1,12 @@
+package com.psytrance.psytrance_tracker_backend.repository;
+
+import com.psytrance.psytrance_tracker_backend.model.Review;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.List;
+import java.util.Optional;
+
+public interface ReviewRepository extends JpaRepository<Review, Long> {
+    List<Review> findByEventId(String eventId);
+    Optional<Review> findByEventIdAndUserId(String eventId, Long userId);
+}
