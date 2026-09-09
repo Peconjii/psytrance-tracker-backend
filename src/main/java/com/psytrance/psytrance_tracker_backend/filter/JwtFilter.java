@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -29,36 +30,43 @@ public class JwtFilter extends OncePerRequestFilter {
         String path = request.getRequestURI();
         String method = request.getMethod();
 
-        // 1. Preflight (OPTIONS) zahtevi odmah prolaze
+        // Allow CORS preflight requests
         if ("OPTIONS".equalsIgnoreCase(method)) {
             response.setStatus(HttpServletResponse.SC_OK);
             filterChain.doFilter(request, response);
             return;
         }
 
-        // 2. Javno čitanje recenzija, login i registracija ne traže proveru tokena
-        if (path.equals("/api/auth/login") || path.equals("/api/auth/register") || (path.startsWith("/api/reviews/event/") && "GET".equalsIgnoreCase(method))) {
+        // Bypass public routes completely
+        if (path.startsWith("/api/auth/login") ||
+                path.startsWith("/api/auth/register") ||
+                path.startsWith("/api/goabase") ||
+                (path.startsWith("/api/reviews/event/") && "GET".equalsIgnoreCase(method))) {
+
             filterChain.doFilter(request, response);
             return;
         }
 
-        // 3. Ekstrakcija i verifikacija JWT tokena za zaštićene rute
         String authHeader = request.getHeader("Authorization");
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
 
-            if (!token.equals("undefined") && !token.equals("null") && !token.isBlank()) {
+            if (!token.equalsIgnoreCase("undefined") && !token.equalsIgnoreCase("null") && !token.isBlank()) {
                 try {
                     String username = jwtUtil.extractUsername(token);
 
                     if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                         UsernamePasswordAuthenticationToken auth =
-                                new UsernamePasswordAuthenticationToken(username, null, List.of());
+                                new UsernamePasswordAuthenticationToken(
+                                        username,
+                                        null,
+                                        List.of(new SimpleGrantedAuthority("ROLE_USER"))
+                                );
                         SecurityContextHolder.getContext().setAuthentication(auth);
                     }
                 } catch (Exception e) {
-                    System.out.println(">>> Invalid JWT: " + e.getMessage());
+                    System.err.println("JWT Verification failed: " + e.getMessage());
                 }
             }
         }

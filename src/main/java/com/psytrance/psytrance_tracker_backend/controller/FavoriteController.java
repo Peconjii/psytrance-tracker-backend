@@ -1,5 +1,6 @@
 package com.psytrance.psytrance_tracker_backend.controller;
 
+import com.psytrance.psytrance_tracker_backend.dto.FavoriteRequest;
 import com.psytrance.psytrance_tracker_backend.model.Favorite;
 import com.psytrance.psytrance_tracker_backend.service.FavoriteService;
 import org.springframework.http.ResponseEntity;
@@ -25,9 +26,8 @@ public class FavoriteController {
     @PostMapping("/{userId}")
     public ResponseEntity<Favorite> addFavorite(
             @PathVariable Long userId,
-            @RequestParam String eventId,
-            @RequestParam String eventName) {
-        Favorite favorite = favoriteService.addFavorite(userId, eventId, eventName);
+            @RequestBody FavoriteRequest request) {
+        Favorite favorite = favoriteService.addFavorite(userId, request.getEventId(), request.getEventName());
         return ResponseEntity.ok(favorite);
     }
 

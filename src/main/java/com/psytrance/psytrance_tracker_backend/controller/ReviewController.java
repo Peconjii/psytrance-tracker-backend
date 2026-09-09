@@ -2,8 +2,10 @@ package com.psytrance.psytrance_tracker_backend.controller;
 
 import com.psytrance.psytrance_tracker_backend.dto.ReviewRequest;
 import com.psytrance.psytrance_tracker_backend.dto.ReviewResponse;
+import com.psytrance.psytrance_tracker_backend.model.Review;
 import com.psytrance.psytrance_tracker_backend.service.ReviewService;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -37,5 +39,16 @@ public class ReviewController {
     public ResponseEntity<List<ReviewResponse>> getReviewsByEvent(@PathVariable String eventId) {
         List<ReviewResponse> reviews = reviewService.getReviewsForEvent(eventId);
         return ResponseEntity.ok(reviews);
+    }
+
+    @GetMapping("/user")
+    public ResponseEntity<List<Review>> getUserReviews(Authentication authentication) {
+        if (authentication == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        String username = authentication.getName();
+        // Pretražujemo sve recenzije povezane sa ulogovanim korisnikom
+        List<Review> userReviews = reviewService.getReviewsByUsername(username);
+        return ResponseEntity.ok(userReviews);
     }
 }

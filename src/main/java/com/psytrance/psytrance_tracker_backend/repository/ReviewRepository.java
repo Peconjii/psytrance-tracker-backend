@@ -9,4 +9,5 @@ import java.util.Optional;
 public interface ReviewRepository extends JpaRepository<Review, Long> {
     List<Review> findByEventId(String eventId);
     Optional<Review> findByEventIdAndUserId(String eventId, Long userId);
+    List<Review> findByUserUsername(String username);
 }

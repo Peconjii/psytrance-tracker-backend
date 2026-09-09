@@ -63,4 +63,8 @@ public class ReviewService {
                 ))
                 .toList();
     }
+
+    public List<Review> getReviewsByUsername(String username) {
+        return reviewRepository.findByUserUsername(username);
+    }
 }
