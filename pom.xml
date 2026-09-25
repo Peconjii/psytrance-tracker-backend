@@ -11,21 +11,9 @@
 	<groupId>com.psytrance</groupId>
 	<artifactId>psytrance-tracker-backend</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name/>
-	<description/>
-	<url/>
-	<licenses>
-		<license/>
-	</licenses>
-	<developers>
-		<developer/>
-	</developers>
-	<scm>
-		<connection/>
-		<developerConnection/>
-		<tag/>
-		<url/>
-	</scm>
+	<name>psytrance-tracker-backend</name>
+	<description>REST API for discovering psytrance events, with accounts, favorites and reviews</description>
+	<url>https://github.com/Peconjii/psytrance-tracker-backend</url>
 	<properties>
 		<java.version>17</java.version>
 	</properties>

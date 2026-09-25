@@ -1,5 +1,6 @@
 package com.psytrance.psytrance_tracker_backend.integration;
 
+import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -47,19 +48,31 @@ class ReviewIntegrationTest extends IntegrationTest {
         register(username, "password123");
         String token = login(username, "password123");
 
-        for (int rating : new int[]{2, 4}) {
-            mockMvc.perform(post("/api/reviews")
-                            .header(HttpHeaders.AUTHORIZATION, bearer(token))
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content("""
-                                    {"eventId": "%s", "rating": %d}
-                                    """.formatted(eventId, rating)))
-                    .andExpect(status().isOk());
-        }
+        String firstReview = mockMvc.perform(post("/api/reviews")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"eventId": "%s", "rating": 2}
+                                """.formatted(eventId)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.updatedAt").doesNotExist())
+                .andReturn().getResponse().getContentAsString();
+        String createdAt = JsonPath.read(firstReview, "$.createdAt");
 
+        mockMvc.perform(post("/api/reviews")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"eventId": "%s", "rating": 4}
+                                """.formatted(eventId)))
+                .andExpect(status().isOk());
+
+        // Still one review, with the new rating, the original creation time and an update time
         mockMvc.perform(get("/api/reviews/event/{eventId}", eventId))
                 .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].rating").value(4));
+                .andExpect(jsonPath("$[0].rating").value(4))
+                .andExpect(jsonPath("$[0].createdAt").value(createdAt))
+                .andExpect(jsonPath("$[0].updatedAt").exists());
 
         mockMvc.perform(get("/api/reviews/user").header(HttpHeaders.AUTHORIZATION, bearer(token)))
                 .andExpect(status().isOk())

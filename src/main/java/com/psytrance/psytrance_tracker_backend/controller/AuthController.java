@@ -4,7 +4,7 @@ import com.psytrance.psytrance_tracker_backend.dto.ForgotPasswordRequest;
 import com.psytrance.psytrance_tracker_backend.dto.LoginRequest;
 import com.psytrance.psytrance_tracker_backend.dto.RegisterRequest;
 import com.psytrance.psytrance_tracker_backend.dto.ResetPasswordRequest;
-import com.psytrance.psytrance_tracker_backend.model.User;
+import com.psytrance.psytrance_tracker_backend.dto.UserResponse;
 import com.psytrance.psytrance_tracker_backend.service.PasswordResetService;
 import com.psytrance.psytrance_tracker_backend.service.UserService;
 import com.psytrance.psytrance_tracker_backend.util.JwtUtil;
@@ -12,7 +12,12 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Map;
 
@@ -30,6 +35,27 @@ public class AuthController {
         this.passwordResetService = passwordResetService;
     }
 
+    @PostMapping("/register")
+    public ResponseEntity<UserResponse> register(@Valid @RequestBody RegisterRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(UserResponse.from(userService.register(request)));
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<Map<String, String>> login(@Valid @RequestBody LoginRequest request) {
+        return userService.login(request.username(), request.password())
+                .map(user -> ResponseEntity.ok(Map.of("token", jwtUtil.generateToken(user.getUsername()))))
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("message", "Invalid username or password")));
+    }
+
+    /** SecurityConfig only lets requests with a valid token reach this endpoint. */
+    @GetMapping("/me")
+    public UserResponse getCurrentUser(Authentication authentication) {
+        return userService.findByUsername(authentication.getName())
+                .map(UserResponse::from)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+    }
+
     @PostMapping("/forgot-password")
     public ResponseEntity<Map<String, String>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
         passwordResetService.requestReset(request.email());
@@ -41,44 +67,5 @@ public class AuthController {
     public ResponseEntity<Map<String, String>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
         passwordResetService.resetPassword(request.token(), request.newPassword());
         return ResponseEntity.ok(Map.of("message", "Your password has been changed. You can log in now."));
-    }
-
-    @PostMapping("/login")
-    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest loginRequest) {
-        User foundUser = userService.login(loginRequest.getUsername(), loginRequest.getPassword());
-
-        if (foundUser != null) {
-            String token = jwtUtil.generateToken(foundUser.getUsername());
-            // Safe JSON mapping: {"token": "eyJ..."}
-            return ResponseEntity.ok(Map.of("token", token));
-        } else {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "Invalid username or password"));
-        }
-    }
-
-    @PostMapping("/register")
-    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest registerRequest) {
-        User user = new User();
-        user.setUsername(registerRequest.getUsername());
-        user.setEmail(registerRequest.getEmail());
-        user.setPassword(registerRequest.getPassword());
-
-        User registeredUser = userService.registerUser(user);
-        return ResponseEntity.status(HttpStatus.CREATED).body(registeredUser);
-    }
-
-    @GetMapping("/me")
-    public ResponseEntity<?> getCurrentUser(Authentication authentication) {
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "User not authenticated"));
-        }
-
-        String username = authentication.getName();
-        return userService.findByUsername(username)
-                .<ResponseEntity<?>>map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(Map.of("message", "User not found")));
     }
 }

@@ -6,11 +6,12 @@ import com.psytrance.psytrance_tracker_backend.model.Review;
 import com.psytrance.psytrance_tracker_backend.model.User;
 import com.psytrance.psytrance_tracker_backend.repository.ReviewRepository;
 import com.psytrance.psytrance_tracker_backend.repository.UserRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
-import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class ReviewService {
@@ -23,57 +24,29 @@ public class ReviewService {
         this.userRepository = userRepository;
     }
 
+    /** One review per user and event: a second review of the same event replaces the first. */
+    @Transactional
     public ReviewResponse addOrUpdateReview(String username, ReviewRequest request) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unknown user"));
 
-        // Ako je korisnik već ostavio recenziju za ovaj događaj, ažuriramo je (jedna recenzija po žurci)
-        Optional<Review> existingReview = reviewRepository.findByEventIdAndUserId(request.getEventId(), user.getId());
+        Review review = reviewRepository.findByEventIdAndUserId(request.getEventId(), user.getId())
+                .orElseGet(() -> new Review(request.getEventId(), user));
+        review.setRating(request.getRating());
+        review.setComment(request.getComment());
 
-        Review review;
-        if (existingReview.isPresent()) {
-            review = existingReview.get();
-            review.setRating(request.getRating());
-            review.setComment(request.getComment());
-            review.setCreatedAt(LocalDateTime.now());
-        } else {
-            review = new Review(request.getEventId(), user, request.getRating(), request.getComment());
-        }
-
-        Review saved = reviewRepository.save(review);
-        return new ReviewResponse(
-                saved.getId(),
-                saved.getEventId(),
-                saved.getUser().getUsername(),
-                saved.getRating(),
-                saved.getComment(),
-                saved.getCreatedAt()
-        );
+        return ReviewResponse.from(reviewRepository.save(review));
     }
 
     public List<ReviewResponse> getReviewsForEvent(String eventId) {
         return reviewRepository.findByEventId(eventId).stream()
-                .map(r -> new ReviewResponse(
-                        r.getId(),
-                        r.getEventId(),
-                        r.getUser().getUsername(),
-                        r.getRating(),
-                        r.getComment(),
-                        r.getCreatedAt()
-                ))
+                .map(ReviewResponse::from)
                 .toList();
     }
 
     public List<ReviewResponse> getReviewsByUsername(String username) {
         return reviewRepository.findByUserUsername(username).stream()
-                .map(r -> new ReviewResponse(
-                        r.getId(),
-                        r.getEventId(),
-                        r.getUser().getUsername(),
-                        r.getRating(),
-                        r.getComment(),
-                        r.getCreatedAt()
-                ))
+                .map(ReviewResponse::from)
                 .toList();
     }
 }

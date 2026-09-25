@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 
 @Entity
 @Table(name = "reviews")
@@ -30,41 +31,43 @@ public class Review {
 
     private LocalDateTime createdAt;
 
-    public Review() {
-        this.createdAt = LocalDateTime.now();
+    // Null until the review is edited for the first time
+    private LocalDateTime updatedAt;
+
+    protected Review() {
     }
 
-    public Review(String eventId, User user, int rating, String comment) {
+    public Review(String eventId, User user) {
         this.eventId = eventId;
         this.user = user;
-        this.rating = rating;
-        this.comment = comment;
-        this.createdAt = LocalDateTime.now();
     }
 
-    // Getters and Setters
+    // JPA calls these right before the INSERT / UPDATE, so the service never sets timestamps by hand
+    @PrePersist
+    void onCreate() {
+        createdAt = now();
+    }
+
+    @PreUpdate
+    void onUpdate() {
+        updatedAt = now();
+    }
+
+    // PostgreSQL keeps microseconds; cutting to that precision keeps the saved and returned values identical
+    private static LocalDateTime now() {
+        return LocalDateTime.now().truncatedTo(ChronoUnit.MICROS);
+    }
+
     public Long getId() {
         return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
     }
 
     public String getEventId() {
         return eventId;
     }
 
-    public void setEventId(String eventId) {
-        this.eventId = eventId;
-    }
-
     public User getUser() {
         return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
     }
 
     public int getRating() {
@@ -87,7 +90,7 @@ public class Review {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
     }
 }
