@@ -4,8 +4,10 @@ import com.psytrance.psytrance_tracker_backend.model.Favorite;
 import com.psytrance.psytrance_tracker_backend.model.User;
 import com.psytrance.psytrance_tracker_backend.repository.FavoriteRepository;
 import com.psytrance.psytrance_tracker_backend.repository.UserRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -24,13 +26,13 @@ public class FavoriteService {
         return favoriteRepository.findByUserId(userId);
     }
 
+    // ResponseStatusException is turned into a JSON error by GlobalExceptionHandler
     @Transactional
     public Favorite addFavorite(Long userId, String eventId, String eventName) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Korisnik nije pronađen"));
+        User user = findUser(userId);
 
         if (favoriteRepository.existsByUserAndEventId(user, eventId)) {
-            throw new RuntimeException("Event je već u favoritima");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Event is already in your favorites");
         }
 
         Favorite favorite = new Favorite(eventId, eventName, user);
@@ -39,12 +41,16 @@ public class FavoriteService {
 
     @Transactional
     public void removeFavorite(Long userId, String eventId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Korisnik nije pronađen"));
+        User user = findUser(userId);
 
         Favorite favorite = favoriteRepository.findByUserAndEventId(user, eventId)
-                .orElseThrow(() -> new RuntimeException("Favorit nije pronađen"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Event is not in your favorites"));
 
         favoriteRepository.delete(favorite);
+    }
+
+    private User findUser(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
     }
 }

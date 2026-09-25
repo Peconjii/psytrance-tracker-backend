@@ -8,7 +8,7 @@ COPY .mvn .mvn
 RUN chmod +x mvnw && ./mvnw -q dependency:go-offline
 
 COPY src src
-# Tests run in CI; the Spring context test needs a database that isn't available here
+# Tests run in CI; the integration tests need Docker (Testcontainers), which isn't available inside a build
 RUN ./mvnw -q package -DskipTests
 
 # --- Run stage: only a JRE and the jar, no build tools or sources ---------------------

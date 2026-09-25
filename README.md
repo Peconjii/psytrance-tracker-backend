@@ -1,5 +1,7 @@
 # PsyTrance Event Tracker — Backend
 
+[![CI](https://github.com/Peconjii/psytrance-tracker-backend/actions/workflows/ci.yml/badge.svg)](https://github.com/Peconjii/psytrance-tracker-backend/actions/workflows/ci.yml)
+
 REST API for **PsyTrance Event Tracker**, a web app for discovering psytrance festivals and parties around the world.
 It pulls events from the public [Goabase](https://www.goabase.net) API, serves them searchable and paginated,
 and lets users register, save favorite events and write reviews.
@@ -14,7 +16,8 @@ and lets users register, save favorite events and write reviews.
 - **PostgreSQL** with **Hibernate / JPA**
 - **JWT** authentication (JJWT) with **BCrypt** password hashing
 - Spring **RestClient** for the Goabase integration
-- **JUnit 5**, **Mockito**, **AssertJ**
+- **JUnit 5**, **Mockito**, **AssertJ**, **Testcontainers**, **MockMvc**
+- **GitHub Actions** CI
 - **Maven**
 - **Docker** / Docker Compose
 
@@ -179,24 +182,36 @@ CORS allows the frontend dev server at `http://localhost:5173`.
 ## Tests
 
 ```bash
-./mvnw test -Dtest='EventServiceTest,PasswordResetServiceTest'
+./mvnw test
 ```
 
-- `EventServiceTest` covers paging, sorting, search, the timeline filters and the cache (single fetch while
-  fresh, refresh after expiry, stale fallback when Goabase is down).
-- `PasswordResetServiceTest` covers the reset flow: unknown emails send nothing, only the token hash is stored,
-  a link works once, and expired or made-up links are rejected.
+Docker must be running: the integration tests start a throwaway PostgreSQL container with
+[Testcontainers](https://testcontainers.com). No other setup or environment variables are needed.
+GitHub Actions runs the same tests on every push.
 
-Goabase, the repositories and the mailer are mocked, and time is controlled with a fake `Clock`, so these tests
-need no internet or database.
+**Unit tests** check one class on its own. Its dependencies are mocked, and time is controlled with a fake `Clock`.
 
-A plain `./mvnw test` also runs a Spring context test that needs the database variables above.
+- `EventServiceTest`: paging, sorting, search, timeline filters and the cache (one fetch while fresh, refresh
+  after expiry, old list kept when Goabase is down)
+- `PasswordResetServiceTest`: unknown emails send nothing, only the token hash is stored, a link works once,
+  expired or made-up links are rejected
+
+**Integration tests** start the whole application with real security and a real PostgreSQL, and call the API
+through MockMvc. Only Goabase is faked.
+
+- `AuthIntegrationTest`: register, log in, `/me`; passwords stored as BCrypt hashes and never returned;
+  duplicate usernames, validation errors, wrong passwords, missing or invalid tokens
+- `FavoriteIntegrationTest`: add, list, remove; duplicates are a `409`; **users can't read or change someone
+  else's favorites** (`403`)
+- `ReviewIntegrationTest`: reading is public, writing needs login, a second review updates the first,
+  rating must be 1–5
+- `EventApiIntegrationTest`: paging, filters, invalid parameters, unknown events, Goabase outages
 
 ## Roadmap
 
 - [x] Docker Compose setup (PostgreSQL + backend + frontend)
-- [ ] Integration tests with Testcontainers and controller tests with `@WebMvcTest`
-- [ ] GitHub Actions CI
+- [x] Integration tests with Testcontainers
+- [x] GitHub Actions CI
 - [ ] Flyway migrations instead of `ddl-auto=update`
 - [ ] Deployment to AWS
 
