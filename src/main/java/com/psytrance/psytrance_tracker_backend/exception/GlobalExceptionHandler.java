@@ -55,6 +55,12 @@ public class GlobalExceptionHandler {
                 .body(Map.of("message", ex.getMessage()));
     }
 
+    @ExceptionHandler(InvalidResetTokenException.class)
+    public ResponseEntity<Map<String, String>> handleInvalidResetToken(InvalidResetTokenException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("message", ex.getMessage()));
+    }
+
     @ExceptionHandler(GoabaseUnavailableException.class)
     public ResponseEntity<Map<String, String>> handleGoabaseUnavailable(GoabaseUnavailableException ex) {
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)

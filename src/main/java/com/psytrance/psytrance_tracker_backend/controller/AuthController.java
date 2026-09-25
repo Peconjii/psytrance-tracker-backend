@@ -1,8 +1,11 @@
 package com.psytrance.psytrance_tracker_backend.controller;
 
+import com.psytrance.psytrance_tracker_backend.dto.ForgotPasswordRequest;
 import com.psytrance.psytrance_tracker_backend.dto.LoginRequest;
 import com.psytrance.psytrance_tracker_backend.dto.RegisterRequest;
+import com.psytrance.psytrance_tracker_backend.dto.ResetPasswordRequest;
 import com.psytrance.psytrance_tracker_backend.model.User;
+import com.psytrance.psytrance_tracker_backend.service.PasswordResetService;
 import com.psytrance.psytrance_tracker_backend.service.UserService;
 import com.psytrance.psytrance_tracker_backend.util.JwtUtil;
 import jakarta.validation.Valid;
@@ -19,10 +22,25 @@ public class AuthController {
 
     private final UserService userService;
     private final JwtUtil jwtUtil;
+    private final PasswordResetService passwordResetService;
 
-    public AuthController(UserService userService, JwtUtil jwtUtil) {
+    public AuthController(UserService userService, JwtUtil jwtUtil, PasswordResetService passwordResetService) {
         this.userService = userService;
         this.jwtUtil = jwtUtil;
+        this.passwordResetService = passwordResetService;
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Map<String, String>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        passwordResetService.requestReset(request.email());
+        // Same answer whether or not the email exists, so this can't be used to find out who has an account
+        return ResponseEntity.ok(Map.of("message", "If an account exists for that email, a reset link has been sent."));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<Map<String, String>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        passwordResetService.resetPassword(request.token(), request.newPassword());
+        return ResponseEntity.ok(Map.of("message", "Your password has been changed. You can log in now."));
     }
 
     @PostMapping("/login")

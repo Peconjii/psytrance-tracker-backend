@@ -50,6 +50,9 @@ Requests go through the usual layers: **controller** (HTTP, validation) → **se
   pin "today" to a fixed date and move time forward to test cache expiry.
 - **Stateless auth.** Login returns a signed JWT; every protected request is authenticated from its
   `Authorization: Bearer` header. Users can only read and change their own favorites.
+- **Password reset without leaking accounts.** Reset links carry a random 256-bit token; only its SHA-256
+  hash is stored, it expires after 30 minutes and works once. The endpoint answers identically for known and
+  unknown emails, so it can't be used to discover who has an account.
 - **Consistent errors.** A `@RestControllerAdvice` turns validation failures, conflicts, missing events and
   Goabase outages into JSON responses with the right status code (`400`, `404`, `409`, `503`).
 
@@ -60,6 +63,8 @@ Requests go through the usual layers: **controller** (HTTP, validation) → **se
 | `POST` | `/api/auth/register` | – | Create an account (`username`, `email`, `password`) |
 | `POST` | `/api/auth/login` | – | Returns `{ "token": "..." }` |
 | `GET` | `/api/auth/me` | ✔ | Current user |
+| `POST` | `/api/auth/forgot-password` | – | Email a one-time reset link (`email`); same answer whether or not the account exists |
+| `POST` | `/api/auth/reset-password` | – | Set a new password with the link's token (`token`, `newPassword`) |
 | `GET` | `/api/events` | – | Paged, filtered event list (see below) |
 | `GET` | `/api/events/map` | – | All events that have coordinates, for the map |
 | `GET` | `/api/events/{id}` | – | One event |
@@ -135,18 +140,36 @@ export JWT_SECRET=$(openssl rand -base64 48)
 
 In IntelliJ, set the same variables under *Run → Edit Configurations → Environment variables*.
 
+**Email (optional).** Password reset emails are sent over SMTP when these are set:
+
+| Variable | Example (Gmail) |
+|---|---|
+| `SPRING_MAIL_HOST` | `smtp.gmail.com` |
+| `SPRING_MAIL_PORT` | `587` |
+| `SPRING_MAIL_USERNAME` | `you@gmail.com` |
+| `SPRING_MAIL_PASSWORD` | a Gmail [app password](https://myaccount.google.com/apppasswords), not your normal password |
+| `MAIL_FROM` | `you@gmail.com` |
+| `FRONTEND_URL` | `http://localhost:5173` (default), used to build the reset link |
+
+Without `SPRING_MAIL_HOST`, the reset link is written to the application log instead, which is enough for
+local development.
+
 The API starts on `http://localhost:8080`, and Hibernate creates the tables on first start.
 CORS allows the frontend dev server at `http://localhost:5173`.
 
 ## Tests
 
 ```bash
-./mvnw test -Dtest=EventServiceTest
+./mvnw test -Dtest='EventServiceTest,PasswordResetServiceTest'
 ```
 
-`EventServiceTest` covers paging, sorting, search, the timeline filters and the cache (single fetch while fresh,
-refresh after expiry, stale fallback when Goabase is down). Goabase is mocked and time is controlled with a
-fake `Clock`, so the tests need no internet or database.
+- `EventServiceTest` covers paging, sorting, search, the timeline filters and the cache (single fetch while
+  fresh, refresh after expiry, stale fallback when Goabase is down).
+- `PasswordResetServiceTest` covers the reset flow: unknown emails send nothing, only the token hash is stored,
+  a link works once, and expired or made-up links are rejected.
+
+Goabase, the repositories and the mailer are mocked, and time is controlled with a fake `Clock`, so these tests
+need no internet or database.
 
 A plain `./mvnw test` also runs a Spring context test that needs the database variables above.
 

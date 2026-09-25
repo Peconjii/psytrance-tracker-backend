@@ -44,6 +44,8 @@ public class JwtFilter extends OncePerRequestFilter {
         // Bypass public routes completely (kept in sync with SecurityConfig)
         if (path.equals("/api/auth/login") ||
                 path.equals("/api/auth/register") ||
+                path.equals("/api/auth/forgot-password") ||
+                path.equals("/api/auth/reset-password") ||
                 path.startsWith("/api/events") ||
                 (path.startsWith("/api/reviews/event/") && "GET".equalsIgnoreCase(method))) {
 
