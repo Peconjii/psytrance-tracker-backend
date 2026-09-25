@@ -1,8 +1,13 @@
 package com.psytrance.psytrance_tracker_backend.dto;
 
+import jakarta.validation.constraints.NotBlank;
+
 public class LoginRequest {
 
+    @NotBlank
     private String username;
+
+    @NotBlank
     private String password;
 
     // Default constructor required for Jackson JSON deserialization

@@ -5,6 +5,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -17,6 +19,8 @@ import java.util.List;
 
 @Component
 public class JwtFilter extends OncePerRequestFilter {
+
+    private static final Logger log = LoggerFactory.getLogger(JwtFilter.class);
 
     @Autowired
     private JwtUtil jwtUtil;
@@ -37,10 +41,10 @@ public class JwtFilter extends OncePerRequestFilter {
             return;
         }
 
-        // Bypass public routes completely
-        if (path.startsWith("/api/auth/login") ||
-                path.startsWith("/api/auth/register") ||
-                path.startsWith("/api/goabase") ||
+        // Bypass public routes completely (kept in sync with SecurityConfig)
+        if (path.equals("/api/auth/login") ||
+                path.equals("/api/auth/register") ||
+                path.startsWith("/api/events") ||
                 (path.startsWith("/api/reviews/event/") && "GET".equalsIgnoreCase(method))) {
 
             filterChain.doFilter(request, response);
@@ -66,7 +70,7 @@ public class JwtFilter extends OncePerRequestFilter {
                         SecurityContextHolder.getContext().setAuthentication(auth);
                     }
                 } catch (Exception e) {
-                    System.err.println("JWT Verification failed: " + e.getMessage());
+                    log.warn("JWT verification failed: {}", e.getMessage());
                 }
             }
         }

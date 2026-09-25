@@ -5,6 +5,7 @@ import com.psytrance.psytrance_tracker_backend.dto.RegisterRequest;
 import com.psytrance.psytrance_tracker_backend.model.User;
 import com.psytrance.psytrance_tracker_backend.service.UserService;
 import com.psytrance.psytrance_tracker_backend.util.JwtUtil;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -25,12 +26,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
-        if (loginRequest == null || loginRequest.getUsername() == null || loginRequest.getPassword() == null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("message", "Username and password are required"));
-        }
-
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest loginRequest) {
         User foundUser = userService.login(loginRequest.getUsername(), loginRequest.getPassword());
 
         if (foundUser != null) {
@@ -44,7 +40,7 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody RegisterRequest registerRequest) {
+    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest registerRequest) {
         User user = new User();
         user.setUsername(registerRequest.getUsername());
         user.setEmail(registerRequest.getEmail());

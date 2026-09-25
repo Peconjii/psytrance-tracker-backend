@@ -64,7 +64,16 @@ public class ReviewService {
                 .toList();
     }
 
-    public List<Review> getReviewsByUsername(String username) {
-        return reviewRepository.findByUserUsername(username);
+    public List<ReviewResponse> getReviewsByUsername(String username) {
+        return reviewRepository.findByUserUsername(username).stream()
+                .map(r -> new ReviewResponse(
+                        r.getId(),
+                        r.getEventId(),
+                        r.getUser().getUsername(),
+                        r.getRating(),
+                        r.getComment(),
+                        r.getCreatedAt()
+                ))
+                .toList();
     }
 }

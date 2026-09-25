@@ -1,7 +1,11 @@
 package com.psytrance.psytrance_tracker_backend.dto;
 
+import jakarta.validation.constraints.NotBlank;
+
 public class FavoriteRequest {
+    @NotBlank
     private String eventId;
+
     private String eventName;
 
     public FavoriteRequest() {}

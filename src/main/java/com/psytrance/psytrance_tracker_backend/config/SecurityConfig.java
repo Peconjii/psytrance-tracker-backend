@@ -36,11 +36,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
-                        .requestMatchers("/api/goabase/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/events/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/reviews/event/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/reviews/**").authenticated()
-                        .requestMatchers("/api/favorites/**").authenticated()
-                        .requestMatchers("/api/auth/me").authenticated()
+                        // Everything else (reviews POST, favorites, /api/auth/me, ...) requires a valid token
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
