@@ -6,6 +6,8 @@ and lets users register, save favorite events and write reviews.
 
 **Frontend (React):** [Peconjii/psytrance-tracker](https://github.com/Peconjii/psytrance-tracker)
 
+![Events page served by this API](https://raw.githubusercontent.com/Peconjii/psytrance-tracker/master/docs/screenshots/events.png)
+
 ## Tech stack
 
 - **Java 17**, **Spring Boot 4** — Web MVC, Security, Data JPA, Validation
