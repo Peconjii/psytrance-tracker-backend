@@ -8,12 +8,12 @@ and lets users register, save favorite events and write reviews.
 
 **Frontend (React):** [Peconjii/psytrance-tracker](https://github.com/Peconjii/psytrance-tracker)
 
-![Events page served by this API](https://raw.githubusercontent.com/Peconjii/psytrance-tracker/master/docs/screenshots/events.png)
+![Events page served by this API](docs/events.png)
 
 ## Tech stack
 
 - **Java 17**, **Spring Boot 4** — Web MVC, Security, Data JPA, Validation, Mail
-- **PostgreSQL** with **Hibernate / JPA**
+- **PostgreSQL** with **Hibernate / JPA** and **Flyway** migrations
 - **JWT** authentication (JJWT) with **BCrypt** password hashing
 - Spring **RestClient** for the Goabase integration
 - **JUnit 5**, **Mockito**, **AssertJ**, **Testcontainers**, **MockMvc**
@@ -57,6 +57,11 @@ Requests go through the usual layers: **controller** (HTTP, validation) → **se
 - **Password reset without leaking accounts.** Reset links carry a random 256-bit token; only its SHA-256
   hash is stored, it expires after 30 minutes and works once. The endpoint answers identically for known and
   unknown emails, so it can't be used to discover who has an account.
+- **Schema changes as versioned SQL.** Flyway migrations in `src/main/resources/db/migration` own the database
+  schema, and Hibernate only validates that the entities match it (`ddl-auto=validate`). Every database (local,
+  Docker, tests, production) goes through the same numbered steps, which are reviewed in git like any other code.
+  Moving off `ddl-auto=update` also surfaced a real gap: it had never added the unique constraint on usernames
+  to the existing table, which `V2__unique_username.sql` now does.
 - **Consistent errors.** A `@RestControllerAdvice` turns validation failures, conflicts, missing events and
   Goabase outages into JSON responses with the right status code (`400`, `404`, `409`, `503`).
 
@@ -176,7 +181,7 @@ In IntelliJ, set the same variables under *Run → Edit Configurations → Envir
 Without `SPRING_MAIL_HOST`, the reset link is written to the application log instead, which is enough for
 local development.
 
-The API starts on `http://localhost:8080`, and Hibernate creates the tables on first start.
+The API starts on `http://localhost:8080`. On first start, Flyway creates the tables from the SQL migrations.
 CORS allows the frontend dev server at `http://localhost:5173`.
 
 ## Tests
@@ -212,7 +217,7 @@ through MockMvc. Only Goabase is faked.
 - [x] Docker Compose setup (PostgreSQL + backend + frontend)
 - [x] Integration tests with Testcontainers
 - [x] GitHub Actions CI
-- [ ] Flyway migrations instead of `ddl-auto=update`
+- [x] Flyway migrations instead of `ddl-auto=update`
 - [ ] Deployment to AWS
 
 ## Credits
