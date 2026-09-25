@@ -1,0 +1,50 @@
+# Runs the whole app: PostgreSQL + backend + frontend.
+#
+# Expects the frontend repo cloned next to this one:
+#   psytrance-tracker/            (frontend)
+#   psytrance-tracker-backend/    (this repo)
+#
+# Start:  docker compose up --build
+# Open:   http://localhost:5173
+#
+# The database credentials and JWT secret below are for this local, throwaway setup only.
+
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: psytrance
+      POSTGRES_USER: psytrance
+      POSTGRES_PASSWORD: psytrance
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U psytrance -d psytrance"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: .
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/psytrance
+      DB_USERNAME: psytrance
+      DB_PASSWORD: psytrance
+      JWT_SECRET: ${JWT_SECRET:-local-docker-only-jwt-secret-change-me-0123456789}
+      FRONTEND_URL: http://localhost:${FRONTEND_PORT:-5173}
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build: ../psytrance-tracker
+    ports:
+      # 5173 on the host so the backend's CORS setting and reset links work unchanged
+      - "${FRONTEND_PORT:-5173}:80"
+    depends_on:
+      - backend
+
+volumes:
+  db-data:

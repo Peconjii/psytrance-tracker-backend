@@ -10,12 +10,13 @@ and lets users register, save favorite events and write reviews.
 
 ## Tech stack
 
-- **Java 17**, **Spring Boot 4** — Web MVC, Security, Data JPA, Validation
+- **Java 17**, **Spring Boot 4** — Web MVC, Security, Data JPA, Validation, Mail
 - **PostgreSQL** with **Hibernate / JPA**
 - **JWT** authentication (JJWT) with **BCrypt** password hashing
 - Spring **RestClient** for the Goabase integration
 - **JUnit 5**, **Mockito**, **AssertJ**
 - **Maven**
+- **Docker** / Docker Compose
 
 ## Architecture
 
@@ -116,7 +117,25 @@ GET /api/events?page=0&size=2&country=spain&timeline=UPCOMING
 }
 ```
 
-## Running locally
+## Quick start with Docker
+
+The fastest way to run everything (database, backend and frontend) is Docker Compose. Clone both repos next
+to each other:
+
+```bash
+git clone https://github.com/Peconjii/psytrance-tracker-backend.git
+git clone https://github.com/Peconjii/psytrance-tracker.git
+
+cd psytrance-tracker-backend
+docker compose up --build
+```
+
+Then open **http://localhost:5173**. The API is on `http://localhost:8080`, and the data lives in a Docker
+volume, so it survives restarts (`docker compose down -v` wipes it).
+
+The database password and JWT secret in `docker-compose.yml` are throwaway values for this local setup.
+
+## Running locally without Docker
 
 **You need:** JDK 17+ and a PostgreSQL database (local, or hosted such as Supabase).
 
@@ -175,7 +194,7 @@ A plain `./mvnw test` also runs a Spring context test that needs the database va
 
 ## Roadmap
 
-- [ ] Docker Compose setup (PostgreSQL + backend + frontend)
+- [x] Docker Compose setup (PostgreSQL + backend + frontend)
 - [ ] Integration tests with Testcontainers and controller tests with `@WebMvcTest`
 - [ ] GitHub Actions CI
 - [ ] Flyway migrations instead of `ddl-auto=update`
