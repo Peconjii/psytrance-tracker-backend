@@ -30,7 +30,6 @@ public class Favorite {
         this.user = user;
     }
 
-    // Getteri i setteri
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
