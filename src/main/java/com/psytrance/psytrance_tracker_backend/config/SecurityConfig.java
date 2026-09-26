@@ -1,6 +1,7 @@
 package com.psytrance.psytrance_tracker_backend.config;
 
 import com.psytrance.psytrance_tracker_backend.filter.JwtFilter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -18,15 +19,19 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
+import java.util.Set;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
     private final JwtFilter jwtFilter;
+    private final String frontendUrl;
 
-    public SecurityConfig(JwtFilter jwtFilter) {
+    public SecurityConfig(JwtFilter jwtFilter, @Value("${app.frontend-url}") String frontendUrl) {
         this.jwtFilter = jwtFilter;
+        // A trailing slash would never match the browser's Origin header
+        this.frontendUrl = frontendUrl.replaceAll("/+$", "");
     }
 
     @Bean
@@ -54,7 +59,9 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:5173", "http://127.0.0.1:5173"));
+        // The deployed frontend (FRONTEND_URL) plus the local dev server; the Set drops duplicates
+        configuration.setAllowedOrigins(List.copyOf(
+                Set.of(frontendUrl, "http://localhost:5173", "http://127.0.0.1:5173")));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With"));
         configuration.setAllowCredentials(true);
