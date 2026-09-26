@@ -19,7 +19,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
-import java.util.Set;
+import java.util.stream.Stream;
 
 @Configuration
 @EnableWebSecurity
@@ -59,9 +59,10 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // The deployed frontend (FRONTEND_URL) plus the local dev server; the Set drops duplicates
-        configuration.setAllowedOrigins(List.copyOf(
-                Set.of(frontendUrl, "http://localhost:5173", "http://127.0.0.1:5173")));
+        // The deployed frontend (FRONTEND_URL) plus the local dev server. distinct() matters: locally
+        // FRONTEND_URL defaults to http://localhost:5173, and Set.of would throw on that duplicate
+        configuration.setAllowedOrigins(
+                Stream.of(frontendUrl, "http://localhost:5173", "http://127.0.0.1:5173").distinct().toList());
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With"));
         configuration.setAllowCredentials(true);
