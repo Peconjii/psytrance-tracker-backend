@@ -8,6 +8,11 @@ and lets users register, save favorite events and write reviews.
 
 **Frontend (React):** [Peconjii/psytrance-tracker](https://github.com/Peconjii/psytrance-tracker)
 
+**Live demo: [psytrance-tracker.vercel.app](https://psytrance-tracker.vercel.app)** · API:
+[psytrance-tracker-backend.onrender.com/api/events](https://psytrance-tracker-backend.onrender.com/api/events)
+
+> Hosted on free tiers (Vercel, Render, Neon). The backend sleeps when nobody uses it, so the first load can take 1–2 minutes.
+
 ![Events page served by this API](docs/events.png)
 
 ## Tech stack
@@ -176,13 +181,14 @@ In IntelliJ, set the same variables under *Run → Edit Configurations → Envir
 | `SPRING_MAIL_USERNAME` | `you@gmail.com` |
 | `SPRING_MAIL_PASSWORD` | a Gmail [app password](https://myaccount.google.com/apppasswords), not your normal password |
 | `MAIL_FROM` | `you@gmail.com` |
-| `FRONTEND_URL` | `http://localhost:5173` (default), used to build the reset link |
+| `FRONTEND_URL` | `http://localhost:5173` (default), used to build the reset link and allowed by CORS |
 
 Without `SPRING_MAIL_HOST`, the reset link is written to the application log instead, which is enough for
 local development.
 
 The API starts on `http://localhost:8080`. On first start, Flyway creates the tables from the SQL migrations.
-CORS allows the frontend dev server at `http://localhost:5173`.
+CORS allows the frontend dev server at `http://localhost:5173` and the address in `FRONTEND_URL`.
+If the `PORT` variable is set (as on Render), the API listens on that port instead.
 
 ## Tests
 
@@ -218,6 +224,7 @@ through MockMvc. Only Goabase is faked.
 - [x] Integration tests with Testcontainers
 - [x] GitHub Actions CI
 - [x] Flyway migrations instead of `ddl-auto=update`
+- [x] Live deployment: backend on Render (Docker), database on Neon (PostgreSQL), frontend on Vercel
 - [ ] Deployment to AWS
 
 ## Credits
