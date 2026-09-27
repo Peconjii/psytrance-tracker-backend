@@ -46,6 +46,9 @@ public class SecurityConfig {
                                 "/api/auth/forgot-password", "/api/auth/reset-password").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/events/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/reviews/event/**").permitAll()
+                        // Spring renders errors like "no such endpoint" at /error; if that needed a token,
+                        // a guest would get a misleading 401 instead of the real 404
+                        .requestMatchers("/error").permitAll()
                         // Everything else (reviews POST, favorites, /api/auth/me, ...) requires a valid token
                         .anyRequest().authenticated()
                 )
