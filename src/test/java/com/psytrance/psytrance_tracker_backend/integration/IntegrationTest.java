@@ -2,6 +2,7 @@ package com.psytrance.psytrance_tracker_backend.integration;
 
 import com.jayway.jsonpath.JsonPath;
 import com.psytrance.psytrance_tracker_backend.client.GoabaseClient;
+import com.psytrance.psytrance_tracker_backend.client.YouTubeClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
@@ -18,8 +19,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /**
  * Base for tests that run the whole application: real HTTP handling through MockMvc, real security,
- * and a real PostgreSQL started in Docker by Testcontainers. Only Goabase is faked, so tests
- * don't depend on the internet.
+ * and a real PostgreSQL started in Docker by Testcontainers. Only Goabase and YouTube are faked,
+ * so tests don't depend on the internet.
  */
 @SpringBootTest(properties = {
         "jwt.secret=integration-test-jwt-secret-that-is-long-enough",
@@ -42,6 +43,9 @@ abstract class IntegrationTest {
 
     @MockitoBean
     protected GoabaseClient goabaseClient;
+
+    @MockitoBean
+    protected YouTubeClient youTubeClient;
 
     /** Usernames are unique per test, because all tests share one database. */
     protected static String uniqueUsername() {

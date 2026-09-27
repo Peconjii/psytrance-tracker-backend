@@ -53,7 +53,7 @@ public class GoabaseClient {
         }
     }
 
-    public Optional<GoabaseParty> fetchParty(long id) {
+    public Optional<GoabasePartyDetails> fetchParty(long id) {
         try {
             return restClient.get()
                     .uri("/api/party/json/{id}", id)
@@ -77,6 +77,6 @@ public class GoabaseClient {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    record SinglePartyResponse(GoabaseParty party) {
+    record SinglePartyResponse(GoabasePartyDetails party) {
     }
 }

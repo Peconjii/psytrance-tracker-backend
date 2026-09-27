@@ -20,7 +20,7 @@ and lets users register, save favorite events and write reviews.
 - **Java 17**, **Spring Boot 4** — Web MVC, Security, Data JPA, Validation, Mail
 - **PostgreSQL** with **Hibernate / JPA** and **Flyway** migrations
 - **JWT** authentication (JJWT) with **BCrypt** password hashing
-- Spring **RestClient** for the Goabase integration
+- Spring **RestClient** for the Goabase and YouTube Data API integrations
 - **JUnit 5**, **Mockito**, **AssertJ**, **Testcontainers**, **MockMvc**
 - **GitHub Actions** CI
 - **Maven**
@@ -36,11 +36,13 @@ flowchart LR
         C[Controllers] --> S[Services]
         S --> R[JPA repositories]
         S --> G[GoabaseClient]
+        S --> Y[YouTubeClient]
         F[JwtFilter] -.checks token.-> C
     end
 
-    R --> DB[(PostgreSQL<br/>users, favorites, reviews)]
+    R --> DB[(PostgreSQL<br/>users, favorites, reviews,<br/>aftermovie lookups)]
     G -->|full list, at most every 10 min| GA[Goabase API]
+    Y -->|festival aftermovies, about once a month each| YT[YouTube Data API]
 ```
 
 Requests go through the usual layers: **controller** (HTTP, validation) → **service** (business logic) →
@@ -55,6 +57,14 @@ Requests go through the usual layers: **controller** (HTTP, validation) → **se
 - **One class talks to Goabase.** `GoabaseClient` owns the URLs, timeouts and JSON shape, and maps responses
   into typed records. The rest of the app never sees Goabase's raw format. Redirects are disabled on purpose:
   Goabase answers an unknown event id with a `301` to an HTML page, which the client turns into "not found".
+- **Aftermovies without burning the YouTube quota.** A YouTube search costs 100 of the 10,000 free daily
+  units, so `AftermovieService` searches at most once a month per festival and stores the result, including
+  "nothing found", in PostgreSQL rather than in memory, because the free host restarts the app often. A video
+  only counts when its title has the festival's name and "aftermovie"; otherwise the page shows no video
+  rather than a wrong one. Without `YOUTUBE_API_KEY` the feature is simply off.
+- **Artists picked out of free-text line-ups.** Goabase line-ups are whatever the organizer typed: emoji,
+  flags, record labels, stage headers, URLs. `LineUpParser` keeps every line as written and adds the artist
+  name only when it's confident (tested against real line-ups), so the frontend can link artists to SoundCloud.
 - **Testable time.** Date logic ("upcoming", "this weekend") uses an injected `java.time.Clock`, so tests can
   pin "today" to a fixed date and move time forward to test cache expiry.
 - **Stateless auth.** Login returns a signed JWT; every protected request is authenticated from its
@@ -82,6 +92,8 @@ Requests go through the usual layers: **controller** (HTTP, validation) → **se
 | `GET` | `/api/events` | – | Paged, filtered event list (see below) |
 | `GET` | `/api/events/map` | – | All events that have coordinates, for the map |
 | `GET` | `/api/events/{id}` | – | One event |
+| `GET` | `/api/events/{id}/aftermovie` | – | The festival's aftermovie on YouTube (`videoId`, `title`), or `204` if there is none |
+| `GET` | `/api/events/{id}/details` | – | One event with times, line-up, venue notes, entry fee, description and organizer (cached per event) |
 | `GET` | `/api/favorites/{userId}` | ✔ own | User's favorites |
 | `POST` | `/api/favorites/{userId}` | ✔ own | Add favorite (`eventId`, `eventName`) |
 | `DELETE` | `/api/favorites/{userId}?eventId=` | ✔ own | Remove favorite |
@@ -185,6 +197,10 @@ In IntelliJ, set the same variables under *Run → Edit Configurations → Envir
 
 Without `SPRING_MAIL_HOST`, the reset link is written to the application log instead, which is enough for
 local development.
+
+**YouTube aftermovies (optional).** Set `YOUTUBE_API_KEY` to a YouTube Data API v3 key (Google Cloud Console →
+*APIs & Services* → enable *YouTube Data API v3* → *Credentials* → *Create API key*). Without it, festival
+pages just have no aftermovie.
 
 The API starts on `http://localhost:8080`. On first start, Flyway creates the tables from the SQL migrations.
 CORS allows the frontend dev server at `http://localhost:5173` and the address in `FRONTEND_URL`.

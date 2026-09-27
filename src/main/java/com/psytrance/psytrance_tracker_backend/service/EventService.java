@@ -1,6 +1,7 @@
 package com.psytrance.psytrance_tracker_backend.service;
 
 import com.psytrance.psytrance_tracker_backend.client.GoabaseClient;
+import com.psytrance.psytrance_tracker_backend.dto.EventDetailsDto;
 import com.psytrance.psytrance_tracker_backend.dto.EventDto;
 import com.psytrance.psytrance_tracker_backend.dto.EventSearch;
 import com.psytrance.psytrance_tracker_backend.dto.PageResponse;
@@ -20,6 +21,8 @@ import java.time.temporal.TemporalAdjusters;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Serves events to the API. Goabase is only asked for the full list once per
@@ -34,12 +37,18 @@ public class EventService {
             .comparing(EventDto::dateStart, Comparator.nullsLast(Comparator.naturalOrder()))
             .thenComparing(EventDto::id);
 
+    // Cached details older than this are dropped instead of being kept as a fallback for outages
+    private static final Duration DETAILS_KEPT_FOR = Duration.ofDays(1);
+
     private final GoabaseClient goabaseClient;
     private final Clock clock;
     private final Duration cacheTtl;
 
     // volatile: a request thread must see the new list as soon as another thread stores it
     private volatile CachedEvents cache;
+
+    // Details come from a separate Goabase call per event, so they are cached per event id
+    private final Map<Long, CachedDetails> detailsCache = new ConcurrentHashMap<>();
 
     public EventService(GoabaseClient goabaseClient,
                         Clock clock,
@@ -68,8 +77,31 @@ public class EventService {
         return allEvents().stream()
                 .filter(event -> Long.valueOf(id).equals(event.id()))
                 .findFirst()
-                .or(() -> goabaseClient.fetchParty(id).map(EventDto::from))
+                .or(() -> goabaseClient.fetchParty(id).map(party -> EventDto.from(party.summary())))
                 .orElseThrow(() -> new EventNotFoundException(id));
+    }
+
+    /** Line-up, venue notes and the rest of the event page. Goabase only has these on its single-party endpoint. */
+    public EventDetailsDto findDetails(long id) {
+        Instant now = clock.instant();
+        CachedDetails cached = detailsCache.get(id);
+        if (cached != null && cached.isFresh(now, cacheTtl)) {
+            return cached.details();
+        }
+        try {
+            EventDetailsDto details = goabaseClient.fetchParty(id)
+                    .map(EventDetailsDto::from)
+                    .orElseThrow(() -> new EventNotFoundException(id));
+            detailsCache.values().removeIf(entry -> !entry.isFresh(now, DETAILS_KEPT_FOR));
+            detailsCache.put(id, new CachedDetails(details, now));
+            return details;
+        } catch (GoabaseUnavailableException e) {
+            if (cached == null) {
+                throw e;
+            }
+            log.warn("Goabase refresh of event {} failed, serving cached details from {}", id, cached.fetchedAt(), e);
+            return cached.details();
+        }
     }
 
     private List<EventDto> allEvents() {
@@ -156,6 +188,13 @@ public class EventService {
     }
 
     private record CachedEvents(List<EventDto> events, Instant fetchedAt) {
+
+        boolean isFresh(Instant now, Duration ttl) {
+            return fetchedAt.plus(ttl).isAfter(now);
+        }
+    }
+
+    private record CachedDetails(EventDetailsDto details, Instant fetchedAt) {
 
         boolean isFresh(Instant now, Duration ttl) {
             return fetchedAt.plus(ttl).isAfter(now);

@@ -1,12 +1,16 @@
 package com.psytrance.psytrance_tracker_backend.controller;
 
+import com.psytrance.psytrance_tracker_backend.dto.AftermovieDto;
+import com.psytrance.psytrance_tracker_backend.dto.EventDetailsDto;
 import com.psytrance.psytrance_tracker_backend.dto.EventDto;
 import com.psytrance.psytrance_tracker_backend.dto.EventSearch;
 import com.psytrance.psytrance_tracker_backend.dto.EventTimeline;
 import com.psytrance.psytrance_tracker_backend.dto.PageResponse;
+import com.psytrance.psytrance_tracker_backend.service.AftermovieService;
 import com.psytrance.psytrance_tracker_backend.service.EventService;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,9 +24,11 @@ import java.util.List;
 public class EventController {
 
     private final EventService eventService;
+    private final AftermovieService aftermovieService;
 
-    public EventController(EventService eventService) {
+    public EventController(EventService eventService, AftermovieService aftermovieService) {
         this.eventService = eventService;
+        this.aftermovieService = aftermovieService;
     }
 
     /**
@@ -48,5 +54,19 @@ public class EventController {
     @GetMapping("/{id}")
     public EventDto getEvent(@PathVariable long id) {
         return eventService.findById(id);
+    }
+
+    /** The full event page: times, line-up, venue notes, entry fee, description and organizer. */
+    @GetMapping("/{id}/details")
+    public EventDetailsDto getEventDetails(@PathVariable long id) {
+        return eventService.findDetails(id);
+    }
+
+    /** The festival's own aftermovie on YouTube, or 204 No Content when there is none. */
+    @GetMapping("/{id}/aftermovie")
+    public ResponseEntity<AftermovieDto> getAftermovie(@PathVariable long id) {
+        return aftermovieService.findForEvent(id)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.noContent().build());
     }
 }

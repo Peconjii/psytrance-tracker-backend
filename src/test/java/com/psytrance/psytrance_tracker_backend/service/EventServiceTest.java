@@ -2,7 +2,10 @@ package com.psytrance.psytrance_tracker_backend.service;
 
 import com.psytrance.psytrance_tracker_backend.client.GoabaseClient;
 import com.psytrance.psytrance_tracker_backend.client.GoabaseParty;
+import com.psytrance.psytrance_tracker_backend.client.GoabasePartyDetails;
+import com.psytrance.psytrance_tracker_backend.dto.EventDetailsDto;
 import com.psytrance.psytrance_tracker_backend.dto.EventDto;
+import com.psytrance.psytrance_tracker_backend.dto.LineUpLine;
 import com.psytrance.psytrance_tracker_backend.dto.EventSearch;
 import com.psytrance.psytrance_tracker_backend.dto.EventTimeline;
 import com.psytrance.psytrance_tracker_backend.dto.PageResponse;
@@ -177,9 +180,55 @@ class EventServiceTest {
     @Test
     void findByIdLooksUpGoabaseDirectlyWhenEventIsNotInTheList() {
         when(goabaseClient.fetchAllParties()).thenReturn(List.of());
-        when(goabaseClient.fetchParty(99)).thenReturn(Optional.of(party(99, "Old favorite", "2025-08-01", null)));
+        when(goabaseClient.fetchParty(99)).thenReturn(Optional.of(details(99, "Old favorite", "")));
 
-        assertThat(eventService.findById(99).nameParty()).isEqualTo("Old favorite");
+        EventDto event = eventService.findById(99);
+
+        assertThat(event.nameParty()).isEqualTo("Old favorite");
+        assertThat(event.urlPartyHtml()).isEqualTo("https://www.goabase.net/party/99");
+    }
+
+    @Test
+    void detailsKeepVenueTimeAndCleanUpGoabaseTexts() {
+        when(goabaseClient.fetchParty(7)).thenReturn(Optional.of(details(7, "Ozora", "www.ozorafestival.eu")));
+
+        EventDetailsDto details = eventService.findDetails(7);
+
+        assertThat(details.startsAt()).hasToString("2026-10-01T22:00");
+        assertThat(details.endsAt()).hasToString("2026-10-04T12:00");
+        assertThat(details.lineUp()).extracting(LineUpLine::artist).containsExactly("Artist One", "Artist Two");
+        assertThat(details.entryFee()).isNull();
+        assertThat(details.organizerUrl()).isEqualTo("https://www.ozorafestival.eu");
+    }
+
+    @Test
+    void detailsAreCachedPerEvent() {
+        when(goabaseClient.fetchParty(7)).thenReturn(Optional.of(details(7, "Ozora", "")));
+
+        eventService.findDetails(7);
+        clock.advance(Duration.ofMinutes(9));
+        eventService.findDetails(7);
+
+        verify(goabaseClient, times(1)).fetchParty(7);
+    }
+
+    @Test
+    void servesOldDetailsWhenGoabaseIsDownDuringRefresh() {
+        when(goabaseClient.fetchParty(7))
+                .thenReturn(Optional.of(details(7, "Cached details", "")))
+                .thenThrow(new GoabaseUnavailableException("down", null));
+
+        eventService.findDetails(7);
+        clock.advance(Duration.ofMinutes(11));
+
+        assertThat(eventService.findDetails(7).nameParty()).isEqualTo("Cached details");
+    }
+
+    @Test
+    void detailsOfUnknownEventAreNotFound() {
+        when(goabaseClient.fetchParty(404)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> eventService.findDetails(404)).isInstanceOf(EventNotFoundException.class);
     }
 
     @Test
@@ -194,6 +243,14 @@ class EventServiceTest {
         return new GoabaseParty(id, name, startDate + "T22:00:00+02:00",
                 endDate == null ? null : endDate + "T12:00:00+02:00",
                 "Festival", "Scheduled", "Serbia", "Novi Sad", 45.25, 19.84, null, null);
+    }
+
+    // As the single-party endpoint sends it: Windows line breaks and "" for empty fields
+    private static GoabasePartyDetails details(long id, String name, String organizerUrl) {
+        return new GoabasePartyDetails(id, name, "2026-10-01T22:00:00+02:00", "2026-10-04T12:00:00+02:00",
+                "Festival", "Scheduled", "Hungary", "Ozora", 46.75, 18.4, null, null,
+                "https://www.goabase.net/party/" + id, "Artist One\r\nArtist Two\r\n", "", "", "",
+                "Crew", organizerUrl);
     }
 
     private static GoabaseParty partyInTown(long id, String name, String town) {
