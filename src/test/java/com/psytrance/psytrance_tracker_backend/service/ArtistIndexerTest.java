@@ -1,0 +1,111 @@
+package com.psytrance.psytrance_tracker_backend.service;
+
+import com.psytrance.psytrance_tracker_backend.client.GoabaseClient;
+import com.psytrance.psytrance_tracker_backend.client.GoabaseParty;
+import com.psytrance.psytrance_tracker_backend.client.GoabasePartyDetails;
+import com.psytrance.psytrance_tracker_backend.dto.EventDto;
+import com.psytrance.psytrance_tracker_backend.exception.GoabaseUnavailableException;
+import com.psytrance.psytrance_tracker_backend.model.LineupScan;
+import com.psytrance.psytrance_tracker_backend.repository.LineupScanRepository;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.InOrder;
+
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.LongStream;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+class ArtistIndexerTest {
+
+    private static final Instant NOW = Instant.parse("2026-09-23T12:00:00Z");
+
+    private EventService eventService;
+    private GoabaseClient goabaseClient;
+    private LineupScanRepository lineupScanRepository;
+    private ArtistService artistService;
+    private ArtistIndexer indexer;
+
+    @BeforeEach
+    void setUp() {
+        eventService = mock(EventService.class);
+        goabaseClient = mock(GoabaseClient.class);
+        lineupScanRepository = mock(LineupScanRepository.class);
+        artistService = mock(ArtistService.class);
+        indexer = new ArtistIndexer(eventService, goabaseClient, lineupScanRepository, artistService,
+                Clock.fixed(NOW, ZoneOffset.UTC));
+    }
+
+    @Test
+    void storesTheArtistsFoundInTheLineUp() {
+        when(eventService.findUpcoming()).thenReturn(List.of(event(1)));
+        when(goabaseClient.fetchParty(1)).thenReturn(Optional.of(withLineUp(1, "LINE UP:\r\nAce Ventura (live)\r\nTBA")));
+
+        assertThat(indexer.indexNextBatch()).isEqualTo(1);
+
+        verify(artistService).saveLineUp(1, List.of("Ace Ventura"), NOW);
+    }
+
+    @Test
+    void eventsNeverReadComeFirstThenTheOldestReads() {
+        when(eventService.findUpcoming()).thenReturn(List.of(event(1), event(2), event(3)));
+        when(lineupScanRepository.findAllById(List.of(1L, 2L, 3L))).thenReturn(List.of(
+                new LineupScan(1L, NOW.minus(Duration.ofDays(3))),
+                // Read an hour ago: not again yet
+                new LineupScan(2L, NOW.minus(Duration.ofHours(1)))));
+        when(goabaseClient.fetchParty(anyLong())).thenReturn(Optional.empty());
+
+        assertThat(indexer.indexNextBatch()).isEqualTo(2);
+
+        InOrder order = inOrder(goabaseClient);
+        order.verify(goabaseClient).fetchParty(3);
+        order.verify(goabaseClient).fetchParty(1);
+        verify(goabaseClient, never()).fetchParty(2);
+    }
+
+    @Test
+    void readsAtMostOneBatchPerRun() {
+        when(eventService.findUpcoming()).thenReturn(LongStream.rangeClosed(1, 100).mapToObj(ArtistIndexerTest::event).toList());
+        when(goabaseClient.fetchParty(anyLong())).thenReturn(Optional.empty());
+
+        assertThat(indexer.indexNextBatch()).isEqualTo(ArtistIndexer.BATCH_SIZE);
+        verify(goabaseClient, times(ArtistIndexer.BATCH_SIZE)).fetchParty(anyLong());
+    }
+
+    @Test
+    void stopsWhenGoabaseIsDownAndKeepsWhatWasRead() {
+        when(eventService.findUpcoming()).thenReturn(List.of(event(1), event(2), event(3)));
+        when(goabaseClient.fetchParty(1)).thenReturn(Optional.of(withLineUp(1, "Astrix")));
+        when(goabaseClient.fetchParty(2)).thenThrow(new GoabaseUnavailableException("down", null));
+
+        assertThat(indexer.indexNextBatch()).isEqualTo(1);
+
+        verify(artistService).saveLineUp(1, List.of("Astrix"), NOW);
+        verify(artistService, never()).saveLineUp(eq(2L), any(), any());
+        verify(goabaseClient, never()).fetchParty(3);
+    }
+
+    private static EventDto event(long id) {
+        return EventDto.from(new GoabaseParty(id, "Event " + id, "2026-10-01T22:00:00+02:00", null,
+                "Festival", "Scheduled", "Serbia", "Novi Sad", 45.25, 19.84, null, null));
+    }
+
+    private static GoabasePartyDetails withLineUp(long id, String lineUp) {
+        return new GoabasePartyDetails(id, "Event " + id, "2026-10-01T22:00:00+02:00", null, "Festival",
+                "Scheduled", "Serbia", "Novi Sad", 45.25, 19.84, null, null, null, lineUp, "", "", "", null, null);
+    }
+}

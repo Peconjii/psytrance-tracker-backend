@@ -24,6 +24,10 @@ class LineUpParserTest {
             "A-MUSH - live                          | A-MUSH",
             "THE HORRIDS (TBC)                      | THE HORRIDS",
             "SUN-WU-KONG                            | SUN-WU-KONG",
+            "ALMA DEYA [LIVE]                       | ALMA DEYA",
+            "BACK TO MARS [BR]/[NL]                 | BACK TO MARS",
+            // A genre word next to a real name is still an artist
+            "DARK CHOCOLATE [ES]                    | DARK CHOCOLATE",
     })
     void findsTheArtistName(String line, String artist) {
         assertThat(LineUpParser.findArtist(line)).isEqualTo(artist);
@@ -44,6 +48,15 @@ class LineUpParserTest {
             "Visuals by Defekt Visuals",
             "Leave your gear behind – we provide everything for your stay.",
             "ESPAÇO NATIVOS: GLAMPING & READY-TO-CAMP",
+            "Darkpsy",
+            "Darkpsy/Forest",
+            "CHILL OUT",
+            "🌀 Dark Prog 🌀",
+            "Artwork by Joe Sanchez",
+            "Flyer Design by Joshuadesigns",
+            "Dekoration & Mapping",
+            "About event",
+            "b2b",
     })
     void skipsLinesThatAreNotArtists(String line) {
         assertThat(LineUpParser.findArtist(line)).isNull();

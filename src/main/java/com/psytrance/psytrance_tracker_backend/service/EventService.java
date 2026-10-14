@@ -72,6 +72,14 @@ public class EventService {
                 .toList();
     }
 
+    /** Events that haven't ended yet, soonest first. Used by the reminder job and the artist pages. */
+    public List<EventDto> findUpcoming() {
+        LocalDate today = LocalDate.now(clock);
+        return allEvents().stream()
+                .filter(event -> event.lastDay() != null && !event.lastDay().isBefore(today))
+                .toList();
+    }
+
     public EventDto findById(long id) {
         // Favorites can point at events that already dropped off the Goabase list, so fall back to a direct lookup
         return allEvents().stream()
@@ -157,8 +165,6 @@ public class EventService {
     private static boolean matchesTimeline(EventDto event, EventSearch search, LocalDate today) {
         return switch (search.timeline()) {
             case ALL -> true;
-            case UPCOMING -> event.lastDay() != null && !event.lastDay().isBefore(today);
-            case PAST -> event.lastDay() != null && event.lastDay().isBefore(today);
             case THIS_WEEKEND -> overlapsWeekend(event, today);
         };
     }

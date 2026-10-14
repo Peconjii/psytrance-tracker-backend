@@ -3,8 +3,11 @@ package com.psytrance.psytrance_tracker_backend.service;
 import com.psytrance.psytrance_tracker_backend.dto.RegisterRequest;
 import com.psytrance.psytrance_tracker_backend.model.User;
 import com.psytrance.psytrance_tracker_backend.repository.UserRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Optional;
 
@@ -36,5 +39,14 @@ public class UserService {
 
     public Optional<User> findByUsername(String username) {
         return userRepository.findByUsername(username);
+    }
+
+    /** Returns the new setting. */
+    @Transactional
+    public boolean setEventReminders(String username, boolean enabled) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unknown user"));
+        user.setEventReminders(enabled);
+        return user.isEventReminders();
     }
 }

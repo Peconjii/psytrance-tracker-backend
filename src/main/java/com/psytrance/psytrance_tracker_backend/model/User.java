@@ -15,6 +15,8 @@ public class User {
     private String email;
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
+    // Reminder emails before events the user saved or is going to; can be turned off on the profile
+    private boolean eventReminders = true;
 
     public String getUsername() {
         return username;
@@ -46,5 +48,13 @@ public class User {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public boolean isEventReminders() {
+        return eventReminders;
+    }
+
+    public void setEventReminders(boolean eventReminders) {
+        this.eventReminders = eventReminders;
     }
 }

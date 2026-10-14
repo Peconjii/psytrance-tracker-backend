@@ -99,20 +99,6 @@ class EventServiceTest {
     }
 
     @Test
-    void upcomingIncludesEventsThatAreHappeningRightNow() {
-        when(goabaseClient.fetchAllParties()).thenReturn(List.of(
-                party(1, "Ended last week", "2026-09-10", "2026-09-13"),
-                party(2, "Started Monday, ends Sunday", "2026-09-21", "2026-09-27"),
-                party(3, "Next month", "2026-10-10", null)));
-
-        List<EventDto> upcoming = eventService.findEvents(new EventSearch(null, null, null, EventTimeline.UPCOMING), 0, 24).content();
-        List<EventDto> past = eventService.findEvents(new EventSearch(null, null, null, EventTimeline.PAST), 0, 24).content();
-
-        assertThat(upcoming).extracting(EventDto::id).containsExactly(2L, 3L);
-        assertThat(past).extracting(EventDto::id).containsExactly(1L);
-    }
-
-    @Test
     void thisWeekendOnASaturdayMeansTheCurrentWeekendNotNextOne() {
         clock.setInstant(Instant.parse("2026-09-26T12:00:00Z")); // Saturday
         when(goabaseClient.fetchAllParties()).thenReturn(List.of(

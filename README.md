@@ -4,7 +4,8 @@
 
 REST API for **PsyTrance Event Tracker**, a web app for discovering psytrance festivals and parties around the world.
 It pulls events from the public [Goabase](https://www.goabase.net) API, serves them searchable and paginated,
-and lets users register, save favorite events and write reviews.
+and lets users register, save favorite events, say they're going, write reviews, get reminder emails before
+their events and look up where an artist plays next.
 
 **Frontend (React):** [Peconjii/psytrance-tracker](https://github.com/Peconjii/psytrance-tracker)
 
@@ -38,9 +39,10 @@ flowchart LR
         S --> G[GoabaseClient]
         S --> Y[YouTubeClient]
         F[JwtFilter] -.checks token.-> C
+        J[BackgroundJobs<br/>reminders hourly,<br/>artist index every 3 min] --> S
     end
 
-    R --> DB[(PostgreSQL<br/>users, favorites, reviews,<br/>aftermovie lookups)]
+    R --> DB[(PostgreSQL<br/>users, favorites, reviews, going,<br/>reminders sent, artists,<br/>aftermovie lookups)]
     G -->|full list, at most every 10 min| GA[Goabase API]
     Y -->|festival aftermovies, about once a month each| YT[YouTube Data API]
 ```
@@ -65,6 +67,22 @@ Requests go through the usual layers: **controller** (HTTP, validation) → **se
 - **Artists picked out of free-text line-ups.** Goabase line-ups are whatever the organizer typed: emoji,
   flags, record labels, stage headers, URLs. `LineUpParser` keeps every line as written and adds the artist
   name only when it's confident (tested against real line-ups), so the frontend can link artists to SoundCloud.
+  Genre titles ("Darkpsy/Forest"), credits ("Artwork by ...") and country tags ("[DE]") are left out.
+- **An artist index built in the background.** Goabase only has line-ups on its single-event endpoint, so
+  "where does this artist play?" would mean hundreds of Goabase calls per request. Instead `ArtistIndexer`
+  reads 25 line-ups every 3 minutes (events never read first, then the oldest reads, since organizers keep
+  adding artists) and stores who plays where in PostgreSQL. The same artist written differently ("ACE VENTURA",
+  "Ace Ventura") is matched by a slug (`ace-ventura`) that also serves as the page address, and the normal
+  spelling is preferred over all-caps.
+- **Reminder emails that are safe to run any time.** `ReminderService` runs every hour and emails users about
+  events they saved or are going to that start in the next 3 days, one email per user listing all of them.
+  Every sent reminder is recorded (unique per user and event), and only after a successful send, so nobody
+  gets one twice, a failed email is retried, and runs missed while the free server was asleep are caught up.
+  Users can turn reminders off on their profile.
+- **"I'm going" counts without N+1 queries.** The events page asks for a whole page of counts at once
+  (`GET /api/events/going?ids=...`), answered with one `GROUP BY` query plus one query for the user's own
+  marks. Marking twice is harmless: the insert uses PostgreSQL's `ON CONFLICT DO NOTHING` against a unique
+  constraint, so even two clicks at the same moment can't create a duplicate.
 - **Testable time.** Date logic ("upcoming", "this weekend") uses an injected `java.time.Clock`, so tests can
   pin "today" to a fixed date and move time forward to test cache expiry.
 - **Stateless auth.** Login returns a signed JWT; every protected request is authenticated from its
@@ -93,7 +111,15 @@ Requests go through the usual layers: **controller** (HTTP, validation) → **se
 | `GET` | `/api/events/map` | – | All events that have coordinates, for the map |
 | `GET` | `/api/events/{id}` | – | One event |
 | `GET` | `/api/events/{id}/aftermovie` | – | The festival's aftermovie on YouTube (`videoId`, `title`), or `204` if there is none |
-| `GET` | `/api/events/{id}/details` | – | One event with times, line-up, venue notes, entry fee, description and organizer (cached per event) |
+| `GET` | `/api/events/{id}/details` | – | One event with times, line-up (each artist with the `artistSlug` of their page), venue notes, entry fee, description and organizer (cached per event) |
+| `GET` | `/api/events/going?ids=1,2,3` | – | `{ "1": { "count": 4, "going": true }, ... }` for up to 100 events; `going` is always `false` for guests |
+| `GET` | `/api/events/{id}/going` | – | `{ "count", "going" }` for one event |
+| `PUT` | `/api/events/{id}/going` | ✔ | Mark yourself as going (doing it twice changes nothing) |
+| `DELETE` | `/api/events/{id}/going` | ✔ | Not going any more |
+| `GET` | `/api/me/going` | ✔ | Events you're going to (`eventId`, `eventName`, `startsOn`), soonest first |
+| `PUT` | `/api/me/reminders` | ✔ | Turn reminder emails on or off (`enabled`) |
+| `GET` | `/api/artists?search=` | – | Artists playing upcoming events (`slug`, `name`, `upcomingEvents`), busiest first; search ignores case and accents |
+| `GET` | `/api/artists/{slug}` | – | One artist and their upcoming events, soonest first |
 | `GET` | `/api/favorites/{userId}` | ✔ own | User's favorites |
 | `POST` | `/api/favorites/{userId}` | ✔ own | Add favorite (`eventId`, `eventName`) |
 | `DELETE` | `/api/favorites/{userId}?eventId=` | ✔ own | Remove favorite |
@@ -110,10 +136,10 @@ Requests go through the usual layers: **controller** (HTTP, validation) → **se
 | `search` | – | Matches event name or town |
 | `country` | – | Matches country name |
 | `genre` | – | Matches event type or name, e.g. `Forest` |
-| `timeline` | `ALL` | `ALL`, `UPCOMING`, `THIS_WEEKEND` or `PAST` |
+| `timeline` | `ALL` | `ALL` or `THIS_WEEKEND` |
 
 ```http
-GET /api/events?page=0&size=2&country=spain&timeline=UPCOMING
+GET /api/events?page=0&size=2&country=spain&timeline=THIS_WEEKEND
 ```
 
 ```json
@@ -184,7 +210,7 @@ export JWT_SECRET=$(openssl rand -base64 48)
 
 In IntelliJ, set the same variables under *Run → Edit Configurations → Environment variables*.
 
-**Email (optional).** Password reset emails are sent over SMTP when these are set:
+**Email (optional).** Password reset and reminder emails are sent over SMTP when these are set:
 
 | Variable | Example (Gmail) |
 |---|---|
@@ -195,8 +221,8 @@ In IntelliJ, set the same variables under *Run → Edit Configurations → Envir
 | `MAIL_FROM` | `you@gmail.com` |
 | `FRONTEND_URL` | `http://localhost:5173` (default), used to build the reset link and allowed by CORS |
 
-Without `SPRING_MAIL_HOST`, the reset link is written to the application log instead, which is enough for
-local development.
+Without `SPRING_MAIL_HOST`, the emails (reset links, reminders) are written to the application log instead,
+which is enough for local development.
 
 **YouTube aftermovies (optional).** Set `YOUTUBE_API_KEY` to a YouTube Data API v3 key (Google Cloud Console →
 *APIs & Services* → enable *YouTube Data API v3* → *Credentials* → *Create API key*). Without it, festival
@@ -222,6 +248,10 @@ GitHub Actions runs the same tests on every push.
   after expiry, old list kept when Goabase is down)
 - `PasswordResetServiceTest`: unknown emails send nothing, only the token hash is stored, a link works once,
   expired or made-up links are rejected
+- `ReminderServiceTest`: only events starting in the next 3 days, saved and going events in one email, nothing
+  sent twice, failed emails retried, reminders that were turned off stay off
+- `ArtistIndexerTest`: events never read come first, at most one batch per run, stops when Goabase is down
+- `LineUpParserTest`, `ArtistNamesTest`: artist names from real line-ups; spellings of one artist share a slug
 
 **Integration tests** start the whole application with real security and a real PostgreSQL, and call the API
 through MockMvc. Only Goabase is faked.
@@ -233,6 +263,11 @@ through MockMvc. Only Goabase is faked.
 - `ReviewIntegrationTest`: reading is public, writing needs login, a second review updates the first,
   rating must be 1–5
 - `EventApiIntegrationTest`: paging, filters, invalid parameters, unknown events, Goabase outages
+- `GoingIntegrationTest`: guests see counts but must log in to mark, marking twice counts once, a page of
+  counts in one request, unknown events are a `404`
+- `ReminderIntegrationTest`: one reminder per user and event even across runs, users can turn reminders off
+- `ArtistIntegrationTest`: indexing line-ups, artist pages, busiest-first list, accent-free search, a re-read
+  line-up replaces the old one
 
 ## Roadmap
 
@@ -241,6 +276,9 @@ through MockMvc. Only Goabase is faked.
 - [x] GitHub Actions CI
 - [x] Flyway migrations instead of `ddl-auto=update`
 - [x] Live deployment: backend on Render (Docker), database on Neon (PostgreSQL), frontend on Vercel
+- [x] "I'm going" with attendance counts
+- [x] Reminder emails before saved events (scheduled job)
+- [x] Artist pages built from event line-ups
 - [ ] Deployment to AWS
 
 ## Credits

@@ -3,7 +3,10 @@ package com.psytrance.psytrance_tracker_backend.util;
 import com.psytrance.psytrance_tracker_backend.dto.LineUpLine;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -25,19 +28,27 @@ public final class LineUpParser {
     private static final int MAX_NAME_LENGTH = 30;
     private static final int MAX_NAME_WORDS = 4;
 
-    // What follows an artist name: "(Label)", " - live", " – Ecstatic Dance", " | Stage", " — Label"
-    private static final Pattern AFTER_NAME = Pattern.compile("\\s*\\(|\\s[-–—|┃/]\\s|\\s*[–—|┃]");
+    // What follows an artist name: "(Label)", "[DE]", " - live", " – Ecstatic Dance", " | Stage", " — Label"
+    private static final Pattern AFTER_NAME = Pattern.compile("\\s*[(\\[]|\\s[-–—|┃/]\\s|\\s*[–—|┃]");
     // Bullets, arrows and emoji in front of the name
     private static final Pattern LEADING_SYMBOLS = Pattern.compile("^[^\\p{L}\\p{N}]+");
     // Flags, emoji and punctuation after the name
     private static final Pattern TRAILING_SYMBOLS = Pattern.compile("[^\\p{L}\\p{N}]+$");
     // "Aleph live", "Etnica DJ set"
     private static final Pattern PERFORMANCE_SUFFIX = Pattern.compile("(?i)\\s+(live|dj\\s*set|dj-set|live\\s*act)$");
-    // Headers and notes around the names: "LINE UP", "MAIN FLOOR", "Special guest", "Visuals by ..."
-    private static final Pattern HEADER = Pattern.compile(
-            "(?i).*(and more|special guest|line\\s*-?\\s*up|featuring|\\bstage\\b|\\bfloor\\b|visuals|deco\\b).*");
-    // A slot without a name yet. Checked on the name only, because "THE HORRIDS (TBC)" is still an artist
-    private static final Pattern PLACEHOLDER = Pattern.compile("(?i)tba|tbc|tbd|to be announced");
+    // Headers and notes around the names: "LINE UP", "MAIN FLOOR", "Special guest", "Visuals by ...", "Flyer design by ..."
+    private static final Pattern HEADER = Pattern.compile("(?i).*(and more|special guest|line\\s*-?\\s*up|featuring"
+            + "|\\bstage\\b|\\bfloor\\b|visuals|deco\\b|\\bdecor|\\bdeko|mapping|artwork|\\bflyer\\b|about (the )?event).*");
+    // A slot without a name yet, or a word between names. Checked on the name only, because
+    // "THE HORRIDS (TBC)" is still an artist
+    private static final Pattern PLACEHOLDER = Pattern.compile("(?i)tba|tbc|tbd|to be announced|b2b|vs\\.?");
+    // Section titles made only of genre words: "Darkpsy", "CHILL OUT", "Darkpsy/Forest", "Dark Prog"
+    private static final Pattern GENRE_SEPARATORS = Pattern.compile("[\\s/&+,-]+");
+    private static final Set<String> GENRE_WORDS = Set.of(
+            "psy", "psytrance", "trance", "dark", "darkpsy", "forest", "psycore", "hitech", "hi", "tech",
+            "goa", "progressive", "prog", "full", "on", "fullon", "downtempo", "chill", "out", "chillout",
+            "ambient", "psychill", "psybient", "techno", "minimal", "twilight", "night", "morning",
+            "experimental", "zenonesque", "house", "dub", "bass");
 
     private LineUpParser() {
     }
@@ -87,10 +98,16 @@ public final class LineUpParser {
                 || name.split("\\s+").length > MAX_NAME_WORDS
                 || name.contains(":")
                 || PLACEHOLDER.matcher(name).matches()
+                || isOnlyGenres(name)
                 || !containsLetter(name)) {
             return null;
         }
         return name;
+    }
+
+    private static boolean isOnlyGenres(String name) {
+        return Arrays.stream(GENRE_SEPARATORS.split(name.toLowerCase(Locale.ROOT)))
+                .allMatch(GENRE_WORDS::contains);
     }
 
     private static boolean containsLetter(String value) {

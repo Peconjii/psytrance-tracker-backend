@@ -32,7 +32,7 @@ public class EventController {
     }
 
     /**
-     * Example: {@code GET /api/events?page=0&size=24&search=boom&country=portugal&timeline=UPCOMING}
+     * Example: {@code GET /api/events?page=0&size=24&search=boom&country=portugal&timeline=THIS_WEEKEND}
      */
     @GetMapping
     public PageResponse<EventDto> getEvents(
