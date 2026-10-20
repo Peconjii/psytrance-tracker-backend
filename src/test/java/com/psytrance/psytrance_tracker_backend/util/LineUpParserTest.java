@@ -73,6 +73,59 @@ class LineUpParserTest {
                 new LineUpLine("Apnea", "Apnea"));
     }
 
+    // Lines from real Goabase line-ups that looked like artist names before
+    @ParameterizedTest(name = "\"{0}\" is not an artist")
+    @CsvSource(delimiter = '|', value = {
+            "Location", "Lounge", "Coming Soon", "Details comming soon", "DJs", "DJ Set", "Artists", "Camping",
+            "Food & Bar", "Free Entry", "FREE RAVE", "Children's area", "CH", "ーLive",
+            "20359 Hamburg", "Oberfeldstrasse 12A", "'C/ Fermín Caballero, 69'", "'Club Schlaflos, Aarau'",
+            "19. Dezember 2026", "28 NOVEMBRE 2026", "30 OCT", "31.10.2026 · PARKHOUSE GRAZ",
+            "15min Pause", "Fahrt dauert 6 Min", "1 hour from Dublin", "700 Meter Fussweg", "2 DANCE FLOORS",
+            "4 Rooms", "10 KW FUNCTION ONE", "Ab 18 Jahren", "Freitag Start 22 UHR",
+            "facebook.com/rene.ragas", "COSMIC CIRCUS presents", "Braingames Records", "Aajaadee Rec",
+            "Earlybird 10", "Abendkasse vorhanden", "Come early. Stay late", "ATTENTION! Limited capacity",
+    })
+    void skipsPartyDetailsThatLookLikeNames(String line) {
+        assertThat(LineUpParser.findArtist(line)).isNull();
+    }
+
+    @ParameterizedTest(name = "\"{0}\" is still an artist")
+    @CsvSource({"1200 Micrograms", "Dr.Psylocibine", "B. RYDER", "7Eleven", "4MOTION", "Dž & Mž", "Live Earth", "ATMOS", "M!GuZ & BeXXn"})
+    void artistsThatLookLikeNoiseAreKept(String line) {
+        assertThat(LineUpParser.findArtist(line)).isEqualTo(line);
+    }
+
+    @Test
+    void styledLettersBecomePlainOnes() {
+        assertThat(LineUpParser.findArtist("𝗔𝗚𝗡𝗘𝗧𝗢𝗡")).isEqualTo("AGNETON");
+    }
+
+    @Test
+    void nothingUnderAVenueOrTicketsHeaderIsAnArtistUntilTheNextStage() {
+        List<LineUpParser.Section> sections = LineUpParser.sections("""
+                Location:
+                Club Schlaflos
+                Oberfeldstrasse 12A
+                8302 Kloten
+
+                MAIN FLOOR
+                1200 Micrograms
+                Astrix
+
+                Tickets
+                Abendkasse 25
+                """);
+
+        assertThat(sections).flatExtracting(LineUpParser.Section::artists).containsExactly("1200 Micrograms", "Astrix");
+    }
+
+    @Test
+    void aFourDigitPostcodeAfterAStreetIsNotAnArtist() {
+        assertThat(LineUpParser.parse("Oberfeldstrasse 12A\n8302 Kloten\nAstrix"))
+                .extracting(LineUpLine::artist)
+                .containsExactly(null, null, "Astrix");
+    }
+
     @Test
     void htmlEscapedCharactersAreShownAsTheyWereTyped() {
         assertThat(LineUpParser.parse("Remaza &gt; TrancerSpacy\r\nDrum &amp; Bass Floor"))

@@ -3,6 +3,7 @@ package com.psytrance.psytrance_tracker_backend.util;
 import com.psytrance.psytrance_tracker_backend.dto.LineUpLine;
 import org.springframework.web.util.HtmlUtils;
 
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -31,8 +32,8 @@ public final class LineUpParser {
 
     // What follows an artist name: "(Label)", "[DE]", " - live", " – Ecstatic Dance", " | Stage", " — Label"
     private static final Pattern AFTER_NAME = Pattern.compile("\\s*[(\\[]|\\s[-–—|┃/]\\s|\\s*[–—|┃]");
-    // Bullets, arrows and emoji in front of the name
-    private static final Pattern LEADING_SYMBOLS = Pattern.compile("^[^\\p{L}\\p{N}]+");
+    // Bullets, arrows, emoji and marks like the Japanese "ー" in front of the name
+    private static final Pattern LEADING_SYMBOLS = Pattern.compile("^(?:[^\\p{L}\\p{N}]|\\p{Lm})+");
     // Flags, emoji and punctuation after the name
     private static final Pattern TRAILING_SYMBOLS = Pattern.compile("[^\\p{L}\\p{N}]+$");
     // "Aleph live", "Etnica DJ set"
@@ -51,6 +52,45 @@ public final class LineUpParser {
             "ambient", "psychill", "psybient", "techno", "minimal", "twilight", "night", "morning",
             "experimental", "zenonesque", "house", "dub", "bass");
 
+    // --- Lines that look like a name but aren't an artist (all seen in real Goabase line-ups) ---
+
+    // Whole lines that are words about the party: "Location", "Coming Soon", "DJs", "Food & Bar", "CH"
+    private static final Set<String> NOT_ARTISTS = Set.of(
+            "location", "lounge", "club", "coming soon", "details coming soon", "details comming soon", "live", "vj",
+            "dj", "djs", "dj's", "dj set", "djset", "dj sets", "dj's tba", "djs tba", "artist", "artists", "camping",
+            "food", "food & bar", "food & drinks", "bar", "children's area", "kids area", "deco", "decoration",
+            "dress code", "free entry", "free party", "free rave", "artisan market", "art materials", "bodypainting by",
+            "fire performance", "fire show", "face design", "facedesign", "electronic music", "tickets", "ticket", "info",
+            "infos", "line up", "lineup", "residents", "workshops", "yoga", "market", "parking", "more", "and many more",
+            "and many moore", "folgt", "ch", "de", "en", "es", "it", "fr", "hu", "at", "nl", "uk", "us", "br", "pt", "pl", "cz");
+    // Headers of the parts of an event text that aren't the line-up: what follows them is skipped
+    // until the next stage header. "Location:", "📍 Anfahrt", "Tickets", "Food & Drinks"
+    private static final Pattern NOT_LINE_UP_HEADER = Pattern.compile("(?i)location|venue|address|adresse|anfahrt|directions"
+            + "|how to get there|getting there|tickets?|entry|eintritt|einlass|abendkasse|prices?|preise?|food( & drinks?)?"
+            + "|camping|workshops?|market|parking|shuttle|contact|kontakt|infos?|information|rules|regeln|awareness");
+    // A year or a day with a month: "19. Dezember 2026", "28 NOVEMBRE", "30 OCT", "31.10.2026"
+    private static final Pattern DATE = Pattern.compile("(?i).*\\b(19|20)\\d{2}\\b.*"
+            + "|^\\d{1,2}\\.?\\s*(jan|feb|mar|apr|may|mai|jun|jul|aug|sep|oct|okt|nov|dec|dez|gen|giu|lug|ago|set|ott|dic)\\p{L}*\\b.*");
+    // A number with a unit: "15min Pause", "1 hour from Dublin", "700 Meter Fussweg", "2 DANCE FLOORS", "Ab 18 Jahren"
+    private static final Pattern MEASURE = Pattern.compile("(?i).*\\b\\d+\\s*(min|mins|minutes?|h|hours?|stunden?|uhr|km|m|meter|kw"
+            + "|floors?|dance\\s*floors?|rooms?|stages?|partys|parties|days?|nights?|tage|jahren?|years?)\\b.*");
+    // A street with a number: "Oberfeldstrasse 12A", "C/ Fermín Caballero, 69"
+    private static final Pattern STREET = Pattern.compile("(?i)(^c/.*|.*(straße|strasse|str\\.|street|\\bst\\.|road|\\brd\\b|\\bweg\\b"
+            + "|gasse|platz|allee|calle|\\bvia\\b|\\brue\\b|avenue|\\bave\\b|ulica|utca).*\\d+.*)");
+    // A postcode and a town: "20359 Hamburg" always, "8302 Kloten" right after a street (a 4-digit one alone
+    // could be an artist like "1200 Micrograms")
+    private static final Pattern POSTCODE_5 = Pattern.compile("^\\d{5}\\s+\\p{L}[\\p{L} -]*$");
+    private static final Pattern POSTCODE_4 = Pattern.compile("^\\d{4}\\s+\\p{L}[\\p{L} -]*$");
+    // A link without http: "facebook.com/rene.ragas", "example.de"
+    private static final Pattern DOMAIN = Pattern.compile("(?i).*\\b[\\w-]+\\.(com|de|net|org|at|ch|io|hu|it|es|fr|pl|ru|be|nl|uk|eu|info|me)\\b.*");
+    // Promoters and labels, not artists: "COSMIC CIRCUS presents", "Braingames Records", "Aajaadee Rec"
+    private static final Pattern PROMO = Pattern.compile("(?i).*\\b(presents?|präsentiert|presenta|records|recordings|rec)\\b.*");
+    // Prices and door info: "Earlybird 10", "Abendkasse vorhanden", "Presale"
+    private static final Pattern DOOR = Pattern.compile("(?i)^(earlybird|early bird|abendkass\\p{L}*|vorverkauf|presale|pre-sale|einlass|eintritt|entry|ab \\d+)\\b.*");
+    // Sentences: "Come early. Stay late", "ATTENTION! Limited capacity", "camping, food, and community".
+    // An initial is fine ("B. RYDER"), and so is a "!" inside a name ("M!GuZ")
+    private static final Pattern SENTENCE = Pattern.compile(".*([!?](\\s|$)|\\p{L}{3,}\\.\\s|,\\s).*");
+
     private LineUpParser() {
     }
 
@@ -60,6 +100,9 @@ public final class LineUpParser {
             return lines;
         }
         boolean previousWasBlank = true;
+        // Under "Location:", "Tickets" and the like no line is an artist, until the next stage header
+        boolean inLineUp = true;
+        boolean afterStreet = false;
         // Goabase sends some characters HTML-escaped ("Remaza &gt; TrancerSpacy")
         for (String raw : HtmlUtils.htmlUnescape(lineUp).split("\\R")) {
             String text = raw.strip();
@@ -71,7 +114,18 @@ public final class LineUpParser {
                 previousWasBlank = true;
                 continue;
             }
-            lines.add(new LineUpLine(text, findArtist(text)));
+            String core = TRAILING_SYMBOLS.matcher(LEADING_SYMBOLS.matcher(text).replaceFirst("")).replaceFirst("");
+            if (NOT_LINE_UP_HEADER.matcher(core).matches()) {
+                inLineUp = false;
+            } else if (isHeader(text)) {
+                inLineUp = true;
+            }
+            String artist = inLineUp ? findArtist(text) : null;
+            if (artist != null && afterStreet && POSTCODE_4.matcher(artist).matches()) {
+                artist = null;
+            }
+            afterStreet = STREET.matcher(text).matches();
+            lines.add(new LineUpLine(text, artist));
             previousWasBlank = false;
         }
         int last = lines.size() - 1;
@@ -139,16 +193,32 @@ public final class LineUpParser {
         name = TRAILING_SYMBOLS.matcher(name).replaceFirst("");
         name = PERFORMANCE_SUFFIX.matcher(name).replaceFirst("");
         name = TRAILING_SYMBOLS.matcher(name).replaceFirst("").strip();
+        // Styled letters some organizers paste in ("𝗔𝗚𝗡𝗘𝗧𝗢𝗡") become plain ones, so the same artist gets the same slug
+        name = Normalizer.normalize(name, Normalizer.Form.NFKC);
 
         if (name.isEmpty() || name.length() > MAX_NAME_LENGTH
                 || name.split("\\s+").length > MAX_NAME_WORDS
                 || name.contains(":")
                 || PLACEHOLDER.matcher(name).matches()
                 || isOnlyGenres(name)
-                || !containsLetter(name)) {
+                || !containsLetter(name)
+                || isNotAnArtist(line, name)) {
             return null;
         }
         return name;
+    }
+
+    private static boolean isNotAnArtist(String line, String name) {
+        return NOT_ARTISTS.contains(name.toLowerCase(Locale.ROOT))
+                || NOT_LINE_UP_HEADER.matcher(name).matches()
+                || DATE.matcher(line).matches()
+                || MEASURE.matcher(line).matches()
+                || STREET.matcher(line).matches()
+                || POSTCODE_5.matcher(name).matches()
+                || DOMAIN.matcher(line).matches()
+                || PROMO.matcher(name).matches()
+                || DOOR.matcher(name).matches()
+                || SENTENCE.matcher(name).matches();
     }
 
     private static boolean isOnlyGenres(String name) {
