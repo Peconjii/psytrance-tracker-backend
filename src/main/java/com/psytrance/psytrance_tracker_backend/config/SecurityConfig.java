@@ -48,6 +48,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/reviews/event/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/artists/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/map/**").permitAll()
+                        // Guests can send feedback; reading it is for admins (checked in FeedbackController)
+                        .requestMatchers(HttpMethod.POST, "/api/feedback").permitAll()
                         // Spring renders errors like "no such endpoint" at /error; if that needed a token,
                         // a guest would get a misleading 401 instead of the real 404
                         .requestMatchers("/error").permitAll()

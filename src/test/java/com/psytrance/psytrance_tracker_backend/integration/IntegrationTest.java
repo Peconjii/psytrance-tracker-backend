@@ -25,7 +25,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(properties = {
         "jwt.secret=integration-test-jwt-secret-that-is-long-enough",
         "goabase.cache-ttl=0s", // no caching between tests, so each test's fake Goabase data is used
-        "app.jobs.enabled=false" // no timers: tests call the reminder and artist index services themselves
+        "app.jobs.enabled=false", // no timers: tests call the reminder and artist index services themselves
+        "app.admin-usernames=feedback_admin" // the one admin, see FeedbackIntegrationTest
 })
 @AutoConfigureMockMvc
 abstract class IntegrationTest {

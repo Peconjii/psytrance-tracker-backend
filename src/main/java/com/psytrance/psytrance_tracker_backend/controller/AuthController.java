@@ -4,6 +4,7 @@ import com.psytrance.psytrance_tracker_backend.dto.ForgotPasswordRequest;
 import com.psytrance.psytrance_tracker_backend.dto.LoginRequest;
 import com.psytrance.psytrance_tracker_backend.dto.RegisterRequest;
 import com.psytrance.psytrance_tracker_backend.dto.ResetPasswordRequest;
+import com.psytrance.psytrance_tracker_backend.config.Admins;
 import com.psytrance.psytrance_tracker_backend.dto.UserResponse;
 import com.psytrance.psytrance_tracker_backend.service.PasswordResetService;
 import com.psytrance.psytrance_tracker_backend.service.UserService;
@@ -28,11 +29,13 @@ public class AuthController {
     private final UserService userService;
     private final JwtUtil jwtUtil;
     private final PasswordResetService passwordResetService;
+    private final Admins admins;
 
-    public AuthController(UserService userService, JwtUtil jwtUtil, PasswordResetService passwordResetService) {
+    public AuthController(UserService userService, JwtUtil jwtUtil, PasswordResetService passwordResetService, Admins admins) {
         this.userService = userService;
         this.jwtUtil = jwtUtil;
         this.passwordResetService = passwordResetService;
+        this.admins = admins;
     }
 
     @PostMapping("/register")
@@ -52,7 +55,7 @@ public class AuthController {
     @GetMapping("/me")
     public UserResponse getCurrentUser(Authentication authentication) {
         return userService.findByUsername(authentication.getName())
-                .map(UserResponse::from)
+                .map(user -> UserResponse.from(user, admins.isAdmin(user.getUsername())))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
     }
 
