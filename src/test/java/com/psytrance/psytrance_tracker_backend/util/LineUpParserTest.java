@@ -74,6 +74,13 @@ class LineUpParserTest {
     }
 
     @Test
+    void htmlEscapedCharactersAreShownAsTheyWereTyped() {
+        assertThat(LineUpParser.parse("Remaza &gt; TrancerSpacy\r\nDrum &amp; Bass Floor"))
+                .extracting(LineUpLine::text)
+                .containsExactly("Remaza > TrancerSpacy", "Drum & Bass Floor");
+    }
+
+    @Test
     void noLineUpIsAnEmptyList() {
         assertThat(LineUpParser.parse(null)).isEmpty();
         assertThat(LineUpParser.sections(null)).isEmpty();

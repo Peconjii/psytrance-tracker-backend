@@ -1,6 +1,7 @@
 package com.psytrance.psytrance_tracker_backend.util;
 
 import com.psytrance.psytrance_tracker_backend.dto.LineUpLine;
+import org.springframework.web.util.HtmlUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -59,7 +60,8 @@ public final class LineUpParser {
             return lines;
         }
         boolean previousWasBlank = true;
-        for (String raw : lineUp.split("\\R")) {
+        // Goabase sends some characters HTML-escaped ("Remaza &gt; TrancerSpacy")
+        for (String raw : HtmlUtils.htmlUnescape(lineUp).split("\\R")) {
             String text = raw.strip();
             // Keep blank lines as spacing between groups, but never two in a row
             if (text.isEmpty()) {

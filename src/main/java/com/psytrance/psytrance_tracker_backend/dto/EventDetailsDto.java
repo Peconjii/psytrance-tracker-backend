@@ -2,6 +2,7 @@ package com.psytrance.psytrance_tracker_backend.dto;
 
 import com.psytrance.psytrance_tracker_backend.client.GoabasePartyDetails;
 import com.psytrance.psytrance_tracker_backend.util.LineUpParser;
+import org.springframework.web.util.HtmlUtils;
 
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
@@ -73,9 +74,9 @@ public record EventDetailsDto(
         }
     }
 
-    // Goabase texts use Windows line breaks and are often just ""
+    // Goabase texts use Windows line breaks, are often just "" and have some characters HTML-escaped ("&gt;")
     private static String textOrNull(String value) {
-        return value == null || value.isBlank() ? null : value.replace("\r\n", "\n").strip();
+        return value == null || value.isBlank() ? null : HtmlUtils.htmlUnescape(value.replace("\r\n", "\n")).strip();
     }
 
     // Organizers often enter "www.example.org", which a browser would treat as a relative link
