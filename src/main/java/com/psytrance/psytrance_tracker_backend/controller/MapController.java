@@ -1,14 +1,17 @@
 package com.psytrance.psytrance_tracker_backend.controller;
 
+import com.psytrance.psytrance_tracker_backend.dto.GenreShare;
 import com.psytrance.psytrance_tracker_backend.dto.MapEventDto;
 import com.psytrance.psytrance_tracker_backend.dto.MapPeriod;
 import com.psytrance.psytrance_tracker_backend.service.MapService;
+import jakarta.validation.constraints.Size;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 /** Data for the galaxy map (Map of Psy). */
 @RestController
@@ -25,5 +28,15 @@ public class MapController {
     @GetMapping("/events")
     public List<MapEventDto> getEvents(@RequestParam(defaultValue = "WEEK") MapPeriod period) {
         return mapService.findEvents(period);
+    }
+
+    /**
+     * The Map of Psy genres of a whole page of events in one request, e.g. {@code GET /api/map/genres?ids=1,2,3}
+     * answers {@code {"1": [{"genreId": "forest", "share": 0.75, "source": "ARTIST"}, ...]}}. Events with
+     * no known genre are left out.
+     */
+    @GetMapping("/genres")
+    public Map<Long, List<GenreShare>> getGenres(@RequestParam @Size(max = 100) List<Long> ids) {
+        return mapService.findGenres(ids);
     }
 }

@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -48,17 +49,28 @@ public class MapService {
             return List.of();
         }
         List<Long> ids = events.stream().map(EventDto::id).toList();
-        Map<Long, List<GenreShare>> genres = eventGenreRepository.findByEventIdIn(ids).stream()
-                .collect(Collectors.groupingBy(EventGenre::getEventId, Collectors.mapping(EventGenre::toShare,
-                        Collectors.collectingAndThen(Collectors.toList(), list -> list.stream()
-                                .sorted(Comparator.comparingDouble(GenreShare::share).reversed())
-                                .toList()))));
+        Map<Long, List<GenreShare>> genres = findGenres(ids);
         Set<Long> read = lineupScanRepository.findAllById(ids).stream()
                 .map(LineupScan::getEventId)
                 .collect(Collectors.toSet());
         return events.stream()
                 .map(event -> MapEventDto.from(event, read.contains(event.id()), genres.getOrDefault(event.id(), List.of())))
                 .toList();
+    }
+
+    /**
+     * The genres of each event, biggest share first, for a page of the event list. Events with no
+     * known genre (or a line-up not read yet) are left out of the map.
+     */
+    public Map<Long, List<GenreShare>> findGenres(Collection<Long> eventIds) {
+        if (eventIds.isEmpty()) {
+            return Map.of();
+        }
+        return eventGenreRepository.findByEventIdIn(eventIds).stream()
+                .collect(Collectors.groupingBy(EventGenre::getEventId, Collectors.mapping(EventGenre::toShare,
+                        Collectors.collectingAndThen(Collectors.toList(), list -> list.stream()
+                                .sorted(Comparator.comparingDouble(GenreShare::share).reversed())
+                                .toList()))));
     }
 
     /** Replaces the stored genres of an event (line-ups change as organizers announce more artists). */

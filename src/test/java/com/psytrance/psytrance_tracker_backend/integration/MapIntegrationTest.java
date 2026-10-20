@@ -11,6 +11,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.LongStream;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -77,6 +78,24 @@ class MapIntegrationTest extends IntegrationTest {
                 .andExpect(jsonPath("$.length()").value(4))
                 .andExpect(jsonPath("$[3].nameParty").value("Next Month Festival"))
                 .andExpect(jsonPath("$[3].lineUpRead").value(false));
+    }
+
+    @Test
+    void genresOfAPageOfEventsComeInOneRequest() throws Exception {
+        artistIndexer.indexNextBatch();
+
+        mockMvc.perform(get("/api/map/genres").param("ids", forestParty + "," + unknownParty))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$['" + forestParty + "'][0].genreId").value("forest"))
+                // No known genre: not in the answer at all
+                .andExpect(jsonPath("$['" + unknownParty + "']").doesNotExist());
+    }
+
+    @Test
+    void tooManyEventsAtOnceIsABadRequest() throws Exception {
+        String ids = String.join(",", LongStream.rangeClosed(1, 101).mapToObj(String::valueOf).toList());
+        mockMvc.perform(get("/api/map/genres").param("ids", ids))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
