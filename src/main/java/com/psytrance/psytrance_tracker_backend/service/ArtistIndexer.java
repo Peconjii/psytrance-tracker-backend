@@ -3,7 +3,6 @@ package com.psytrance.psytrance_tracker_backend.service;
 import com.psytrance.psytrance_tracker_backend.client.GoabaseClient;
 import com.psytrance.psytrance_tracker_backend.client.GoabasePartyDetails;
 import com.psytrance.psytrance_tracker_backend.dto.EventDto;
-import com.psytrance.psytrance_tracker_backend.dto.LineUpLine;
 import com.psytrance.psytrance_tracker_backend.exception.GoabaseUnavailableException;
 import com.psytrance.psytrance_tracker_backend.model.LineupScan;
 import com.psytrance.psytrance_tracker_backend.repository.LineupScanRepository;
@@ -18,7 +17,6 @@ import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -28,6 +26,7 @@ import java.util.stream.Collectors;
  * hundreds of Goabase calls, so this reads a small batch every few minutes in the background
  * (see BackgroundJobs) and stores the result. Events never read come first, then the ones read
  * longest ago, because organizers keep adding artists until the event starts.
+ * While reading a line-up it also works out the event's Map of Psy genres (see {@link EventGenres}).
  */
 @Component
 public class ArtistIndexer {
@@ -42,17 +41,23 @@ public class ArtistIndexer {
     private final GoabaseClient goabaseClient;
     private final LineupScanRepository lineupScanRepository;
     private final ArtistService artistService;
+    private final EventGenres eventGenres;
+    private final MapService mapService;
     private final Clock clock;
 
     public ArtistIndexer(EventService eventService,
                          GoabaseClient goabaseClient,
                          LineupScanRepository lineupScanRepository,
                          ArtistService artistService,
+                         EventGenres eventGenres,
+                         MapService mapService,
                          Clock clock) {
         this.eventService = eventService;
         this.goabaseClient = goabaseClient;
         this.lineupScanRepository = lineupScanRepository;
         this.artistService = artistService;
+        this.eventGenres = eventGenres;
+        this.mapService = mapService;
         this.clock = clock;
     }
 
@@ -81,15 +86,26 @@ public class ArtistIndexer {
                 break;
             }
             // An event Goabase no longer knows is stored with no artists, so it isn't asked about again soon
-            List<String> artists = party
-                    .map(details -> LineUpParser.parse(details.textLineUp()).stream()
-                            .map(LineUpLine::artist)
-                            .filter(Objects::nonNull)
-                            .toList())
+            List<LineUpParser.Section> lineUp = party
+                    .map(details -> LineUpParser.sections(details.textLineUp()))
                     .orElse(List.of());
+            List<String> keywords = party.isPresent() ? keywords(eventId) : List.of();
+            mapService.saveGenres(eventId, eventGenres.compute(lineUp, keywords));
+            List<String> artists = lineUp.stream().flatMap(section -> section.artists().stream()).toList();
+            // Saved last, because it also marks the event as read
             artistService.saveLineUp(eventId, artists, now);
             read++;
         }
         return read;
+    }
+
+    // Keywords only add to the genres, so the line-up is still stored when they can't be read
+    private List<String> keywords(long eventId) {
+        try {
+            return goabaseClient.fetchKeywords(eventId);
+        } catch (GoabaseUnavailableException e) {
+            log.warn("Could not read the Goabase keywords of event {}", eventId, e);
+            return List.of();
+        }
     }
 }

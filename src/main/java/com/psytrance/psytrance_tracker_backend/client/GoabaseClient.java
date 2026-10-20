@@ -72,6 +72,33 @@ public class GoabaseClient {
         }
     }
 
+    /**
+     * The genres the organizer picked when posting the event ("Forest", "Twilight"). The JSON API
+     * doesn't have them, only the JSON-LD version of the event. Most events have none.
+     */
+    public List<String> fetchKeywords(long id) {
+        try {
+            return restClient.get()
+                    .uri("/api/party/jsonld/{id}", id)
+                    .exchange((request, response) -> {
+                        if (response.getStatusCode().is5xxServerError()) {
+                            throw new GoabaseUnavailableException("Goabase returned " + response.getStatusCode(), null);
+                        }
+                        if (!response.getStatusCode().is2xxSuccessful()) {
+                            return List.<String>of();
+                        }
+                        JsonLdEvent body = response.bodyTo(JsonLdEvent.class);
+                        return body == null || body.keywords() == null ? List.<String>of() : body.keywords();
+                    });
+        } catch (RestClientException e) {
+            throw new GoabaseUnavailableException("Could not load keywords of event " + id + " from Goabase", e);
+        }
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record JsonLdEvent(List<String> keywords) {
+    }
+
     @JsonIgnoreProperties(ignoreUnknown = true)
     record PartyListResponse(List<GoabaseParty> partylist) {
     }

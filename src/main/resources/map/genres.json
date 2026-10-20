@@ -1,0 +1,2975 @@
+{
+  "families": {
+    "goa": {
+      "name": "Goa / Full-on",
+      "color": "#ff9d2e"
+    },
+    "prog": {
+      "name": "Progressive",
+      "color": "#3ee6c4"
+    },
+    "dark": {
+      "name": "Dark / Forest / Hi-tech",
+      "color": "#c45bff"
+    },
+    "chill": {
+      "name": "Chill / Downtempo",
+      "color": "#5aa8ff"
+    },
+    "roots": {
+      "name": "Roots",
+      "color": "#9a94b8"
+    }
+  },
+  "genres": [
+    {
+      "id": "goa",
+      "name": "Goa trance",
+      "family": "goa",
+      "year": 1990,
+      "bpm": [
+        135,
+        150
+      ],
+      "size": 1.4,
+      "x": 1250,
+      "y": 800,
+      "description": "Born at beach parties in Goa, India, where DJs in the late 80s mixed EBM, acid and industrial. Melodic, with Eastern scales, analog synths and long arrangements.",
+      "artists": [
+        "Astral Projection",
+        "Hallucinogen",
+        "Man With No Name",
+        "Juno Reactor",
+        "Electric Universe",
+        "Cosmosis",
+        "Total Eclipse",
+        "Pleiadians",
+        "Koxbox",
+        "Prana"
+      ],
+      "production": {
+        "bass": "Pulsing 16th-note bassline, often from an analog synth",
+        "kick": "Softer kick than later styles, with lots of 909 percussion",
+        "atmosphere": "Oriental scales, acid (TB-303) lines, long build-ups"
+      },
+      "labels": [
+        "Dragonfly Records",
+        "TIP Records",
+        "Flying Rhino",
+        "Blue Room Released"
+      ],
+      "countries": [
+        "India",
+        "UK",
+        "Israel",
+        "Germany"
+      ],
+      "festivals": [
+        "Anjuna and Vagator beach parties (Goa)"
+      ],
+      "tracks": [
+        {
+          "artist": "Hallucinogen",
+          "title": "LSD",
+          "year": 1994,
+          "youtube": "iIsVzSMRw8E",
+          "famous": true
+        },
+        {
+          "artist": "Astral Projection",
+          "title": "Mahadeva",
+          "year": 1994,
+          "youtube": "onquKz5SYRs",
+          "famous": true
+        },
+        {
+          "artist": "Man With No Name",
+          "title": "Teleport",
+          "year": 1995,
+          "youtube": "nKKy0zXbJFE",
+          "famous": true
+        },
+        {
+          "artist": "Electric Universe",
+          "title": "Solar Energy",
+          "year": 1994,
+          "youtube": "vGpE3t5fcII"
+        },
+        {
+          "artist": "Astral Projection",
+          "title": "People Can Fly",
+          "year": 1996,
+          "youtube": "XdfTSS-ZCZI"
+        },
+        {
+          "artist": "Juno Reactor",
+          "title": "Mona Lisa Overdrive",
+          "year": 2003,
+          "youtube": "HLeI2e2cPVw"
+        },
+        {
+          "artist": "Electric Universe",
+          "title": "The Prayer",
+          "youtube": "Jtb1THFjA2o"
+        },
+        {
+          "artist": "Pleiadians",
+          "title": "Pyramid",
+          "youtube": "gxIjGq8XVmQ"
+        },
+        {
+          "artist": "Cosmosis",
+          "title": "Cosmology",
+          "youtube": "2GGk2BDIom8"
+        },
+        {
+          "artist": "Total Eclipse",
+          "title": "Waiting For A New Life",
+          "year": 1994,
+          "youtube": "xLZDtH9eA-E"
+        },
+        {
+          "artist": "Koxbox",
+          "title": "Little Grays",
+          "youtube": "lXt4UynSQtA"
+        },
+        {
+          "artist": "Prana",
+          "title": "Boundless",
+          "year": 1997,
+          "youtube": "kitJqb-J1TI"
+        }
+      ]
+    },
+    {
+      "id": "oldschool",
+      "name": "Old-school UK psy",
+      "family": "goa",
+      "year": 1995,
+      "bpm": [
+        140,
+        145
+      ],
+      "size": 1,
+      "x": 1000,
+      "y": 650,
+      "description": "The mid-90s London scene that turned the Goa sound into tighter, crazier and more danceable psytrance. Key to the transition from Goa to modern psy.",
+      "artists": [
+        "Hallucinogen",
+        "Green Nuns of the Revolution",
+        "Eat Static",
+        "Doof",
+        "Shakta",
+        "Slinky Wizard",
+        "Technossomy"
+      ],
+      "production": {
+        "bass": "Faster, more digital basslines",
+        "kick": "Harder, shorter kick",
+        "atmosphere": "Humour, weird samples, fewer oriental scales over time"
+      },
+      "labels": [
+        "TIP Records",
+        "Flying Rhino",
+        "Dragonfly Records"
+      ],
+      "countries": [
+        "UK"
+      ],
+      "festivals": [],
+      "tracks": [
+        {
+          "artist": "Green Nuns of the Revolution",
+          "title": "Conflict",
+          "year": 1995,
+          "youtube": "DFB_FSxP0Gw",
+          "famous": true
+        },
+        {
+          "artist": "Eat Static",
+          "title": "Prana",
+          "year": 1993,
+          "youtube": "n2McWiOl1Kc"
+        },
+        {
+          "artist": "Doof",
+          "title": "Let's Turn On",
+          "year": 1994,
+          "youtube": "NSIEcqiKoPs"
+        },
+        {
+          "artist": "Hallucinogen",
+          "title": "Spiritual Antiseptic",
+          "year": 1997,
+          "youtube": "s2uBinONmuI"
+        },
+        {
+          "artist": "Slinky Wizard",
+          "title": "Slick Witch",
+          "year": 1996,
+          "youtube": "V3bTdP20UxI",
+          "famous": true
+        },
+        {
+          "artist": "Shakta",
+          "title": "Cosmic Trigger",
+          "year": 1997,
+          "youtube": "49PPpUeBTsg"
+        },
+        {
+          "artist": "Technossomy",
+          "title": "Pyramid",
+          "year": 1995,
+          "youtube": "ISvmFwA2DxE"
+        },
+        {
+          "artist": "Doof",
+          "title": "Double Dragons",
+          "year": 1995,
+          "youtube": "WZzYySgd6Ts"
+        }
+      ]
+    },
+    {
+      "id": "psy",
+      "name": "Psytrance",
+      "family": "goa",
+      "year": 1996,
+      "bpm": [
+        138,
+        145
+      ],
+      "size": 1.3,
+      "x": 1450,
+      "y": 700,
+      "description": "The name that stuck in the late 90s as the sound became more digital, harder and less oriental. The umbrella term for everything that follows.",
+      "artists": [
+        "Hallucinogen",
+        "Psysex",
+        "Etnica",
+        "1200 Micrograms",
+        "Space Tribe",
+        "X-Dream",
+        "Cosmic Dimension",
+        "Alien Project"
+      ],
+      "production": {
+        "bass": "The rolling bass starts replacing Goa lines",
+        "kick": "Harder, digital kick",
+        "atmosphere": "More FX and samples, less melody"
+      },
+      "labels": [],
+      "countries": [
+        "UK",
+        "Israel",
+        "Germany",
+        "Sweden"
+      ],
+      "festivals": [],
+      "tracks": [
+        {
+          "artist": "Hallucinogen",
+          "title": "Gamma Goblins",
+          "year": 1996,
+          "youtube": "k4OPhCA7AJI",
+          "famous": true
+        },
+        {
+          "artist": "Infected Mushroom",
+          "title": "Bust a Move",
+          "year": 2000,
+          "youtube": "J4mulG7cglQ",
+          "famous": true
+        },
+        {
+          "artist": "1200 Micrograms",
+          "title": "Ayahuasca",
+          "year": 2001,
+          "youtube": "Nag7YHVG6Mk"
+        },
+        {
+          "artist": "X-Dream",
+          "title": "Our Own Happiness",
+          "year": 1996,
+          "youtube": "IE-Flmw3_4Q",
+          "famous": true
+        },
+        {
+          "artist": "Space Tribe",
+          "title": "Into the 4Th Dimension",
+          "year": 2019,
+          "youtube": "miPlNdUw0KA"
+        },
+        {
+          "artist": "Alien Project",
+          "title": "Crystal Skulls",
+          "youtube": "wcQLjoC_SGo"
+        },
+        {
+          "artist": "Cosmic Dimension",
+          "title": "Universe of Destruction",
+          "youtube": "gxAv-fVdmFI"
+        },
+        {
+          "artist": "Etnica",
+          "title": "Desert Journey",
+          "youtube": "L4OzbkbmHTk"
+        },
+        {
+          "artist": "Psysex",
+          "title": "Blasting Carrots",
+          "youtube": "sm8LKtKjuzk"
+        }
+      ]
+    },
+    {
+      "id": "fullon",
+      "name": "Full-on",
+      "family": "goa",
+      "year": 2001,
+      "bpm": [
+        140,
+        148
+      ],
+      "size": 1.3,
+      "x": 1500,
+      "y": 450,
+      "description": "The Israeli school: rolling bass, strong leads and non-stop energy. The most widespread form of psy.",
+      "artists": [
+        "Infected Mushroom",
+        "GMS",
+        "Skazi",
+        "Astrix",
+        "Talamasca",
+        "Bizzare Contact",
+        "Electro Sun",
+        "Eskimo",
+        "Domestic",
+        "Space Cat",
+        "Hypnoise",
+        "Freedom Fighters",
+        "Burn In Noise",
+        "Wrecked Machines"
+      ],
+      "production": {
+        "bass": "Classic rolling bass: kick plus three bass notes in between",
+        "kick": "Strong, punchy kick with a short tail",
+        "atmosphere": "Big melodies, rise/fall FX, breakdowns with vocal samples"
+      },
+      "labels": [
+        "HOMmega Productions",
+        "Spin Twist Records",
+        "TIP World"
+      ],
+      "countries": [
+        "Israel",
+        "UK",
+        "Brazil"
+      ],
+      "festivals": [
+        "Boom Festival",
+        "Universo Paralello"
+      ],
+      "tracks": [
+        {
+          "artist": "Infected Mushroom",
+          "title": "Becoming Insane",
+          "year": 2007,
+          "youtube": "wVwQYSVNJVM",
+          "famous": true
+        },
+        {
+          "artist": "Astrix",
+          "title": "Closer to Heaven",
+          "year": 2005,
+          "youtube": "e7ydzriSovs",
+          "famous": true
+        },
+        {
+          "artist": "GMS",
+          "title": "Juice",
+          "youtube": "afLtyzmYIkI"
+        },
+        {
+          "artist": "Skazi",
+          "title": "Out of Space",
+          "youtube": "Xe1-8K7b7Fg"
+        },
+        {
+          "artist": "Astrix",
+          "title": "Deep Jungle Walk",
+          "year": 2016,
+          "youtube": "xw3C03Ba8Dk",
+          "famous": true
+        },
+        {
+          "artist": "Skazi",
+          "title": "I Wish",
+          "youtube": "PIL2ttBqTsM"
+        },
+        {
+          "artist": "Eskimo",
+          "title": "Carni-Valium",
+          "youtube": "XhtJMZYD_h8",
+          "famous": true
+        },
+        {
+          "artist": "Bizzare Contact",
+          "title": "Peaches on the moon",
+          "year": 2006,
+          "youtube": "z-yKyO3Wgzo",
+          "famous": true
+        },
+        {
+          "artist": "Electro Sun",
+          "title": "Singularity",
+          "year": 2015,
+          "youtube": "cTdNLNXZZGQ"
+        },
+        {
+          "artist": "Domestic & Astrix vs Astral Projection",
+          "title": "Pure NRG",
+          "youtube": "azHo_2sf9WU"
+        },
+        {
+          "artist": "Space Cat ft. Simon Posford",
+          "title": "Invasion",
+          "youtube": "q30Txg3Q-2w"
+        },
+        {
+          "artist": "Hypnoise",
+          "title": "Super Conscious",
+          "youtube": "HOoox3-j1bM"
+        },
+        {
+          "artist": "Hypnoise",
+          "title": "Storm",
+          "year": 2017,
+          "youtube": "cr0VGkeiWYM"
+        },
+        {
+          "artist": "Wrecked Machines Vs Pixel",
+          "title": "Sem Parar",
+          "youtube": "2cSIEVNngXM"
+        }
+      ]
+    },
+    {
+      "id": "morning",
+      "name": "Morning full-on",
+      "family": "goa",
+      "year": 2005,
+      "bpm": [
+        140,
+        145
+      ],
+      "size": 0.9,
+      "x": 1300,
+      "y": 300,
+      "description": "The brighter, euphoric branch of full-on, made for festival sunrises. Melody comes first.",
+      "artists": [
+        "Vibe Tribe",
+        "Bliss",
+        "Ajja",
+        "Ital",
+        "Sesto Sento"
+      ],
+      "production": {
+        "bass": "Rolling bass with a softer tone",
+        "kick": "Standard full-on kick",
+        "atmosphere": "Major-key melodies, bright pads, fewer aggressive FX"
+      },
+      "labels": [
+        "TIP World"
+      ],
+      "countries": [
+        "Israel",
+        "Greece"
+      ],
+      "festivals": [],
+      "tracks": [
+        {
+          "artist": "Vibe Tribe",
+          "title": "Melodrama",
+          "year": 2004,
+          "youtube": "ihgKVBiOlSg",
+          "famous": true
+        },
+        {
+          "artist": "Vibe Tribe",
+          "title": "Incore",
+          "youtube": "_-3agKDD-aI"
+        },
+        {
+          "artist": "Ajja",
+          "title": "Starfall",
+          "youtube": "99uMDv5n0WE"
+        },
+        {
+          "artist": "Sesto Sento",
+          "title": "Lift Me Up",
+          "youtube": "TqJgE0P4drE",
+          "famous": true
+        },
+        {
+          "artist": "Mekkanikka, Ajja",
+          "title": "Crunch Bunny",
+          "youtube": "BQa8L0nmlcI"
+        },
+        {
+          "artist": "Ital",
+          "title": "Om",
+          "youtube": "SolWkBpZcGk"
+        },
+        {
+          "artist": "Sesto Sento",
+          "title": "Tick Tock",
+          "year": 2016,
+          "youtube": "M25_pC939m8"
+        },
+        {
+          "artist": "Ital",
+          "title": "Milagros",
+          "youtube": "2cRjEA04jKk"
+        },
+        {
+          "artist": "Tristan & Bliss",
+          "title": "Meltdown",
+          "youtube": "cz1XgN7UB6c"
+        }
+      ]
+    },
+    {
+      "id": "night",
+      "name": "Night full-on",
+      "family": "goa",
+      "year": 2005,
+      "bpm": [
+        144,
+        148
+      ],
+      "size": 0.9,
+      "x": 1750,
+      "y": 350,
+      "description": "Darker, more aggressive full-on with lots of FX and less melody. The bridge to dark psy.",
+      "artists": [
+        "Talamasca",
+        "Rinkadink",
+        "Hujaboy",
+        "Avalon",
+        "Dickster",
+        "Tristan",
+        "Cosinus",
+        "Rezonant",
+        "Fungus Funk"
+      ],
+      "production": {
+        "bass": "Rolling bass with more distortion",
+        "kick": "Harder kick",
+        "atmosphere": "Dark leads, dense FX, fewer melodic themes"
+      },
+      "labels": [],
+      "countries": [
+        "Israel",
+        "France"
+      ],
+      "festivals": [],
+      "tracks": [
+        {
+          "artist": "Talamasca",
+          "title": "A Frenchman in Mumbai",
+          "youtube": "-bPk_7KcJxk",
+          "famous": true
+        },
+        {
+          "artist": "Talamasca",
+          "title": "Make Some Noise",
+          "youtube": "q577cck9bnc"
+        },
+        {
+          "artist": "Vini Vici & Tristan & Avalon",
+          "title": "Colors",
+          "year": 2016,
+          "youtube": "WXkaIQ680LU",
+          "famous": true
+        },
+        {
+          "artist": "Rinkadink",
+          "title": "Techmology V3",
+          "year": 2005,
+          "youtube": "-90nx2K-XWk"
+        },
+        {
+          "artist": "GMS & Dickster",
+          "title": "Conscious Revolution",
+          "youtube": "Xz90aE8hVyU"
+        },
+        {
+          "artist": "Hujaboy",
+          "title": "Silver Sands",
+          "youtube": "mwYLGtjFG_8"
+        },
+        {
+          "artist": "Cosinus",
+          "title": "Tripping Tricksters",
+          "youtube": "C0tgWIKkdc0"
+        },
+        {
+          "artist": "Rezonant",
+          "title": "Johny on the Run",
+          "youtube": "aXLlsRcrMAg"
+        },
+        {
+          "artist": "Dickster, Burn In Noise & Logica",
+          "title": "Scarabian Nights",
+          "year": 2013,
+          "youtube": "Xdb--Z9NIOA"
+        },
+        {
+          "artist": "Tristan, Burn In Noise, Avalon, Altruism",
+          "title": "The God Molecule",
+          "youtube": "4Y5pNVUQUzs"
+        },
+        {
+          "artist": "Fungus Funk",
+          "title": "India",
+          "youtube": "KXummEHngc0",
+          "famous": true
+        }
+      ]
+    },
+    {
+      "id": "brazil",
+      "name": "Brazilian full-on",
+      "family": "goa",
+      "year": 2008,
+      "bpm": [
+        142,
+        146
+      ],
+      "size": 0.9,
+      "x": 1750,
+      "y": 550,
+      "description": "Brazil became one of the biggest psy scenes; the sound is modern, clean and built for big festival moments.",
+      "artists": [
+        "Vegas",
+        "Mandragora"
+      ],
+      "production": {
+        "bass": "Dense, loud rolling bass",
+        "kick": "Compressed, modern kick",
+        "atmosphere": "Big drops, festival build-ups"
+      },
+      "labels": [],
+      "countries": [
+        "Brazil"
+      ],
+      "festivals": [
+        "Universo Paralello"
+      ],
+      "tracks": [
+        {
+          "artist": "Mandragora",
+          "title": "Codeine",
+          "year": 2018,
+          "youtube": "csOZutpHDyc",
+          "famous": true
+        },
+        {
+          "artist": "Mandragora",
+          "title": "Shiva Style",
+          "youtube": "DBUoZuAiH5M"
+        },
+        {
+          "artist": "Vegas",
+          "title": "Butterfly",
+          "youtube": "NROqm4y5oY4"
+        },
+        {
+          "artist": "Vegas",
+          "title": "Elipsy",
+          "youtube": "bxsjJi1RU88"
+        }
+      ]
+    },
+    {
+      "id": "neogoa",
+      "name": "Neo-goa",
+      "family": "goa",
+      "year": 2009,
+      "bpm": [
+        140,
+        146
+      ],
+      "size": 0.8,
+      "x": 950,
+      "y": 900,
+      "description": "A return to the 90s sound with modern production: melodies, acid lines and Goa aesthetics.",
+      "artists": [
+        "Filteria",
+        "Ra",
+        "Artifact303",
+        "E-Mantra",
+        "Chi-A.D.",
+        "Hypnoxock",
+        "Imba"
+      ],
+      "production": {
+        "bass": "Goa-style 16th-note lines",
+        "kick": "Modern, clean kick",
+        "atmosphere": "Acid lines, oriental melodies, long arrangements"
+      },
+      "labels": [
+        "Suntrip Records"
+      ],
+      "countries": [
+        "Finland",
+        "Romania",
+        "Hungary"
+      ],
+      "festivals": [],
+      "tracks": [
+        {
+          "artist": "Filteria",
+          "title": "Tiny Universe",
+          "year": 2005,
+          "youtube": "BzlPcd2e60k"
+        },
+        {
+          "artist": "Artifact303",
+          "title": "Magnetic Fields",
+          "youtube": "Zfkh5D7BUfI"
+        },
+        {
+          "artist": "E-Mantra",
+          "title": "Night Walker",
+          "year": 2012,
+          "youtube": "rm5AWlDjZd4"
+        },
+        {
+          "artist": "Chi-A.D.",
+          "title": "Eye am the I",
+          "youtube": "cGBK2NHprek"
+        },
+        {
+          "artist": "E-Mantra",
+          "title": "Snow Began to Fall",
+          "youtube": "wnf-aFAzuWs"
+        },
+        {
+          "artist": "Chi-A.D.",
+          "title": "Exit Eternity",
+          "year": 1998,
+          "youtube": "obdg6gnX0Ik"
+        },
+        {
+          "artist": "Ra",
+          "title": "Sirius",
+          "youtube": "6vBQJ0EY5Xw"
+        },
+        {
+          "artist": "Hypnoxock",
+          "title": "Discofrenetik",
+          "youtube": "2we6_BOGVT4"
+        },
+        {
+          "artist": "Imba",
+          "title": "Cosmos In Her Eyes",
+          "year": 2016,
+          "youtube": "lSctF2OR6fI"
+        },
+        {
+          "artist": "Imba",
+          "title": "Impossible Astronaut",
+          "youtube": "EdGZ9y5smSc"
+        }
+      ]
+    },
+    {
+      "id": "mainstream",
+      "name": "Mainstream psy",
+      "family": "goa",
+      "year": 2015,
+      "bpm": [
+        138,
+        140
+      ],
+      "size": 1.1,
+      "x": 1250,
+      "y": 150,
+      "description": "Psy that reached the big EDM festivals: shorter tracks, clear drops and a radio-friendly approach. Many scene fans keep their distance from it.",
+      "artists": [
+        "Vini Vici",
+        "Infected Mushroom",
+        "Astrix",
+        "Blastoyz"
+      ],
+      "production": {
+        "bass": "Rolling bass simplified for drops",
+        "kick": "Strong, EDM-compressed kick",
+        "atmosphere": "Vocals and ethnic samples, build-up → drop structure"
+      },
+      "labels": [],
+      "countries": [
+        "Israel"
+      ],
+      "festivals": [],
+      "tracks": [
+        {
+          "artist": "Vini Vici",
+          "title": "The Tribe",
+          "year": 2015,
+          "youtube": "3_YBIeU7VSU",
+          "famous": true
+        },
+        {
+          "artist": "Liquid Soul & Vini Vici",
+          "title": "Universe Inside Me",
+          "year": 2016,
+          "youtube": "yvBK1rSUzTc"
+        },
+        {
+          "artist": "Infected Mushroom",
+          "title": "Spitfire",
+          "youtube": "bnsUkE8i0tU"
+        },
+        {
+          "artist": "Armin van Buuren vs Vini Vici feat. Hilight Tribe",
+          "title": "Great Spirit",
+          "year": 2016,
+          "youtube": "yo4pmauhugo",
+          "famous": true
+        },
+        {
+          "artist": "Blastoyz",
+          "title": "Mandala",
+          "youtube": "FHVD9ft_ANw",
+          "famous": true
+        },
+        {
+          "artist": "Blastoyz",
+          "title": "Parvati Valley",
+          "youtube": "FHUo4NQPaxs"
+        }
+      ]
+    },
+    {
+      "id": "prog",
+      "name": "Progressive psy",
+      "family": "prog",
+      "year": 2000,
+      "bpm": [
+        130,
+        138
+      ],
+      "size": 1.3,
+      "x": 2000,
+      "y": 1000,
+      "description": "Slower, more minimal and more hypnotic. Groove and gradual development instead of constant pounding. The most popular style in clubs today.",
+      "artists": [
+        "Ace Ventura",
+        "Liquid Soul",
+        "Atmos",
+        "Ritmo",
+        "Captain Hook",
+        "Talpa",
+        "Neelix",
+        "Phaxe",
+        "Interactive Noise",
+        "Tegma",
+        "Morten Granau",
+        "Zyce"
+      ],
+      "production": {
+        "bass": "Off-beat bass or shorter rolling bass, heavy sidechain",
+        "kick": "Deep, round kick",
+        "atmosphere": "Slow filter sweeps, minimal melodies, hypnotic loops"
+      },
+      "labels": [
+        "Iboga Records",
+        "Bluehour Sounds",
+        "Spin Twist Records"
+      ],
+      "countries": [
+        "Israel",
+        "Sweden",
+        "Germany"
+      ],
+      "festivals": [
+        "Ozora Festival"
+      ],
+      "tracks": [
+        {
+          "artist": "Ace Ventura",
+          "title": "Presence",
+          "year": 2007,
+          "youtube": "BnQ8o69EZ8c",
+          "famous": true
+        },
+        {
+          "artist": "Atmos",
+          "title": "Klein Aber Doctor",
+          "year": 2001,
+          "youtube": "yOJsjyq_GsE"
+        },
+        {
+          "artist": "Ace Ventura & Astrix",
+          "title": "Pranava",
+          "year": 2015,
+          "youtube": "QSwg7fxXsd8",
+          "famous": true
+        },
+        {
+          "artist": "Neelix, Caroline Harrison",
+          "title": "There Was A Time",
+          "year": 2021,
+          "youtube": "A0cYgqi2eGs"
+        },
+        {
+          "artist": "Interactive Noise",
+          "title": "For A Better World",
+          "youtube": "bsRuZ8po8Kw"
+        },
+        {
+          "artist": "Talpa",
+          "title": "Violently Happy",
+          "youtube": "_QWla5g_ozY"
+        },
+        {
+          "artist": "Tegma",
+          "title": "Our World",
+          "youtube": "2iQF-Fzs6UQ"
+        },
+        {
+          "artist": "Ritmo",
+          "title": "Organic Rhythm",
+          "youtube": "o2fIa2bzMqk"
+        },
+        {
+          "artist": "Zyce",
+          "title": "Source Code",
+          "year": 2011,
+          "youtube": "dSapDLR53OY"
+        }
+      ]
+    },
+    {
+      "id": "offbeat",
+      "name": "Offbeat prog",
+      "family": "prog",
+      "year": 2012,
+      "bpm": [
+        136,
+        140
+      ],
+      "size": 0.8,
+      "x": 2140,
+      "y": 760,
+      "description": "Melodic progressive built on the offbeat bass: the bass hits between the kicks for a bouncy, driving pulse. Big in Hamburg and across German and Danish clubs.",
+      "artists": [
+        "Phaxe",
+        "Morten Granau",
+        "Ghost Rider",
+        "Day.Din"
+      ],
+      "production": {
+        "bass": "Offbeat bass: one short note between every two kicks",
+        "kick": "Punchy, round progressive kick",
+        "atmosphere": "Melodic leads and uplifting breakdowns, cleaner and brighter than dark prog"
+      },
+      "labels": [
+        "Iboga Records",
+        "Spin Twist Records"
+      ],
+      "countries": [
+        "Germany",
+        "Denmark"
+      ],
+      "festivals": [],
+      "tracks": [
+        {
+          "artist": "Phaxe & Morten Granau",
+          "title": "The Collective",
+          "year": 2014,
+          "youtube": "cd4vsOOD9Ck",
+          "famous": true
+        },
+        {
+          "artist": "Phaxe & Morten Granau",
+          "title": "Lost",
+          "youtube": "Lua1Y5Iy6Bc"
+        }
+      ]
+    },
+    {
+      "id": "zenon",
+      "name": "Zenonesque",
+      "family": "prog",
+      "year": 2004,
+      "bpm": [
+        130,
+        136
+      ],
+      "size": 0.8,
+      "x": 2250,
+      "y": 880,
+      "description": "A minimal, dry sound gathered around the Australian label Zenon Records. Glitch details and a techno pulse.",
+      "artists": [
+        "Sensient",
+        "Grouch",
+        "Cid Inc",
+        "Tetrameth"
+      ],
+      "production": {
+        "bass": "Short, percussive bass notes",
+        "kick": "Dry techno kick",
+        "atmosphere": "Glitches and micro-samples, lots of space in the mix"
+      },
+      "labels": [
+        "Zenon Records"
+      ],
+      "countries": [
+        "Australia",
+        "New Zealand"
+      ],
+      "festivals": [
+        "Rainbow Serpent"
+      ],
+      "tracks": [
+        {
+          "artist": "Cid Inc",
+          "title": "Orbiter",
+          "youtube": "kQJ6b-7Rtqg"
+        },
+        {
+          "artist": "Sensient",
+          "title": "Emotive Motive",
+          "youtube": "ukWe9VEdyHo"
+        },
+        {
+          "artist": "Grouch",
+          "title": "Deeper",
+          "youtube": "drKgqLcOSPY"
+        },
+        {
+          "artist": "Tetrameth",
+          "title": "The Eclectic Benevolence",
+          "youtube": "zhKdq7Xug44"
+        }
+      ]
+    },
+    {
+      "id": "psytechno",
+      "name": "Psy-techno",
+      "family": "prog",
+      "year": 2014,
+      "bpm": [
+        128,
+        135
+      ],
+      "size": 0.9,
+      "x": 2250,
+      "y": 1150,
+      "description": "Progressive psy meets techno: straight kick, dark atmosphere, psychedelic FX instead of a rolling bass.",
+      "artists": [
+        "Captain Hook",
+        "Ritmo",
+        "Vertical Mode",
+        "Symphonix"
+      ],
+      "production": {
+        "bass": "Techno bass, rumble under the kick",
+        "kick": "Straight 4/4 techno kick",
+        "atmosphere": "Dark pads, psychedelic FX and acid details"
+      },
+      "labels": [
+        "Iboga Records"
+      ],
+      "countries": [
+        "Israel",
+        "Germany"
+      ],
+      "festivals": [],
+      "tracks": [
+        {
+          "artist": "Captain Hook",
+          "title": "Mr. Gold",
+          "year": 2014,
+          "youtube": "ShQL_nyt1BU",
+          "famous": true
+        },
+        {
+          "artist": "Captain Hook & DJ Gula K",
+          "title": "Consciousness",
+          "year": 2015,
+          "youtube": "zCMkxuLeSVg"
+        },
+        {
+          "artist": "Symphonix",
+          "title": "Music Prostitute",
+          "youtube": "DeboCaX7_0Y"
+        },
+        {
+          "artist": "Vertical Mode",
+          "title": "Inside Your Head",
+          "youtube": "tRj1UdpNIe8"
+        }
+      ]
+    },
+    {
+      "id": "twilight",
+      "name": "Twilight",
+      "family": "dark",
+      "year": 2003,
+      "bpm": [
+        145,
+        150
+      ],
+      "size": 0.8,
+      "x": 1590,
+      "y": 980,
+      "description": "Between full-on and dark: a dark atmosphere, but with groove and melodies.",
+      "artists": [
+        "Hux Flux",
+        "Xikwri Neyrra",
+        "Ajna",
+        "Digicult",
+        "Ka-Sol",
+        "Ocelot",
+        "Ajja"
+      ],
+      "production": {
+        "bass": "Groovy rolling bass",
+        "kick": "Medium-hard kick",
+        "atmosphere": "Dark melodies, mysterious mood"
+      },
+      "labels": [],
+      "countries": [
+        "Sweden",
+        "South Africa"
+      ],
+      "festivals": [],
+      "tracks": [
+        {
+          "artist": "Hux Flux",
+          "title": "Idiot",
+          "year": 1999,
+          "youtube": "-o-gCOSrJnI",
+          "famous": true
+        },
+        {
+          "artist": "Hux Flux",
+          "title": "Monkey Business",
+          "youtube": "KYRGHBd__CI"
+        },
+        {
+          "artist": "Ka-Sol",
+          "title": "Skreno",
+          "youtube": "uvbRMoLHImo"
+        },
+        {
+          "artist": "Ocelot",
+          "title": "Damn",
+          "youtube": "pkDl5tIogYs"
+        },
+        {
+          "artist": "Ka-Sol",
+          "title": "The Light",
+          "youtube": "Eg-Qd9k2pSw"
+        },
+        {
+          "artist": "Ocelot",
+          "title": "RTT",
+          "youtube": "AhE56Ub6BWk"
+        },
+        {
+          "artist": "Digicult & Hux Flux",
+          "title": "The Moksha Medicine",
+          "youtube": "CQ8WNrkSTWE"
+        },
+        {
+          "artist": "Ajna",
+          "title": "Search For The Divine",
+          "youtube": "oG68KAha0Ec"
+        }
+      ]
+    },
+    {
+      "id": "dark",
+      "name": "Dark psy",
+      "family": "dark",
+      "year": 2001,
+      "bpm": [
+        145,
+        160
+      ],
+      "size": 1.2,
+      "x": 1270,
+      "y": 1500,
+      "description": "The Russian and German scenes: horror samples, distortion, an abstract sound without classic melodies.",
+      "artists": [
+        "Xenomorph",
+        "Kindzadza",
+        "Parasense",
+        "Psykovsky",
+        "Dark Nebula",
+        "Polyphonia",
+        "Archaic"
+      ],
+      "production": {
+        "bass": "Fast, distorted rolling bass",
+        "kick": "Hard kick, sometimes almost industrial",
+        "atmosphere": "Horror samples, metallic sounds, abstract structure"
+      },
+      "labels": [
+        "Parvati Records",
+        "Triplag Records"
+      ],
+      "countries": [
+        "Russia",
+        "Germany",
+        "Switzerland"
+      ],
+      "festivals": [],
+      "tracks": [
+        {
+          "artist": "Kindzadza",
+          "title": "Achtung Kinder",
+          "youtube": "RMxkdqcmyzI",
+          "famous": true
+        },
+        {
+          "artist": "Psykovsky",
+          "title": "P.O. Saga",
+          "youtube": "_H6va1KBC0s"
+        },
+        {
+          "artist": "Arjuna",
+          "title": "Manufactured",
+          "year": 2007,
+          "youtube": "Bb6Dkp88me4"
+        },
+        {
+          "artist": "Parasense",
+          "title": "Vesna",
+          "youtube": "VpAWGsdJS9o"
+        },
+        {
+          "artist": "Dark Nebula",
+          "title": "Magical energy",
+          "youtube": "OMCqOWsUBC0"
+        },
+        {
+          "artist": "Polyphonia",
+          "title": "Viva La Revolution",
+          "youtube": "p0_8DWuT0bA"
+        },
+        {
+          "artist": "Parasense",
+          "title": "Arizona dream",
+          "youtube": "-HG-2acJrmc"
+        },
+        {
+          "artist": "Dark Nebula",
+          "title": "Universal Heart",
+          "youtube": "PWUhmx4kdfA"
+        },
+        {
+          "artist": "Archaic",
+          "title": "Deep Space",
+          "youtube": "VjutfuTFPC4"
+        },
+        {
+          "artist": "Xenomorph",
+          "title": "Killer State",
+          "youtube": "nKo2PEVMtb4"
+        }
+      ]
+    },
+    {
+      "id": "suomi",
+      "name": "Suomisaundi",
+      "family": "dark",
+      "year": 1997,
+      "bpm": [
+        140,
+        150
+      ],
+      "size": 0.8,
+      "x": 950,
+      "y": 1300,
+      "description": "Finnish free-form psy: humour, weird samples, chaotic structure. Breaks the rules on purpose.",
+      "artists": [
+        "Squaremeat",
+        "Haltya",
+        "Salakavala",
+        "Texas Faggott",
+        "Igor Swamp"
+      ],
+      "production": {
+        "bass": "Irregular, bouncy basslines",
+        "kick": "Varying kick",
+        "atmosphere": "Humour, live playing, strange transitions"
+      },
+      "labels": [],
+      "countries": [
+        "Finland"
+      ],
+      "festivals": [],
+      "tracks": [
+        {
+          "artist": "Haltya",
+          "title": "Robots Are Good",
+          "youtube": "1mqYApM19PM"
+        },
+        {
+          "artist": "Squaremeat",
+          "title": "Mankeli",
+          "youtube": "gW9E2owPsyE"
+        },
+        {
+          "artist": "Salakavala",
+          "title": "Salmiakki",
+          "youtube": "qn6q5xlJc5M"
+        },
+        {
+          "artist": "Texas Faggott",
+          "title": "Back to Mad",
+          "year": 2000,
+          "youtube": "Mk1asK7ElEE",
+          "famous": true
+        },
+        {
+          "artist": "Haltya",
+          "title": "Hero",
+          "year": 2003,
+          "youtube": "bM1vQA5405Y"
+        },
+        {
+          "artist": "Texas Faggott",
+          "title": "Narkpsy",
+          "youtube": "aS0rX4rMx9E"
+        },
+        {
+          "artist": "Squaremeat",
+          "title": "Queen of the Night",
+          "youtube": "szjZIft6uuY"
+        },
+        {
+          "artist": "Igor Swamp",
+          "title": "Ytkytyytkyty",
+          "youtube": "feYjiW5LE4I"
+        }
+      ]
+    },
+    {
+      "id": "forest",
+      "name": "Forest",
+      "family": "dark",
+      "year": 2007,
+      "bpm": [
+        145,
+        155
+      ],
+      "size": 1,
+      "x": 1330,
+      "y": 1250,
+      "description": "Organic forest sounds and a dark but natural atmosphere. A frequent point of debate with dark psy.",
+      "artists": [
+        "Derango",
+        "Megalopsy",
+        "Kalilaskov AS",
+        "Onkel Dunkel",
+        "Mubali",
+        "Farebi Jalebi",
+        "Krapul",
+        "Procs",
+        "Daksinamurti",
+        "Naima"
+      ],
+      "production": {
+        "bass": "Rolling bass with organic textures",
+        "kick": "Muffled, earthy kick",
+        "atmosphere": "Forest sounds, rustling, insects, mystical mood"
+      },
+      "labels": [
+        "Sangoma Records",
+        "Parvati Records",
+        "Bluehour Sounds"
+      ],
+      "countries": [
+        "Germany",
+        "Finland",
+        "Denmark"
+      ],
+      "festivals": [],
+      "tracks": [
+        {
+          "artist": "Derango",
+          "title": "Clairvoyage",
+          "year": 2005,
+          "youtube": "bQR5ycMNLIY"
+        },
+        {
+          "artist": "Megalopsy",
+          "title": "Monkey Supernova",
+          "youtube": "tICo1t-nIbY"
+        },
+        {
+          "artist": "Will O Wisp & Megalopsy",
+          "title": "Zenith",
+          "youtube": "dUhE6H72Qpg"
+        },
+        {
+          "artist": "Onkel Dunkel",
+          "title": "The Nightman Cometh",
+          "youtube": "VkJfQBFDi08"
+        },
+        {
+          "artist": "Mubali",
+          "title": "Funk in Ya Trunk",
+          "youtube": "XnlRuxaaeVQ"
+        },
+        {
+          "artist": "Derango",
+          "title": "Confusion is next",
+          "year": 2005,
+          "youtube": "xPzzFXhhWEo"
+        },
+        {
+          "artist": "Kalilaskov AS",
+          "title": "Crying Girl",
+          "year": 2006,
+          "youtube": "lRVED2O-qCE"
+        },
+        {
+          "artist": "Krapul",
+          "title": "Odyssey In Jungle",
+          "youtube": "SG_qQnIeoio"
+        },
+        {
+          "artist": "Procs",
+          "title": "Psychoforest",
+          "youtube": "Pc4NGzyZ4EY"
+        },
+        {
+          "artist": "Daksinamurti",
+          "title": "Hippietalamus",
+          "youtube": "xNl8JktK-ZI"
+        },
+        {
+          "artist": "Jaramogi & Naima",
+          "title": "Movement",
+          "youtube": "oNl64zIjUpM"
+        },
+        {
+          "artist": "Farebi Jalebi",
+          "title": "Keanu Raves",
+          "youtube": "OwK8iJTv8B0"
+        }
+      ]
+    },
+    {
+      "id": "hitech",
+      "name": "Hi-tech",
+      "family": "dark",
+      "year": 2010,
+      "bpm": [
+        160,
+        200
+      ],
+      "size": 1,
+      "x": 1600,
+      "y": 1550,
+      "description": "Extremely fast, precisely programmed, packed with micro-sounds.",
+      "artists": [
+        "Highko",
+        "Zik",
+        "Arjuna",
+        "Oxidaksi",
+        "Kashyyyk",
+        "Arcek",
+        "Torog",
+        "Kneether",
+        "Zis0ky"
+      ],
+      "production": {
+        "bass": "Very fast, precise rolling bass",
+        "kick": "Short, sharp kick",
+        "atmosphere": "Thousands of micro-samples, rapid changes, sci-fi FX"
+      },
+      "labels": [
+        "Parvati Records"
+      ],
+      "countries": [
+        "Mexico",
+        "France",
+        "Germany"
+      ],
+      "festivals": [],
+      "tracks": [
+        {
+          "artist": "Highko",
+          "title": "San Pedro",
+          "youtube": "q5m-gaoYr3w"
+        },
+        {
+          "artist": "Oxidaksi",
+          "title": "Revolution",
+          "youtube": "0-7eCc9_f8M",
+          "famous": true
+        },
+        {
+          "artist": "Kashyyyk & Lalu",
+          "title": "Shawarma",
+          "youtube": "3MVaKzxg8M4"
+        },
+        {
+          "artist": "Zik",
+          "title": "Oops i did it again",
+          "youtube": "CdxYpgY8jXE"
+        },
+        {
+          "artist": "Highko & Naked Tourist",
+          "title": "Divine Blast",
+          "youtube": "wlfczJqwbjg"
+        },
+        {
+          "artist": "Arcek",
+          "title": "Besame",
+          "youtube": "VijowRRVsEY"
+        },
+        {
+          "artist": "Kashyyyk",
+          "title": "Teonanacatl",
+          "youtube": "Aci1_huKLFo"
+        },
+        {
+          "artist": "Torog",
+          "title": "Obscured by Clouds",
+          "youtube": "5z9Ei33EIoY"
+        },
+        {
+          "artist": "Zis0ky",
+          "title": "Devil's Dance",
+          "youtube": "tgKI4afSamc"
+        },
+        {
+          "artist": "Kneether",
+          "title": "Cryoplanet",
+          "youtube": "isEFpLpWez8"
+        }
+      ]
+    },
+    {
+      "id": "psycore",
+      "name": "Psycore",
+      "family": "dark",
+      "year": 2009,
+      "bpm": [
+        160,
+        200
+      ],
+      "size": 0.8,
+      "x": 1350,
+      "y": 1750,
+      "description": "The fastest and heaviest end of the spectrum, with industrial and noise influences.",
+      "artists": [
+        "Necropsycho",
+        "Dark Whisper",
+        "Xikwri Neyrra",
+        "Biomechanimal",
+        "Atriohm",
+        "Hammerer",
+        "Highko"
+      ],
+      "production": {
+        "bass": "Fast, aggressive bass",
+        "kick": "Industrial kick",
+        "atmosphere": "Noise, distortion, chaotic transitions"
+      },
+      "labels": [],
+      "countries": [
+        "Russia",
+        "Germany"
+      ],
+      "festivals": [],
+      "tracks": [
+        {
+          "artist": "Necropsycho",
+          "title": "Macabra Queen",
+          "youtube": "WryhqKfF21I"
+        },
+        {
+          "artist": "Necropsycho",
+          "title": "Sarva Bhavam",
+          "year": 2019,
+          "youtube": "7ZhF3JCTCLA"
+        },
+        {
+          "artist": "Dark Whisper",
+          "title": "Realms Of Unseen",
+          "youtube": "A03R1iM8FJA",
+          "famous": true
+        },
+        {
+          "artist": "Xikwri Neyrra",
+          "title": "Tierra De Shamanes",
+          "youtube": "50dHk1Lpn8w"
+        },
+        {
+          "artist": "Dark Whisper",
+          "title": "Yage Curandee",
+          "youtube": "Vd6g0Y11zLU"
+        },
+        {
+          "artist": "Xikwri Neyrra",
+          "title": "108 Names",
+          "youtube": "H_Hs7EnrLY8"
+        },
+        {
+          "artist": "Hammerer",
+          "title": "Gianny For Example",
+          "youtube": "sMrYhDq5Bv0"
+        },
+        {
+          "artist": "Atriohm",
+          "title": "paranormal amplifier",
+          "youtube": "yQPNIS3NkfM"
+        },
+        {
+          "artist": "Biomechanimal",
+          "title": "Enter the Animal",
+          "youtube": "9phJdfV3fTQ"
+        }
+      ]
+    },
+    {
+      "id": "psybient",
+      "name": "Psybient / Psychill",
+      "family": "chill",
+      "year": 1993,
+      "bpm": [
+        60,
+        110
+      ],
+      "size": 1.1,
+      "x": 600,
+      "y": 950,
+      "description": "Ambient and downtempo for festival chill-out zones. Psychedelic sounds without a dance beat.",
+      "artists": [
+        "Shpongle",
+        "Entheogenic",
+        "Carbon Based Lifeforms",
+        "Solar Fields",
+        "Aes Dana",
+        "Asura",
+        "Ishq",
+        "Hol Baumann"
+      ],
+      "production": {
+        "bass": "Deep, slow pads instead of a bassline",
+        "kick": "Soft kick or none at all",
+        "atmosphere": "Vast reverb, ethnic instruments, layered textures"
+      },
+      "labels": [
+        "Twisted Records",
+        "Ultimae Records",
+        "Interchill Records"
+      ],
+      "countries": [
+        "UK",
+        "Sweden",
+        "France"
+      ],
+      "festivals": [
+        "Chill-out stages at Boom and Ozora"
+      ],
+      "tracks": [
+        {
+          "artist": "Shpongle",
+          "title": "Divine Moments of Truth",
+          "year": 1998,
+          "youtube": "8qt2WbfotkU",
+          "famous": true
+        },
+        {
+          "artist": "Carbon Based Lifeforms",
+          "title": "Photosynthesis",
+          "year": 2006,
+          "youtube": "rRW_zVeRp9I",
+          "famous": true
+        },
+        {
+          "artist": "Solar Fields",
+          "title": "Sol",
+          "year": 2009,
+          "youtube": "lxjwcAEsufE",
+          "famous": true
+        },
+        {
+          "artist": "Entheogenic",
+          "title": "Gaia Sophia",
+          "youtube": "dRpFF5Dm-k0"
+        },
+        {
+          "artist": "Asura",
+          "title": "Life²",
+          "year": 2007,
+          "youtube": "3uW5Jef1okQ"
+        },
+        {
+          "artist": "Hol Baumann",
+          "title": "Human",
+          "year": 2005,
+          "youtube": "OVCvwgFgMig"
+        },
+        {
+          "artist": "Asura vs. Aes Dana",
+          "title": "Elie",
+          "youtube": "jkVC7p_3DGw"
+        },
+        {
+          "artist": "Ishq",
+          "title": "Yu",
+          "year": 2000,
+          "youtube": "ADxY3lyq5eY"
+        }
+      ]
+    },
+    {
+      "id": "psyworld",
+      "name": "Psy-world",
+      "family": "chill",
+      "year": 2000,
+      "bpm": [
+        90,
+        130
+      ],
+      "size": 0.8,
+      "x": 450,
+      "y": 750,
+      "description": "Psychedelia with ethnic instruments and rhythms from around the world: sitar, didgeridoo, tabla, vocals.",
+      "artists": [
+        "Juno Reactor",
+        "Shpongle",
+        "Desert Dwellers",
+        "Hilight Tribe",
+        "Banco de Gaia"
+      ],
+      "production": {
+        "bass": "Organic bass, often played live",
+        "kick": "Ethnic percussion instead of a clean kick",
+        "atmosphere": "Ethnic instruments and vocals"
+      },
+      "labels": [
+        "Twisted Records"
+      ],
+      "countries": [
+        "UK",
+        "USA"
+      ],
+      "festivals": [],
+      "tracks": [
+        {
+          "artist": "Juno Reactor",
+          "title": "Navras",
+          "year": 2003,
+          "youtube": "0ydLf9qDPHY",
+          "famous": true
+        },
+        {
+          "artist": "Juno Reactor",
+          "title": "Masters of the Universe",
+          "year": 2000,
+          "youtube": "ro2Tn_vfj8M"
+        },
+        {
+          "artist": "Desert Dwellers",
+          "title": "Breath: Portal To Stillness",
+          "youtube": "UOR33XRprEg"
+        },
+        {
+          "artist": "Hilight Tribe",
+          "title": "Esperanza",
+          "youtube": "36M2M3lw6D0",
+          "famous": true
+        },
+        {
+          "artist": "Banco de Gaia",
+          "title": "Apollo",
+          "youtube": "kvvzPUgkFgc"
+        },
+        {
+          "artist": "Banco de Gaia",
+          "title": "Obsidian",
+          "year": 2000,
+          "youtube": "_k5vXoB0WWA"
+        }
+      ]
+    },
+    {
+      "id": "psydub",
+      "name": "Psy-dub",
+      "family": "chill",
+      "year": 2004,
+      "bpm": [
+        70,
+        100
+      ],
+      "size": 0.9,
+      "x": 400,
+      "y": 1150,
+      "description": "Dub bass and reverb combined with psychedelic production techniques.",
+      "artists": [
+        "Ott",
+        "Kalya Scintilla",
+        "Desert Dwellers",
+        "Bluetech",
+        "Globular",
+        "Dub Trees"
+      ],
+      "production": {
+        "bass": "Deep dub bass",
+        "kick": "Slow, soft kick",
+        "atmosphere": "Delay and reverb effects, reggae/dub rhythms"
+      },
+      "labels": [
+        "Twisted Records",
+        "Interchill Records"
+      ],
+      "countries": [
+        "UK",
+        "Australia",
+        "USA"
+      ],
+      "festivals": [],
+      "tracks": [
+        {
+          "artist": "Ott",
+          "title": "Squirrel and Biscuits",
+          "youtube": "6vszOgNRvWI",
+          "famous": true
+        },
+        {
+          "artist": "Ott",
+          "title": "Owl Stretching Time",
+          "youtube": "PaJiZX7BYN0"
+        },
+        {
+          "artist": "Kalya Scintilla",
+          "title": "Sufi",
+          "youtube": "5X68ot1Xlko"
+        },
+        {
+          "artist": "Globular & Geoglyph",
+          "title": "Messages From The Resonator",
+          "youtube": "Nq6M_Lod9RQ"
+        },
+        {
+          "artist": "Kalya Scintilla",
+          "title": "TribeOriginal",
+          "youtube": "dohGC131kPI"
+        },
+        {
+          "artist": "Bluetech",
+          "title": "Honey in the Heart",
+          "year": 2009,
+          "youtube": "MaYmigSkHjM"
+        },
+        {
+          "artist": "Dub Trees",
+          "title": "Dreamlab",
+          "youtube": "hCfRnzuhyAI"
+        },
+        {
+          "artist": "Dub Trees",
+          "title": "A Way of Being Free",
+          "youtube": "vXaTP6yj3oA"
+        }
+      ]
+    },
+    {
+      "id": "psystep",
+      "name": "Psystep",
+      "family": "chill",
+      "year": 2010,
+      "bpm": [
+        70,
+        75
+      ],
+      "size": 0.8,
+      "x": 250,
+      "y": 1350,
+      "description": "Psychedelic sounds over half-time dubstep rhythms.",
+      "artists": [
+        "Kaminanda",
+        "Kalya Scintilla",
+        "Liquid Stranger",
+        "Quanta"
+      ],
+      "production": {
+        "bass": "Wobble and sub bass",
+        "kick": "Half-time rhythm",
+        "atmosphere": "Psychedelic FX, ethnic details"
+      },
+      "labels": [],
+      "countries": [
+        "USA",
+        "Australia"
+      ],
+      "festivals": [],
+      "tracks": [
+        {
+          "artist": "Kaminanda",
+          "title": "Yessence",
+          "youtube": "fHTpuczlnj8"
+        },
+        {
+          "artist": "Liquid Stranger",
+          "title": "Dissolve",
+          "youtube": "D_jG-KasU0o",
+          "famous": true
+        },
+        {
+          "artist": "Kaminanda",
+          "title": "Gateways Of Consciousness",
+          "youtube": "dH4_rYwpb9E"
+        },
+        {
+          "artist": "Liquid Stranger",
+          "title": "Party Like Us",
+          "youtube": "9cr-GtXWGJ8"
+        },
+        {
+          "artist": "Quanta",
+          "title": "Emulate",
+          "youtube": "2xNa_Dncx7c"
+        },
+        {
+          "artist": "Quanta",
+          "title": "Wide Eyed",
+          "youtube": "utY8szhIHrM"
+        }
+      ]
+    },
+    {
+      "id": "psybass",
+      "name": "Psy-glitch / Psybass",
+      "family": "chill",
+      "year": 2005,
+      "bpm": [
+        90,
+        110
+      ],
+      "size": 0.8,
+      "x": 550,
+      "y": 1400,
+      "description": "Glitch, bass music and psychedelia: extremely detailed production and heavy bass.",
+      "artists": [
+        "Tipper",
+        "Bluetech",
+        "Desert Dwellers",
+        "Phutureprimitive",
+        "Opiuo"
+      ],
+      "production": {
+        "bass": "Heavy, distorted bass",
+        "kick": "Broken breakbeat rhythms",
+        "atmosphere": "Micro-edits, glitches, spatial FX"
+      },
+      "labels": [],
+      "countries": [
+        "USA",
+        "UK"
+      ],
+      "festivals": [],
+      "tracks": [
+        {
+          "artist": "Tipper",
+          "title": "Tip Hop",
+          "year": 2001,
+          "youtube": "Q2s0DV59U7Y",
+          "famous": true
+        },
+        {
+          "artist": "Tipper",
+          "title": "Off Kilter",
+          "youtube": "48gyIDIrqXM"
+        },
+        {
+          "artist": "Bluetech",
+          "title": "Enter the Lovely",
+          "year": 2005,
+          "youtube": "kW8S3EDgN-Q"
+        },
+        {
+          "artist": "Opiuo",
+          "title": "Jelly",
+          "year": 2016,
+          "youtube": "YCME_bIuF3k",
+          "famous": true
+        },
+        {
+          "artist": "Phutureprimitive",
+          "title": "Luminous",
+          "year": 2008,
+          "youtube": "Mnufvy9Z_FU"
+        },
+        {
+          "artist": "Opiuo",
+          "title": "Sneakers",
+          "year": 2016,
+          "youtube": "hXkF3HNw1RQ"
+        },
+        {
+          "artist": "Phutureprimitive",
+          "title": "Innerverse",
+          "youtube": "hlTimJQrFME"
+        }
+      ]
+    },
+    {
+      "id": "nitzhonot",
+      "name": "Nitzhonot",
+      "family": "goa",
+      "year": 1996,
+      "bpm": [
+        145,
+        155
+      ],
+      "size": 0.8,
+      "x": 1100,
+      "y": 470,
+      "description": "An Israeli offshoot of Goa from the late 90s (Hebrew for “victories”). Hard kick, anthemic Eastern melodies and long uplifting sections. It went mainstream in Israel and in the early 2000s melted into full-on and “uplifting” psy.",
+      "artists": [
+        "Eyal Barkan",
+        "Yahel",
+        "Astrix",
+        "Holymen"
+      ],
+      "production": {
+        "bass": "Simple off-beat or galloping bassline",
+        "kick": "Hard, loud kick, faster than Goa",
+        "atmosphere": "Anthemic leads, Eastern scales, long build-ups without much darkness"
+      },
+      "labels": [],
+      "countries": [
+        "Israel"
+      ],
+      "festivals": [],
+      "tracks": [
+        {
+          "artist": "Eyal Barkan",
+          "title": "Good Morning Israel",
+          "year": 1998,
+          "youtube": "cZKPxqkDqAY"
+        },
+        {
+          "artist": "Yahel",
+          "title": "Voyage",
+          "year": 2000,
+          "youtube": "QsgJif2ya7I",
+          "famous": true
+        },
+        {
+          "artist": "Yahel & Eyal Barkan",
+          "title": "Mr. Club Trance",
+          "youtube": "quwFhUE4jl4"
+        },
+        {
+          "artist": "Yahel",
+          "title": "Butterfly",
+          "year": 2003,
+          "youtube": "ecVspwYmFCk",
+          "famous": true
+        },
+        {
+          "artist": "Holymen",
+          "title": "Abra Kadabra",
+          "youtube": "Vk7IFXPg1_s"
+        }
+      ]
+    },
+    {
+      "id": "sapsy",
+      "name": "South African scene",
+      "family": "goa",
+      "year": 2003,
+      "bpm": [
+        138,
+        146
+      ],
+      "size": 0.8,
+      "x": 1950,
+      "y": 640,
+      "description": "Since the early 2000s Cape Town has been one of the strongest psy scenes outside Europe and Israel. The sound ranges from melodic progressive (Protoculture) to energetic full-on, and open-air festivals are part of local culture.",
+      "artists": [
+        "Protoculture",
+        "Headroom",
+        "Broken Toy",
+        "Gataka",
+        "Lysandros"
+      ],
+      "production": {
+        "bass": "Rolling bass, from soft progressive to full-on weight",
+        "kick": "Clean, powerful kick",
+        "atmosphere": "Melodic themes, sunny festival energy"
+      },
+      "labels": [],
+      "countries": [
+        "South Africa"
+      ],
+      "festivals": [
+        "Vortex Open Air",
+        "Origin Festival",
+        "Alien Safari"
+      ],
+      "tracks": [
+        {
+          "artist": "Protoculture",
+          "title": "Pegasus",
+          "year": 2015,
+          "youtube": "5G8LFXRIpu8",
+          "famous": true
+        },
+        {
+          "artist": "Protoculture",
+          "title": "Cobalt",
+          "year": 2012,
+          "youtube": "gqR_aH9KMt4",
+          "famous": true
+        },
+        {
+          "artist": "Broken Toy",
+          "title": "Psycho Bitches",
+          "year": 2005,
+          "youtube": "SdG9Xvu6cu4"
+        },
+        {
+          "artist": "Gataka",
+          "title": "Get Out Of My Head",
+          "youtube": "PgSY6LbgQ-s"
+        },
+        {
+          "artist": "Broken Toy",
+          "title": "Tiger Blood",
+          "year": 2014,
+          "youtube": "oiLoktVG_sE"
+        },
+        {
+          "artist": "Gataka",
+          "title": "From Zero To Hero",
+          "youtube": "A5oL6ri9CA8"
+        },
+        {
+          "artist": "Creepy Deep & Lysandros",
+          "title": "Simon Says",
+          "youtube": "iT3XY6wRDe8"
+        },
+        {
+          "artist": "Nergil & Lysandros",
+          "title": "Sumerian Chant",
+          "youtube": "EjY4VOWG1fY"
+        },
+        {
+          "artist": "Headroom",
+          "title": "Simulation Stimulation",
+          "youtube": "CqjufYwbV3Q"
+        }
+      ]
+    },
+    {
+      "id": "swedish",
+      "name": "Swedish minimal prog",
+      "family": "prog",
+      "year": 2000,
+      "bpm": [
+        134,
+        140
+      ],
+      "size": 0.9,
+      "x": 1830,
+      "y": 870,
+      "description": "Around 2000, Swedish producers (Vibrasphere, Atmos, Son Kite, Noma, Human Blue) stripped psytrance to the bone: less melody, more rhythm and space. Vibrasphere's album Echo (2000) is considered one of the foundations of modern progressive.",
+      "artists": [
+        "Vibrasphere",
+        "Atmos",
+        "Son Kite",
+        "Noma",
+        "Human Blue",
+        "Ticon"
+      ],
+      "production": {
+        "bass": "Short, tight bass notes with heavy sidechain",
+        "kick": "Deep, minimalist kick",
+        "atmosphere": "Hypnotic repetition, micro filter changes, little melody"
+      },
+      "labels": [
+        "Spiral Trax",
+        "Digital Structures",
+        "Iboga Records"
+      ],
+      "countries": [
+        "Sweden"
+      ],
+      "festivals": [],
+      "tracks": [
+        {
+          "artist": "Son Kite",
+          "title": "Jukebox",
+          "year": 2004,
+          "youtube": "KrC_rEyw4SQ"
+        },
+        {
+          "artist": "Son Kite",
+          "title": "On Air",
+          "year": 2004,
+          "youtube": "_s3B3K4uwZM"
+        },
+        {
+          "artist": "Vibrasphere",
+          "title": "Breathing Place",
+          "youtube": "LP6X0jTl78k"
+        },
+        {
+          "artist": "Atmos",
+          "title": "One You Need",
+          "year": 2011,
+          "youtube": "qAsx8iuzei0"
+        },
+        {
+          "artist": "Vibrasphere",
+          "title": "Tierra Azul",
+          "year": 2006,
+          "youtube": "Tgo-9hhms0o",
+          "famous": true
+        },
+        {
+          "artist": "Ticon",
+          "title": "1987",
+          "year": 2008,
+          "youtube": "3R6EnKVStbo"
+        },
+        {
+          "artist": "Human Blue",
+          "title": "Dream Creator",
+          "year": 2002,
+          "youtube": "pP-56vX0lFo"
+        },
+        {
+          "artist": "Ticon",
+          "title": "Ether",
+          "year": 2015,
+          "youtube": "BJMZoDSYOdc"
+        },
+        {
+          "artist": "Noma",
+          "title": "Böse",
+          "youtube": "0C1eLvYTKM8"
+        }
+      ]
+    },
+    {
+      "id": "darkprog",
+      "name": "Dark progressive",
+      "family": "prog",
+      "year": 2010,
+      "bpm": [
+        134,
+        140
+      ],
+      "size": 0.8,
+      "x": 2020,
+      "y": 1360,
+      "description": "The darker side of progressive, halfway between the Zenon sound and darkpsy. Slower than dark psy, but with the same unease and plenty of psychedelic detail.",
+      "artists": [
+        "Kromagon",
+        "HypoGeo",
+        "Radioactive.Cake",
+        "Gojja"
+      ],
+      "production": {
+        "bass": "Deep, percussive, groovy bass",
+        "kick": "Dry, hard kick",
+        "atmosphere": "Dark pads, glitch and horror FX, lots of space"
+      },
+      "labels": [
+        "Zenon Records",
+        "Iono Music"
+      ],
+      "countries": [
+        "USA",
+        "Italy",
+        "Australia"
+      ],
+      "festivals": [],
+      "tracks": [
+        {
+          "artist": "Kromagon",
+          "title": "Patient Zero",
+          "youtube": "vRvCy7ZbD4M"
+        },
+        {
+          "artist": "Kromagon",
+          "title": "Architect",
+          "youtube": "CDG9N5TBQHg"
+        },
+        {
+          "artist": "Kromagon",
+          "title": "Sentinel",
+          "youtube": "98-R4hTibT8"
+        },
+        {
+          "artist": "Freedom Fighters x Pspiralife x HypoGeo",
+          "title": "Subconscious",
+          "year": 2019,
+          "youtube": "8Mpyd63qUNM",
+          "famous": true
+        },
+        {
+          "artist": "Freedom Fighters & HypoGeo",
+          "title": "Machinery",
+          "youtube": "BAMvgSYU_18"
+        },
+        {
+          "artist": "Gojja",
+          "title": "Bubble Enhancer",
+          "youtube": "KyH8f8Fc9z8"
+        },
+        {
+          "artist": "Radioactive.Cake",
+          "title": "Radioactive.Brain",
+          "youtube": "V6Y18moCJCU"
+        },
+        {
+          "artist": "Gojja",
+          "title": "Ocular Aerobics",
+          "youtube": "1sw79fylCeA"
+        }
+      ]
+    },
+    {
+      "id": "psybreaks",
+      "name": "Psybreaks",
+      "family": "prog",
+      "year": 2001,
+      "bpm": [
+        130,
+        140
+      ],
+      "size": 0.8,
+      "x": 2300,
+      "y": 1460,
+      "description": "The psytrance sound over breakbeat rhythms. Born in the UK in the early 2000s (Digitalis, Mood Deluxe, Slack Baba), later pushed by Hedflux, Bad Tango and Monk3y Logic, with Broken Robot as a key label.",
+      "artists": [
+        "Mood Deluxe",
+        "Digitalis",
+        "Slack Baba",
+        "Hedflux",
+        "Bad Tango",
+        "Monk3y Logic"
+      ],
+      "production": {
+        "bass": "Psy rolling or acid bass over a broken beat",
+        "kick": "Breakbeat instead of straight 4/4",
+        "atmosphere": "Psy FX and acid lines with a funk/breaks groove"
+      },
+      "labels": [
+        "Broken Robot Records",
+        "Luminus Music",
+        "Neom Recordings"
+      ],
+      "countries": [
+        "UK"
+      ],
+      "festivals": [],
+      "tracks": [
+        {
+          "artist": "Mood Deluxe",
+          "title": "Zen and the Art of Psy Breaks",
+          "youtube": "Ia9827qjOiE"
+        },
+        {
+          "artist": "Hedflux",
+          "title": "Fractal Funk",
+          "youtube": "OYuaNImDWdg",
+          "famous": true
+        },
+        {
+          "artist": "Hedflux",
+          "title": "Non Stop",
+          "youtube": "RSed73JkblM"
+        },
+        {
+          "artist": "Bad Tango",
+          "title": "Cortex",
+          "year": 2011,
+          "youtube": "baCGDfADTAc"
+        },
+        {
+          "artist": "Mood Deluxe",
+          "title": "Mind Pyramid",
+          "youtube": "X2lW2XTaYWo"
+        },
+        {
+          "artist": "Bad Tango",
+          "title": "Enzyme",
+          "youtube": "Cfiqn36iM0w"
+        },
+        {
+          "artist": "Digitalis",
+          "title": "Shakta",
+          "year": 1995,
+          "youtube": "C0eU_7GAuxI"
+        },
+        {
+          "artist": "Slack Baba",
+          "title": "Drink More Tea",
+          "youtube": "4Ps1VpXbZhU"
+        },
+        {
+          "artist": "OOOD & Monk3y Logic",
+          "title": "Bristolian Rhapsody",
+          "youtube": "4-yyBpy6V2U"
+        }
+      ]
+    },
+    {
+      "id": "psyrock",
+      "name": "Psychedelic rock",
+      "family": "roots",
+      "year": 1965,
+      "bpm": [
+        90,
+        130
+      ],
+      "size": 0.8,
+      "x": 260,
+      "y": 260,
+      "description": "The 60s and 70s psychedelic movement gave psytrance its name, its ethos and its first travellers: Goa became a hippie destination in the late 60s, long before anyone played electronic music there. Gong's Steve Hillage later founded System 7, a direct bridge into the dance scene.",
+      "artists": [
+        "Pink Floyd",
+        "Gong",
+        "Hawkwind",
+        "The Grateful Dead"
+      ],
+      "production": {
+        "bass": "Live bass guitar, often hypnotic and repetitive",
+        "kick": "Live drums",
+        "atmosphere": "Long improvised jams, tape echo, spacey organs and early synths"
+      },
+      "labels": [],
+      "countries": [
+        "UK",
+        "USA"
+      ],
+      "festivals": [],
+      "tracks": [
+        {
+          "artist": "Pink Floyd",
+          "title": "Interstellar Overdrive",
+          "year": 1967,
+          "youtube": "UFdn7LA56uE"
+        },
+        {
+          "artist": "Gong",
+          "title": "Master Builder",
+          "year": 1974,
+          "youtube": "Up_t-7DX0qw"
+        },
+        {
+          "artist": "Hawkwind",
+          "title": "Silver Machine",
+          "year": 1972
+        }
+      ]
+    },
+    {
+      "id": "ebm",
+      "name": "EBM / Industrial",
+      "family": "roots",
+      "year": 1981,
+      "bpm": [
+        110,
+        130
+      ],
+      "size": 0.8,
+      "x": 560,
+      "y": 150,
+      "description": "Electronic Body Music: hard sequenced bass, shouted vocals and a militant pulse. One of the main ingredients early Goa DJs mixed, and the source of the driving sequenced basslines.",
+      "artists": [
+        "Front 242",
+        "Nitzer Ebb",
+        "DAF",
+        "Cabaret Voltaire"
+      ],
+      "production": {
+        "bass": "Sequenced, gated synth bass on 8th or 16th notes",
+        "kick": "Dry drum-machine kick",
+        "atmosphere": "Cold, aggressive, metallic samples"
+      },
+      "labels": [
+        "Wax Trax!"
+      ],
+      "countries": [
+        "Belgium",
+        "Germany",
+        "UK"
+      ],
+      "festivals": [],
+      "tracks": [
+        {
+          "artist": "Front 242",
+          "title": "Headhunter",
+          "year": 1988,
+          "youtube": "m1cRGVaJF7Y"
+        },
+        {
+          "artist": "Nitzer Ebb",
+          "title": "Join in the Chant",
+          "year": 1987,
+          "youtube": "AGHMS_zh0zM"
+        },
+        {
+          "artist": "DAF",
+          "title": "Der Mussolini",
+          "year": 1981,
+          "youtube": "6etM3FWwEZo"
+        },
+        {
+          "artist": "Cabaret Voltaire",
+          "title": "Nag Nag Nag",
+          "year": 1979,
+          "youtube": "jCvTCw4dLFA"
+        }
+      ]
+    },
+    {
+      "id": "newbeat",
+      "name": "New beat",
+      "family": "roots",
+      "year": 1987,
+      "bpm": [
+        100,
+        115
+      ],
+      "size": 0.7,
+      "x": 830,
+      "y": 120,
+      "description": "A short-lived Belgian scene that slowed EBM down and added acid lines and samples. Part of the record bags in Goa in the late 80s.",
+      "artists": [
+        "A Split-Second",
+        "Lords of Acid",
+        "The Neon Judgement"
+      ],
+      "production": {
+        "bass": "Slow, heavy synth bass",
+        "kick": "Slow, thick kick",
+        "atmosphere": "Dark samples, acid lines, a hypnotic slow pulse"
+      },
+      "labels": [
+        "Antler-Subway"
+      ],
+      "countries": [
+        "Belgium"
+      ],
+      "festivals": [],
+      "tracks": [
+        {
+          "artist": "A Split-Second",
+          "title": "Flesh",
+          "year": 1986,
+          "youtube": "-FDy-RVeI-A"
+        },
+        {
+          "artist": "Lords of Acid",
+          "title": "I Sit on Acid",
+          "year": 1988,
+          "youtube": "K64SQFa8hHk"
+        },
+        {
+          "artist": "The Neon Judgement",
+          "title": "TV Treated",
+          "youtube": "PQtaNgipCSs"
+        }
+      ]
+    },
+    {
+      "id": "acidhouse",
+      "name": "Acid house",
+      "family": "roots",
+      "year": 1987,
+      "bpm": [
+        118,
+        128
+      ],
+      "size": 0.8,
+      "x": 800,
+      "y": 360,
+      "description": "Chicago house built around the squelching Roland TB-303. The acid line became one of the defining sounds of Goa and is still all over psytrance.",
+      "artists": [
+        "Phuture",
+        "808 State",
+        "Hardfloor"
+      ],
+      "production": {
+        "bass": "TB-303 acid line with resonance and accent tweaks",
+        "kick": "TR-909 / 808 four-on-the-floor",
+        "atmosphere": "Raw, minimal, the 303 in the spotlight"
+      },
+      "labels": [
+        "Harthouse",
+        "Trax Records"
+      ],
+      "countries": [
+        "USA",
+        "UK"
+      ],
+      "festivals": [],
+      "tracks": [
+        {
+          "artist": "Phuture",
+          "title": "Acid Tracks",
+          "year": 1987,
+          "youtube": "igNBeo3QSqc"
+        },
+        {
+          "artist": "808 State",
+          "title": "Pacific State",
+          "year": 1989,
+          "youtube": "tLxDRePUwEY"
+        },
+        {
+          "artist": "Hardfloor",
+          "title": "Acperience 1",
+          "year": 1992,
+          "youtube": "Un4CeV_l3pI"
+        }
+      ]
+    },
+    {
+      "id": "detroit",
+      "name": "Detroit techno",
+      "family": "roots",
+      "year": 1985,
+      "bpm": [
+        120,
+        135
+      ],
+      "size": 0.8,
+      "x": 500,
+      "y": 480,
+      "description": "Futuristic machine music from Detroit, made by Juan Atkins (Model 500), Derrick May (Rhythim Is Rhythim) and Kevin Saunderson (Inner City). It defined the straight 4/4 grid, the sci-fi mood and the producer-as-programmer idea that trance and psy built on.",
+      "artists": [
+        "Rhythim Is Rhythim",
+        "Model 500",
+        "Inner City"
+      ],
+      "production": {
+        "bass": "Synth bass locked to the kick",
+        "kick": "Drum-machine 4/4",
+        "atmosphere": "Futuristic strings and pads, sci-fi melancholy"
+      },
+      "labels": [
+        "Transmat",
+        "Metroplex"
+      ],
+      "countries": [
+        "USA"
+      ],
+      "festivals": [],
+      "tracks": [
+        {
+          "artist": "Rhythim Is Rhythim",
+          "title": "Strings of Life",
+          "year": 1987,
+          "youtube": "rFQZndywOR4"
+        },
+        {
+          "artist": "Model 500",
+          "title": "No UFO's",
+          "year": 1985,
+          "youtube": "KNz01ty-kTQ"
+        },
+        {
+          "artist": "Inner City",
+          "title": "Big Fun",
+          "year": 1988,
+          "youtube": "Gr-zG-IXDyo"
+        }
+      ]
+    },
+    {
+      "id": "frankfurt",
+      "name": "Frankfurt trance",
+      "family": "roots",
+      "year": 1991,
+      "bpm": [
+        130,
+        140
+      ],
+      "size": 0.8,
+      "x": 1030,
+      "y": 250,
+      "description": "German trance developing in parallel with Goa, around Sven Väth and labels like Harthouse and Eye Q. More a cousin of psy than a parent, the two scenes shared ideas, DJs and dancefloors.",
+      "artists": [
+        "Sven Väth",
+        "Jam & Spoon",
+        "Hardfloor",
+        "Resistance D"
+      ],
+      "production": {
+        "bass": "Rolling or off-beat synth bass",
+        "kick": "Hard 909 kick",
+        "atmosphere": "Long builds, arpeggios, euphoric pads"
+      },
+      "labels": [
+        "Harthouse",
+        "Eye Q"
+      ],
+      "countries": [
+        "Germany"
+      ],
+      "festivals": [],
+      "tracks": [
+        {
+          "artist": "Age of Love",
+          "title": "The Age of Love",
+          "year": 1990
+        },
+        {
+          "artist": "Jam & Spoon",
+          "title": "Stella",
+          "year": 1992,
+          "youtube": "zLy--cFj6W0"
+        },
+        {
+          "artist": "Sven Väth",
+          "title": "L'Esperanza",
+          "youtube": "8XYn3I2qTVM"
+        },
+        {
+          "artist": "Resistance D",
+          "title": "Cosmic Love",
+          "year": 1991,
+          "youtube": "7M-ZPzJe_pc"
+        }
+      ]
+    }
+  ],
+  "links": [
+    [
+      "goa",
+      "oldschool"
+    ],
+    [
+      "oldschool",
+      "psy"
+    ],
+    [
+      "goa",
+      "psy"
+    ],
+    [
+      "goa",
+      "psybient"
+    ],
+    [
+      "goa",
+      "suomi"
+    ],
+    [
+      "goa",
+      "neogoa"
+    ],
+    [
+      "goa",
+      "psyworld"
+    ],
+    [
+      "psy",
+      "fullon"
+    ],
+    [
+      "psy",
+      "prog"
+    ],
+    [
+      "psy",
+      "dark"
+    ],
+    [
+      "psy",
+      "twilight"
+    ],
+    [
+      "fullon",
+      "morning"
+    ],
+    [
+      "fullon",
+      "night"
+    ],
+    [
+      "fullon",
+      "hitech"
+    ],
+    [
+      "fullon",
+      "brazil"
+    ],
+    [
+      "fullon",
+      "mainstream"
+    ],
+    [
+      "prog",
+      "mainstream"
+    ],
+    [
+      "night",
+      "dark"
+    ],
+    [
+      "night",
+      "twilight"
+    ],
+    [
+      "prog",
+      "zenon"
+    ],
+    [
+      "prog",
+      "psytechno"
+    ],
+    [
+      "zenon",
+      "psytechno"
+    ],
+    [
+      "dark",
+      "forest"
+    ],
+    [
+      "dark",
+      "hitech"
+    ],
+    [
+      "dark",
+      "psycore"
+    ],
+    [
+      "twilight",
+      "forest"
+    ],
+    [
+      "suomi",
+      "forest"
+    ],
+    [
+      "psybient",
+      "psydub"
+    ],
+    [
+      "psybient",
+      "psyworld"
+    ],
+    [
+      "psydub",
+      "psystep"
+    ],
+    [
+      "psydub",
+      "psybass"
+    ],
+    [
+      "psystep",
+      "psybass"
+    ],
+    [
+      "goa",
+      "nitzhonot"
+    ],
+    [
+      "nitzhonot",
+      "fullon"
+    ],
+    [
+      "fullon",
+      "sapsy"
+    ],
+    [
+      "prog",
+      "sapsy"
+    ],
+    [
+      "psy",
+      "swedish"
+    ],
+    [
+      "swedish",
+      "prog"
+    ],
+    [
+      "zenon",
+      "darkprog"
+    ],
+    [
+      "dark",
+      "darkprog"
+    ],
+    [
+      "psy",
+      "psybreaks"
+    ],
+    [
+      "prog",
+      "psybreaks"
+    ],
+    [
+      "psyrock",
+      "goa"
+    ],
+    [
+      "psyrock",
+      "psybient"
+    ],
+    [
+      "ebm",
+      "goa"
+    ],
+    [
+      "ebm",
+      "newbeat"
+    ],
+    [
+      "newbeat",
+      "goa"
+    ],
+    [
+      "acidhouse",
+      "goa"
+    ],
+    [
+      "acidhouse",
+      "frankfurt"
+    ],
+    [
+      "detroit",
+      "frankfurt"
+    ],
+    [
+      "detroit",
+      "acidhouse"
+    ],
+    [
+      "frankfurt",
+      "goa"
+    ],
+    [
+      "prog",
+      "offbeat"
+    ]
+  ]
+}

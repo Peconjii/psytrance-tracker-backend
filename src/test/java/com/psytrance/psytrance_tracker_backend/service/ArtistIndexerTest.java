@@ -4,6 +4,8 @@ import com.psytrance.psytrance_tracker_backend.client.GoabaseClient;
 import com.psytrance.psytrance_tracker_backend.client.GoabaseParty;
 import com.psytrance.psytrance_tracker_backend.client.GoabasePartyDetails;
 import com.psytrance.psytrance_tracker_backend.dto.EventDto;
+import com.psytrance.psytrance_tracker_backend.dto.GenreShare;
+import com.psytrance.psytrance_tracker_backend.dto.GenreShare.Source;
 import com.psytrance.psytrance_tracker_backend.exception.GoabaseUnavailableException;
 import com.psytrance.psytrance_tracker_backend.model.LineupScan;
 import com.psytrance.psytrance_tracker_backend.repository.LineupScanRepository;
@@ -38,6 +40,7 @@ class ArtistIndexerTest {
     private GoabaseClient goabaseClient;
     private LineupScanRepository lineupScanRepository;
     private ArtistService artistService;
+    private MapService mapService;
     private ArtistIndexer indexer;
 
     @BeforeEach
@@ -46,8 +49,11 @@ class ArtistIndexerTest {
         goabaseClient = mock(GoabaseClient.class);
         lineupScanRepository = mock(LineupScanRepository.class);
         artistService = mock(ArtistService.class);
+        mapService = mock(MapService.class);
+        // A tiny map: one forest star with one artist
+        MapGenres mapGenres = new MapGenres(List.of(new MapGenres.Genre("forest", "Forest", "dark", List.of("Derango"))));
         indexer = new ArtistIndexer(eventService, goabaseClient, lineupScanRepository, artistService,
-                Clock.fixed(NOW, ZoneOffset.UTC));
+                new EventGenres(mapGenres), mapService, Clock.fixed(NOW, ZoneOffset.UTC));
     }
 
     @Test
@@ -97,6 +103,40 @@ class ArtistIndexerTest {
         verify(artistService).saveLineUp(1, List.of("Astrix"), NOW);
         verify(artistService, never()).saveLineUp(eq(2L), any(), any());
         verify(goabaseClient, never()).fetchParty(3);
+    }
+
+    @Test
+    void storesTheEventsMapGenresWithTheLineUp() {
+        when(eventService.findUpcoming()).thenReturn(List.of(event(1)));
+        when(goabaseClient.fetchParty(1)).thenReturn(Optional.of(withLineUp(1, "Derango\r\nSomeone Unknown")));
+
+        indexer.indexNextBatch();
+
+        verify(mapService).saveGenres(1, List.of(new GenreShare("forest", 1.0, Source.ARTIST)));
+        verify(artistService).saveLineUp(1, List.of("Derango", "Someone Unknown"), NOW);
+    }
+
+    @Test
+    void usesGoabaseKeywordsWhenTheLineUpSaysNothing() {
+        when(eventService.findUpcoming()).thenReturn(List.of(event(1)));
+        when(goabaseClient.fetchParty(1)).thenReturn(Optional.of(withLineUp(1, "Someone Unknown")));
+        when(goabaseClient.fetchKeywords(1)).thenReturn(List.of("Forest", "Psytrance"));
+
+        indexer.indexNextBatch();
+
+        verify(mapService).saveGenres(1, List.of(new GenreShare("forest", 1.0, Source.KEYWORD)));
+    }
+
+    @Test
+    void keywordsThatCantBeReadDontStopTheLineUp() {
+        when(eventService.findUpcoming()).thenReturn(List.of(event(1)));
+        when(goabaseClient.fetchParty(1)).thenReturn(Optional.of(withLineUp(1, "Astrix")));
+        when(goabaseClient.fetchKeywords(1)).thenThrow(new GoabaseUnavailableException("down", null));
+
+        assertThat(indexer.indexNextBatch()).isEqualTo(1);
+
+        verify(mapService).saveGenres(1, List.of());
+        verify(artistService).saveLineUp(1, List.of("Astrix"), NOW);
     }
 
     private static EventDto event(long id) {

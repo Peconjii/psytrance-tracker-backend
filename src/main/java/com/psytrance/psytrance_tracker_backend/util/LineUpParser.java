@@ -79,6 +79,50 @@ public final class LineUpParser {
         return lines;
     }
 
+    /**
+     * The line-up split at its headers, so each artist can be tied to the stage they play on:
+     * <pre>
+     * DARKPSY / FOREST STAGE   -> header "DARKPSY / FOREST STAGE", artists [Derango, Megalopsy]
+     * Derango
+     * Megalopsy
+     * </pre>
+     * Artists before the first header get a null header. A header lasts until the next one; blank
+     * lines don't end it, because organizers often leave a gap between the header and the names.
+     */
+    public static List<Section> sections(String lineUp) {
+        List<Section> sections = new ArrayList<>();
+        String header = null;
+        List<String> artists = new ArrayList<>();
+        for (LineUpLine line : parse(lineUp)) {
+            if (line.artist() != null) {
+                artists.add(line.artist());
+            } else if (isHeader(line.text())) {
+                if (header != null || !artists.isEmpty()) {
+                    sections.add(new Section(header, List.copyOf(artists)));
+                }
+                header = line.text();
+                artists = new ArrayList<>();
+            }
+        }
+        if (header != null || !artists.isEmpty()) {
+            sections.add(new Section(header, List.copyOf(artists)));
+        }
+        return sections;
+    }
+
+    /** One stage or part of a line-up: its header as written (null before the first header) and its artists. */
+    public record Section(String header, List<String> artists) {
+    }
+
+    // "MAIN FLOOR | GOA // PSYTRANCE", "🌲 DARKPSY / FOREST", "Line up:" - but not sentences, links or "TBA"
+    private static boolean isHeader(String line) {
+        if (line.isEmpty() || line.length() > MAX_LINE_LENGTH || line.contains("http") || line.contains("www.")) {
+            return false;
+        }
+        String words = TRAILING_SYMBOLS.matcher(LEADING_SYMBOLS.matcher(line).replaceFirst("")).replaceFirst("");
+        return HEADER.matcher(line).matches() || line.endsWith(":") || (!words.isEmpty() && isOnlyGenres(words));
+    }
+
     static String findArtist(String line) {
         if (line.length() > MAX_LINE_LENGTH || line.contains("http") || line.contains("www.")
                 || line.endsWith(":") || line.startsWith("(") || line.startsWith("...") || line.startsWith("+")

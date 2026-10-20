@@ -76,5 +76,26 @@ class LineUpParserTest {
     @Test
     void noLineUpIsAnEmptyList() {
         assertThat(LineUpParser.parse(null)).isEmpty();
+        assertThat(LineUpParser.sections(null)).isEmpty();
+    }
+
+    @Test
+    void splitsTheLineUpAtItsStageHeaders() {
+        List<LineUpParser.Section> sections = LineUpParser.sections("""
+                Opening Act
+                🔮 MAIN FLOOR | GOA // PSYTRANCE
+
+                DJ LUCAS (Tip Records)
+                + TBA
+                Darkpsy/Forest
+                Earth M 🇸🇪
+                (Psygnosis Records)
+                Apnea
+                """);
+
+        assertThat(sections).containsExactly(
+                new LineUpParser.Section(null, List.of("Opening Act")),
+                new LineUpParser.Section("🔮 MAIN FLOOR | GOA // PSYTRANCE", List.of("DJ LUCAS")),
+                new LineUpParser.Section("Darkpsy/Forest", List.of("Earth M", "Apnea")));
     }
 }
