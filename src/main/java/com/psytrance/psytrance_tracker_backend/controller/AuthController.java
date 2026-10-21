@@ -6,6 +6,7 @@ import com.psytrance.psytrance_tracker_backend.dto.RegisterRequest;
 import com.psytrance.psytrance_tracker_backend.dto.ResetPasswordRequest;
 import com.psytrance.psytrance_tracker_backend.config.Admins;
 import com.psytrance.psytrance_tracker_backend.dto.UserResponse;
+import com.psytrance.psytrance_tracker_backend.service.LoginAttempts;
 import com.psytrance.psytrance_tracker_backend.service.PasswordResetService;
 import com.psytrance.psytrance_tracker_backend.service.UserService;
 import com.psytrance.psytrance_tracker_backend.util.JwtUtil;
@@ -30,12 +31,15 @@ public class AuthController {
     private final JwtUtil jwtUtil;
     private final PasswordResetService passwordResetService;
     private final Admins admins;
+    private final LoginAttempts loginAttempts;
 
-    public AuthController(UserService userService, JwtUtil jwtUtil, PasswordResetService passwordResetService, Admins admins) {
+    public AuthController(UserService userService, JwtUtil jwtUtil, PasswordResetService passwordResetService, Admins admins,
+                          LoginAttempts loginAttempts) {
         this.userService = userService;
         this.jwtUtil = jwtUtil;
         this.passwordResetService = passwordResetService;
         this.admins = admins;
+        this.loginAttempts = loginAttempts;
     }
 
     @PostMapping("/register")
@@ -45,10 +49,17 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<Map<String, String>> login(@Valid @RequestBody LoginRequest request) {
+        // Too many wrong passwords for this username: 429 before the password is even checked
+        loginAttempts.checkAllowed(request.username());
         return userService.login(request.username(), request.password())
-                .map(user -> ResponseEntity.ok(Map.of("token", jwtUtil.generateToken(user.getUsername()))))
-                .orElseGet(() -> ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(Map.of("message", "Invalid username or password")));
+                .map(user -> {
+                    loginAttempts.succeeded(request.username());
+                    return ResponseEntity.ok(Map.of("token", jwtUtil.generateToken(user.getUsername())));
+                })
+                .orElseGet(() -> {
+                    loginAttempts.failed(request.username());
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Invalid username or password"));
+                });
     }
 
     /** SecurityConfig only lets requests with a valid token reach this endpoint. */

@@ -5,8 +5,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.ResultActions;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -83,6 +85,45 @@ class AuthIntegrationTest extends IntegrationTest {
                                 {"username": "%s", "password": "wrong-password"}
                                 """.formatted(username)))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void tooManyWrongPasswordsLockTheUsernameForAWhile() throws Exception {
+        String username = uniqueUsername();
+        register(username, "password123");
+        String other = uniqueUsername();
+        register(other, "password123");
+
+        for (int i = 0; i < 10; i++) {
+            logIn(username, "guess-" + i).andExpect(status().isUnauthorized());
+        }
+        // Locked: even the right password is refused, however the name is written
+        logIn(username, "password123")
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.message").value(containsString("Too many wrong passwords")));
+        logIn(username.toUpperCase(), "password123").andExpect(status().isTooManyRequests());
+        // Other accounts are not affected
+        logIn(other, "password123").andExpect(status().isOk());
+    }
+
+    @Test
+    void aSuccessfulLoginForgetsEarlierWrongPasswords() throws Exception {
+        String username = uniqueUsername();
+        register(username, "password123");
+        for (int round = 0; round < 2; round++) {
+            for (int i = 0; i < 9; i++) {
+                logIn(username, "guess-" + i).andExpect(status().isUnauthorized());
+            }
+            logIn(username, "password123").andExpect(status().isOk());
+        }
+    }
+
+    private ResultActions logIn(String username, String password) throws Exception {
+        return mockMvc.perform(post("/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"username": "%s", "password": "%s"}
+                        """.formatted(username, password)));
     }
 
     @Test

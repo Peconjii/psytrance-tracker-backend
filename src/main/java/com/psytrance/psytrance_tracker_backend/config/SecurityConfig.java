@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -26,10 +27,12 @@ import java.util.stream.Stream;
 public class SecurityConfig {
 
     private final JwtFilter jwtFilter;
+    private final Admins admins;
     private final String frontendUrl;
 
-    public SecurityConfig(JwtFilter jwtFilter, @Value("${app.frontend-url}") String frontendUrl) {
+    public SecurityConfig(JwtFilter jwtFilter, Admins admins, @Value("${app.frontend-url}") String frontendUrl) {
         this.jwtFilter = jwtFilter;
+        this.admins = admins;
         // A trailing slash would never match the browser's Origin header
         this.frontendUrl = frontendUrl.replaceAll("/+$", "");
     }
@@ -53,6 +56,10 @@ public class SecurityConfig {
                         // Spring renders errors like "no such endpoint" at /error; if that needed a token,
                         // a guest would get a misleading 401 instead of the real 404
                         .requestMatchers("/error").permitAll()
+                        // The admin side as a whole, so an endpoint that forgets Admins.requireAdmin is still closed.
+                        // Guests get 401 (log in first), other users 403
+                        .requestMatchers("/api/admin/**").access((authentication, context) ->
+                                new AuthorizationDecision(admins.isAdmin(authentication.get().getName())))
                         // Everything else (reviews POST, favorites, "I'm going", /api/me/..., /api/auth/me) requires a valid token
                         .anyRequest().authenticated()
                 )
