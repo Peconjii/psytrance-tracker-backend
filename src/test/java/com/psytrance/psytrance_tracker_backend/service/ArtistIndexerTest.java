@@ -53,7 +53,7 @@ class ArtistIndexerTest {
         // A tiny map: one forest star with one artist
         MapGenres mapGenres = new MapGenres(List.of(new MapGenres.Genre("forest", "Forest", "dark", List.of("Derango"))));
         indexer = new ArtistIndexer(eventService, goabaseClient, lineupScanRepository, artistService,
-                new EventGenres(mapGenres), mapService, Clock.fixed(NOW, ZoneOffset.UTC));
+                new EventGenres(mapGenres), mapService, mock(EventTimetables.class), Clock.fixed(NOW, ZoneOffset.UTC));
     }
 
     @Test

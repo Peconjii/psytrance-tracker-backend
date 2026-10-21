@@ -7,6 +7,7 @@ import com.psytrance.psytrance_tracker_backend.exception.GoabaseUnavailableExcep
 import com.psytrance.psytrance_tracker_backend.model.LineupScan;
 import com.psytrance.psytrance_tracker_backend.repository.LineupScanRepository;
 import com.psytrance.psytrance_tracker_backend.util.LineUpParser;
+import com.psytrance.psytrance_tracker_backend.util.TimetableParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Component;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +45,7 @@ public class ArtistIndexer {
     private final ArtistService artistService;
     private final EventGenres eventGenres;
     private final MapService mapService;
+    private final EventTimetables eventTimetables;
     private final Clock clock;
 
     public ArtistIndexer(EventService eventService,
@@ -51,6 +54,7 @@ public class ArtistIndexer {
                          ArtistService artistService,
                          EventGenres eventGenres,
                          MapService mapService,
+                         EventTimetables eventTimetables,
                          Clock clock) {
         this.eventService = eventService;
         this.goabaseClient = goabaseClient;
@@ -58,6 +62,7 @@ public class ArtistIndexer {
         this.artistService = artistService;
         this.eventGenres = eventGenres;
         this.mapService = mapService;
+        this.eventTimetables = eventTimetables;
         this.clock = clock;
     }
 
@@ -91,12 +96,23 @@ public class ArtistIndexer {
                     .orElse(List.of());
             List<String> keywords = party.isPresent() ? keywords(eventId) : List.of();
             mapService.saveGenres(eventId, eventGenres.compute(lineUp, keywords));
+            party.ifPresent(details -> eventTimetables.saveParsed(eventId, timetable(details)));
             List<String> artists = lineUp.stream().flatMap(section -> section.artists().stream()).toList();
             // Saved last, because it also marks the event as read
             artistService.saveLineUp(eventId, artists, now);
             read++;
         }
         return read;
+    }
+
+    // Set times written in the line-up, on the event's own clock (Goabase gives the start with its UTC offset)
+    private static List<TimetableParser.Slot> timetable(GoabasePartyDetails details) {
+        try {
+            OffsetDateTime start = OffsetDateTime.parse(details.dateStart());
+            return TimetableParser.parse(details.textLineUp(), start.toLocalDate(), start.getHour(), start.getOffset());
+        } catch (RuntimeException e) {
+            return List.of();
+        }
     }
 
     // Keywords only add to the genres, so the line-up is still stored when they can't be read

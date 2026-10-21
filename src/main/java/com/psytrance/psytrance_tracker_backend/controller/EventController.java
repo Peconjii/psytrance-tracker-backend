@@ -6,8 +6,10 @@ import com.psytrance.psytrance_tracker_backend.dto.EventDto;
 import com.psytrance.psytrance_tracker_backend.dto.EventSearch;
 import com.psytrance.psytrance_tracker_backend.dto.EventTimeline;
 import com.psytrance.psytrance_tracker_backend.dto.PageResponse;
+import com.psytrance.psytrance_tracker_backend.dto.TimetableDto;
 import com.psytrance.psytrance_tracker_backend.service.AftermovieService;
 import com.psytrance.psytrance_tracker_backend.service.EventService;
+import com.psytrance.psytrance_tracker_backend.service.EventTimetables;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import org.springframework.http.ResponseEntity;
@@ -25,10 +27,18 @@ public class EventController {
 
     private final EventService eventService;
     private final AftermovieService aftermovieService;
+    private final EventTimetables eventTimetables;
 
-    public EventController(EventService eventService, AftermovieService aftermovieService) {
+    public EventController(EventService eventService, AftermovieService aftermovieService, EventTimetables eventTimetables) {
         this.eventService = eventService;
         this.aftermovieService = aftermovieService;
+        this.eventTimetables = eventTimetables;
+    }
+
+    /** The set times of the event: read from its line-up or set by an admin; no sets when there are none */
+    @GetMapping("/{id}/timetable")
+    public TimetableDto getTimetable(@PathVariable long id) {
+        return eventTimetables.get(id);
     }
 
     /**

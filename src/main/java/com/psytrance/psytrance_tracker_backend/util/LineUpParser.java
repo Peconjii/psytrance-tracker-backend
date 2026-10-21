@@ -180,6 +180,8 @@ public final class LineUpParser {
     }
 
     static String findArtist(String line) {
+        // "21:00 - 22:00 | Naraka": the name after a set time (see TimetableParser)
+        line = TimetableParser.withoutTime(line);
         if (line.length() > MAX_LINE_LENGTH || line.contains("http") || line.contains("www.")
                 || line.endsWith(":") || line.startsWith("(") || line.startsWith("...") || line.startsWith("+")
                 || HEADER.matcher(line).matches()) {

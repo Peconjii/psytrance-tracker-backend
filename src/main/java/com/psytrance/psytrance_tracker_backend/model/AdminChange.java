@@ -22,6 +22,8 @@ public class AdminChange {
     public static final String ARTIST_HIDDEN = "ARTIST_HIDDEN";
     /** Two spellings merged; target is the spelling that was merged away, after is the artist it went into */
     public static final String ARTIST_MERGED = "ARTIST_MERGED";
+    /** An admin wrote or handed back an event timetable; target is "<event id> · <event name>" (no undo) */
+    public static final String EVENT_TIMETABLE = "EVENT_TIMETABLE";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
