@@ -1,5 +1,6 @@
 package com.psytrance.psytrance_tracker_backend.config;
 
+import com.psytrance.psytrance_tracker_backend.service.ArtistFollows;
 import com.psytrance.psytrance_tracker_backend.service.ArtistIndexer;
 import com.psytrance.psytrance_tracker_backend.service.ReminderService;
 import org.slf4j.Logger;
@@ -23,10 +24,12 @@ public class BackgroundJobs {
 
     private final ReminderService reminderService;
     private final ArtistIndexer artistIndexer;
+    private final ArtistFollows artistFollows;
 
-    public BackgroundJobs(ReminderService reminderService, ArtistIndexer artistIndexer) {
+    public BackgroundJobs(ReminderService reminderService, ArtistIndexer artistIndexer, ArtistFollows artistFollows) {
         this.reminderService = reminderService;
         this.artistIndexer = artistIndexer;
+        this.artistFollows = artistFollows;
     }
 
     @Scheduled(initialDelayString = "${app.reminders.initial-delay}", fixedDelayString = "${app.reminders.interval}")
@@ -39,6 +42,15 @@ public class BackgroundJobs {
         } catch (RuntimeException e) {
             // E.g. Goabase down before the first event list was loaded; the next run tries again
             log.warn("Reminder job failed", e);
+        }
+        // New gigs of followed artists, on the same hourly timer
+        try {
+            int sent = artistFollows.sendNewGigEmails();
+            if (sent > 0) {
+                log.info("Sent {} new-gig emails", sent);
+            }
+        } catch (RuntimeException e) {
+            log.warn("New-gig job failed", e);
         }
     }
 

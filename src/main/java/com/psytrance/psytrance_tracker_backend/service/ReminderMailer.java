@@ -17,7 +17,7 @@ import java.util.Locale;
 import java.util.stream.Collectors;
 
 /**
- * Emails "your events are coming up" reminders. Like {@link PasswordResetMailer}, it only logs
+ * Emails "your events are coming up" reminders and new gigs of followed artists. Like {@link PasswordResetMailer}, it only logs
  * the email when no mail server is configured (local development).
  */
 @Component
@@ -58,13 +58,43 @@ public class ReminderMailer {
                 You get this email because you saved these events or marked that you are going.
                 You can turn reminders off on your profile: %s/profile
                 """.formatted(user.getUsername(), eventList(events), frontendUrl);
+        return send(user, subject, text, "reminder");
+    }
 
+    /** A new gig of artists the user follows: the event and who of them plays it */
+    public record Gig(EventDto event, List<String> artists) {
+    }
+
+    /**
+     * One email listing the new gigs of the artists the user follows. Returns false only when sending failed,
+     * so the job tries again on its next run; a logged email counts as delivered.
+     */
+    public boolean sendNewGigs(User user, List<Gig> gigs) {
+        String subject = gigs.size() == 1
+                ? String.join(" & ", gigs.get(0).artists()) + " at " + gigs.get(0).event().nameParty()
+                : gigs.size() + " new gigs of artists you follow";
+        String list = gigs.stream()
+                .map(gig -> "%s plays:%n%s".formatted(String.join(", ", gig.artists()), eventList(List.of(gig.event()))))
+                .collect(Collectors.joining("\n\n"));
+        String text = """
+                Hi %s,
+
+                New on Map of Psy:
+
+                %s
+
+                You get this email because you follow these artists (%s/profile).
+                You can turn emails off there too.
+                """.formatted(user.getUsername(), list, frontendUrl);
+        return send(user, subject, text, "new gigs");
+    }
+
+    private boolean send(User user, String subject, String text, String what) {
         JavaMailSender sender = mailSender.getIfAvailable();
         if (sender == null) {
-            log.info("Mail is not configured - reminder for user '{}':\n{}", user.getUsername(), text);
+            log.info("Mail is not configured - {} for user '{}':\n{}", what, user.getUsername(), text);
             return true;
         }
-
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(from);
         message.setTo(user.getEmail());
@@ -74,7 +104,7 @@ public class ReminderMailer {
             sender.send(message);
             return true;
         } catch (MailException e) {
-            log.error("Could not send reminder email to user '{}'", user.getUsername(), e);
+            log.error("Could not send {} email to user '{}'", what, user.getUsername(), e);
             return false;
         }
     }
