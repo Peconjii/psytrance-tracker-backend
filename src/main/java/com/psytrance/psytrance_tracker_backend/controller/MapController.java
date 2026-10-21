@@ -3,6 +3,8 @@ package com.psytrance.psytrance_tracker_backend.controller;
 import com.psytrance.psytrance_tracker_backend.dto.GenreShare;
 import com.psytrance.psytrance_tracker_backend.dto.MapEventDto;
 import com.psytrance.psytrance_tracker_backend.dto.MapPeriod;
+import com.psytrance.psytrance_tracker_backend.dto.TimetableDto;
+import com.psytrance.psytrance_tracker_backend.service.EventTimetables;
 import com.psytrance.psytrance_tracker_backend.service.MapPlacements;
 import com.psytrance.psytrance_tracker_backend.service.MapService;
 import jakarta.validation.constraints.Size;
@@ -21,9 +23,11 @@ public class MapController {
 
     private final MapService mapService;
     private final MapPlacements mapPlacements;
+    private final EventTimetables eventTimetables;
 
-    public MapController(MapService mapService, MapPlacements mapPlacements) {
+    public MapController(MapService mapService, MapPlacements mapPlacements, EventTimetables eventTimetables) {
         this.mapService = mapService;
+        this.eventTimetables = eventTimetables;
         this.mapPlacements = mapPlacements;
     }
 
@@ -37,6 +41,15 @@ public class MapController {
     @GetMapping("/events")
     public List<MapEventDto> getEvents(@RequestParam(defaultValue = "WEEK") MapPeriod period) {
         return mapService.findEvents(period);
+    }
+
+    /**
+     * {@code GET /api/map/timetables?period=WEEK}: the timetables of the period's events that have set times, so the
+     * map can send a ship to each genre's star when it plays. Times are on the venue clock, with its UTC offset.
+     */
+    @GetMapping("/timetables")
+    public List<TimetableDto> getTimetables(@RequestParam(defaultValue = "WEEK") MapPeriod period) {
+        return eventTimetables.forEvents(mapService.findEvents(period).stream().map(MapEventDto::id).toList());
     }
 
     /**

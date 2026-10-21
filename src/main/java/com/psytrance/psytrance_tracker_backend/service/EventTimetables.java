@@ -18,7 +18,11 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Event timetables. The artist index fills them from set times in line-ups ("21:00 Artist"); an admin can correct
@@ -49,7 +53,20 @@ public class EventTimetables {
     }
 
     public TimetableDto get(long eventId) {
-        List<TimetableSlot> slots = slotRepository.findByEventIdOrderByPositionAsc(eventId);
+        return toDto(eventId, slotRepository.findByEventIdOrderByPositionAsc(eventId));
+    }
+
+    /** The timetables of these events in one query, for the galaxy map; events without set times are left out */
+    public List<TimetableDto> forEvents(Collection<Long> eventIds) {
+        if (eventIds.isEmpty()) {
+            return List.of();
+        }
+        Map<Long, List<TimetableSlot>> byEvent = slotRepository.findByEventIdInOrderByEventIdAscPositionAsc(eventIds).stream()
+                .collect(Collectors.groupingBy(TimetableSlot::getEventId, LinkedHashMap::new, Collectors.toList()));
+        return byEvent.entrySet().stream().map(e -> toDto(e.getKey(), e.getValue())).toList();
+    }
+
+    private static TimetableDto toDto(long eventId, List<TimetableSlot> slots) {
         boolean manual = slots.stream().anyMatch(s -> TimetableSlot.MANUAL.equals(s.getSource()));
         Integer offset = slots.isEmpty() ? null : slots.get(0).getUtcOffsetMinutes();
         return new TimetableDto(eventId, manual, offset, slots.stream()

@@ -6,11 +6,14 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
 import java.util.List;
 
 public interface TimetableSlotRepository extends JpaRepository<TimetableSlot, Long> {
 
     List<TimetableSlot> findByEventIdOrderByPositionAsc(Long eventId);
+
+    List<TimetableSlot> findByEventIdInOrderByEventIdAscPositionAsc(Collection<Long> eventIds);
 
     boolean existsByEventIdAndSource(Long eventId, String source);
 

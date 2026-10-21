@@ -81,6 +81,15 @@ class TimetableIntegrationTest extends IntegrationTest {
     }
 
     @Test
+    void theMapGetsTheWeeksTimetablesInOneRequest() throws Exception {
+        mockMvc.perform(get("/api/map/timetables").param("period", "WEEK"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].eventId").value(eventId))
+                .andExpect(jsonPath("$[0].sets.length()").value(2));
+    }
+
+    @Test
     void anAdminsTimetableStaysUntilHandedBack() throws Exception {
         setTimetable("""
                 [{"stage": "Main", "artist": "Ajja", "startsAt": "%sT23:00:00", "endsAt": "%sT01:00:00"}]
