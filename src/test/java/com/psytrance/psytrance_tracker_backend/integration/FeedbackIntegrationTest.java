@@ -121,6 +121,18 @@ class FeedbackIntegrationTest extends IntegrationTest {
                 {"kind": "WISHLIST", "message": "A kind that doesn't exist"}
                 """)
                 .andExpect(status().isBadRequest());
+        // The inbox links to pageUrl, so only pages of this site are taken
+        for (String elsewhere : List.of("https://evil.example/login", "//evil.example", "/\\\\evil.example", "javascript:alert(1)")) {
+            send("""
+                    {"kind": "OTHER", "message": "Look at this page", "pageUrl": "%s"}
+                    """.formatted(elsewhere))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.errors.pageUrl").exists());
+        }
+        send("""
+                {"kind": "OTHER", "message": "Look at this page", "pageUrl": "/?genre=forest&artist=Derango"}
+                """)
+                .andExpect(status().isCreated());
     }
 
     @Test

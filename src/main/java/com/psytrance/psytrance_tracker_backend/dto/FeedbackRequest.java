@@ -4,6 +4,7 @@ import com.psytrance.psytrance_tracker_backend.model.Feedback;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 /**
@@ -14,7 +15,8 @@ public record FeedbackRequest(
         @NotNull Feedback.Kind kind,
         Feedback.About aboutType,
         @Size(max = 200) String aboutRef,
-        @Size(max = 500) String pageUrl,
+        // A page of this site ("/events/123"), never another site ("https://...", "//...", "/\..."): admins open it from the inbox
+        @Size(max = 500) @Pattern(regexp = "/(?![/\\\\]).*", message = "must be a page of this site") String pageUrl,
         @NotBlank @Size(min = 5, max = 2000) String message,
         @Email @Size(max = 255) String email,
         String website
