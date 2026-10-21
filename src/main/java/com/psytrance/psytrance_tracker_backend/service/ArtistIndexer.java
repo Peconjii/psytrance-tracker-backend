@@ -15,8 +15,10 @@ import org.springframework.stereotype.Component;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -69,14 +71,19 @@ public class ArtistIndexer {
     /** Reads the next batch of line-ups. Returns how many events were read. */
     public int indexNextBatch() {
         Instant now = clock.instant();
-        List<Long> upcomingIds = eventService.findUpcoming().stream().map(EventDto::id).toList();
+        List<EventDto> upcoming = eventService.findUpcoming();
+        List<Long> upcomingIds = upcoming.stream().map(EventDto::id).toList();
         Map<Long, Instant> lastRead = lineupScanRepository.findAllById(upcomingIds).stream()
                 .collect(Collectors.toMap(LineupScan::getEventId, LineupScan::getScannedAt));
+        // Goabase doesn't list events by date, so the date is the tie-break: when many line-ups are due at once
+        // (never read, or all marked for re-reading), the soonest events are read first
+        Map<Long, LocalDate> startById = new HashMap<>();
+        upcoming.forEach(event -> startById.putIfAbsent(event.id(), event.dateStart()));
 
-        // Stable sort: events never read keep their date order, so the soonest are read first
         List<Long> due = upcomingIds.stream()
                 .filter(id -> !lastRead.containsKey(id) || lastRead.get(id).plus(REREAD_AFTER).isBefore(now))
-                .sorted(Comparator.comparing((Long id) -> lastRead.getOrDefault(id, Instant.MIN)))
+                .sorted(Comparator.comparing((Long id) -> lastRead.getOrDefault(id, Instant.MIN))
+                        .thenComparing(startById::get, Comparator.nullsLast(Comparator.naturalOrder())))
                 .limit(BATCH_SIZE)
                 .toList();
 

@@ -84,6 +84,22 @@ class ArtistIndexerTest {
     }
 
     @Test
+    void lineUpsDueAtOnceAreReadSoonestEventFirst() {
+        // Goabase lists events in its own order; all three were marked for re-reading at the same time
+        when(eventService.findUpcoming()).thenReturn(List.of(event(1, "2026-12-01"), event(2, "2026-10-01"), event(3, "2026-11-01")));
+        when(lineupScanRepository.findAllById(List.of(1L, 2L, 3L))).thenReturn(List.of(
+                new LineupScan(1L, Instant.EPOCH), new LineupScan(2L, Instant.EPOCH), new LineupScan(3L, Instant.EPOCH)));
+        when(goabaseClient.fetchParty(anyLong())).thenReturn(Optional.empty());
+
+        indexer.indexNextBatch();
+
+        InOrder order = inOrder(goabaseClient);
+        order.verify(goabaseClient).fetchParty(2);
+        order.verify(goabaseClient).fetchParty(3);
+        order.verify(goabaseClient).fetchParty(1);
+    }
+
+    @Test
     void readsAtMostOneBatchPerRun() {
         when(eventService.findUpcoming()).thenReturn(LongStream.rangeClosed(1, 100).mapToObj(ArtistIndexerTest::event).toList());
         when(goabaseClient.fetchParty(anyLong())).thenReturn(Optional.empty());
@@ -140,7 +156,11 @@ class ArtistIndexerTest {
     }
 
     private static EventDto event(long id) {
-        return EventDto.from(new GoabaseParty(id, "Event " + id, "2026-10-01T22:00:00+02:00", null,
+        return event(id, "2026-10-01");
+    }
+
+    private static EventDto event(long id, String day) {
+        return EventDto.from(new GoabaseParty(id, "Event " + id, day + "T22:00:00+02:00", null,
                 "Festival", "Scheduled", "Serbia", "Novi Sad", 45.25, 19.84, null, null));
     }
 
