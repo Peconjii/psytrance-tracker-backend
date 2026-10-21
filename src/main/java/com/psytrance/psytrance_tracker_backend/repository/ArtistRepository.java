@@ -15,6 +15,9 @@ public interface ArtistRepository extends JpaRepository<Artist, Long> {
 
     Optional<Artist> findBySlug(String slug);
 
+    /** For the admin search: artists from the line-ups whose slug contains this part, by name */
+    List<Artist> findTop30BySlugContainingOrderByNameAsc(String slugPart);
+
     List<Artist> findBySlugIn(Collection<String> slugs);
 
     /**

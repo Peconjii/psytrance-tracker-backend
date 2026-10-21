@@ -3,6 +3,7 @@ package com.psytrance.psytrance_tracker_backend.controller;
 import com.psytrance.psytrance_tracker_backend.dto.GenreShare;
 import com.psytrance.psytrance_tracker_backend.dto.MapEventDto;
 import com.psytrance.psytrance_tracker_backend.dto.MapPeriod;
+import com.psytrance.psytrance_tracker_backend.service.MapPlacements;
 import com.psytrance.psytrance_tracker_backend.service.MapService;
 import jakarta.validation.constraints.Size;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,9 +20,17 @@ import java.util.Map;
 public class MapController {
 
     private final MapService mapService;
+    private final MapPlacements mapPlacements;
 
-    public MapController(MapService mapService) {
+    public MapController(MapService mapService, MapPlacements mapPlacements) {
         this.mapService = mapService;
+        this.mapPlacements = mapPlacements;
+    }
+
+    /** Which artists orbit which genre star: {@code {"forest": ["Derango", ...], ...}}. Admins edit it in the panel. */
+    @GetMapping("/placements")
+    public Map<String, List<String>> getPlacements() {
+        return mapPlacements.placements();
     }
 
     /** Example: {@code GET /api/map/events?period=MONTH}. Events with their Map of Psy genres, soonest first. */

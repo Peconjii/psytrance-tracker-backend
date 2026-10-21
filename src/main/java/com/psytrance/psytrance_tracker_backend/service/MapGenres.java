@@ -68,7 +68,9 @@ public class MapGenres {
     private static final Pattern SEPARATORS = Pattern.compile("[^\\p{L}\\p{N}]+");
 
     private final List<Genre> genres;
-    private final Map<String, List<String>> genreIdsByArtistSlug;
+    // Replaced as a whole when admins move artists (see MapPlacements); volatile so the artist index's
+    // background thread sees the new placements right away
+    private volatile Map<String, List<String>> genreIdsByArtistSlug;
 
     @Autowired
     public MapGenres(JsonMapper jsonMapper) {
@@ -78,17 +80,32 @@ public class MapGenres {
     // For tests: a small hand-made map
     MapGenres(List<Genre> genres) {
         this.genres = List.copyOf(genres);
-        Map<String, List<String>> byArtist = new HashMap<>();
+        Map<String, List<String>> artistsByGenre = new HashMap<>();
         for (Genre genre : genres) {
-            for (String artist : genre.artists()) {
+            artistsByGenre.put(genre.id(), genre.artists());
+        }
+        usePlacements(artistsByGenre);
+    }
+
+    /** The genres of the map as genres.json has them; their artist lists are the starting placements only. */
+    public List<Genre> all() {
+        return genres;
+    }
+
+    /** Places artists in genres ({@code genreId -> artist names}) instead of the placements used so far. */
+    public void usePlacements(Map<String, List<String>> artistsByGenre) {
+        Map<String, List<String>> byArtist = new HashMap<>();
+        // In the map's genre order, so an artist's first genre is the same everywhere
+        for (Genre genre : genres) {
+            for (String artist : artistsByGenre.getOrDefault(genre.id(), List.of())) {
                 byArtist.computeIfAbsent(ArtistNames.slug(artist), slug -> new ArrayList<>()).add(genre.id());
             }
         }
         this.genreIdsByArtistSlug = byArtist;
     }
 
-    public List<Genre> all() {
-        return genres;
+    public boolean isGenre(String genreId) {
+        return genres.stream().anyMatch(genre -> genre.id().equals(genreId));
     }
 
     /** The genres an artist is placed in on the map, matched by slug; empty when the artist isn't on the map. */

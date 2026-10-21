@@ -19,7 +19,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Map;
@@ -48,7 +47,7 @@ public class FeedbackController {
     /** Example: {@code GET /api/admin/feedback?status=NEW}. All feedback when no status is given; admins only. */
     @GetMapping("/api/admin/feedback")
     public List<FeedbackDto> list(@RequestParam(required = false) Feedback.Status status, Authentication authentication) {
-        requireAdmin(authentication);
+        admins.requireAdmin(authentication);
         return feedbackService.list(status);
     }
 
@@ -56,17 +55,11 @@ public class FeedbackController {
     @PatchMapping("/api/admin/feedback/{id}")
     public FeedbackDto updateStatus(@PathVariable long id, @Valid @RequestBody StatusChange change,
                                     Authentication authentication) {
-        requireAdmin(authentication);
+        admins.requireAdmin(authentication);
         return feedbackService.updateStatus(id, change.status());
     }
 
     public record StatusChange(@NotNull Feedback.Status status) {
-    }
-
-    private void requireAdmin(Authentication authentication) {
-        if (!admins.isAdmin(usernameOrNull(authentication))) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only admins can see feedback");
-        }
     }
 
     // The form works for guests too; logged-in senders are remembered with their message
