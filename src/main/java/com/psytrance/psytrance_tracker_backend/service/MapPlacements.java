@@ -4,7 +4,6 @@ import com.psytrance.psytrance_tracker_backend.dto.AdminArtistDto;
 import com.psytrance.psytrance_tracker_backend.dto.AdminChangeDto;
 import com.psytrance.psytrance_tracker_backend.model.AdminChange;
 import com.psytrance.psytrance_tracker_backend.model.Artist;
-import com.psytrance.psytrance_tracker_backend.model.LineupScan;
 import com.psytrance.psytrance_tracker_backend.model.MapArtistGenre;
 import com.psytrance.psytrance_tracker_backend.repository.AdminChangeRepository;
 import com.psytrance.psytrance_tracker_backend.repository.ArtistEventRepository;
@@ -19,7 +18,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Clock;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -208,7 +206,8 @@ public class MapPlacements {
         } else {
             setGenres(change.getTarget(), before, adminUsername, changeId);
         }
-        return history().stream().filter(c -> changeId == c.id()).findFirst().orElseThrow();
+        // Not looked up in history(): that only holds the newest changes, and this one can be older
+        return AdminChangeDto.from(change, changeRepository.findFirstByUndoOf(changeId).map(AdminChange::getId).orElse(null));
     }
 
     // The genres an artist is placed in now, as the history writes them: "forest, twilight"
@@ -229,9 +228,7 @@ public class MapPlacements {
     private void rereadEventsWith(String slug) {
         artistRepository.findBySlug(slug).ifPresent(artist -> {
             List<Long> eventIds = artistEventRepository.findEventIdsByArtistId(artist.getId());
-            List<LineupScan> scans = lineupScanRepository.findAllById(eventIds);
-            scans.forEach(scan -> scan.setScannedAt(Instant.EPOCH));
-            lineupScanRepository.saveAll(scans);
+            lineupScanRepository.rereadSoon(eventIds);
         });
     }
 }

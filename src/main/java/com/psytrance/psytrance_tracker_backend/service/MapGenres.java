@@ -71,6 +71,8 @@ public class MapGenres {
     // Replaced as a whole when admins move artists (see MapPlacements); volatile so the artist index's
     // background thread sees the new placements right away
     private volatile Map<String, List<String>> genreIdsByArtistSlug;
+    // Merged spellings ("ajja-experience" -> "ajja"), see ArtistCleanup
+    private volatile Map<String, String> artistSlugByAlias = Map.of();
 
     @Autowired
     public MapGenres(JsonMapper jsonMapper) {
@@ -108,9 +110,22 @@ public class MapGenres {
         return genres.stream().anyMatch(genre -> genre.id().equals(genreId));
     }
 
-    /** The genres an artist is placed in on the map, matched by slug; empty when the artist isn't on the map. */
+    /** Spellings admins merged into another artist ({@code alias slug -> artist slug}), instead of the ones used so far. */
+    public void useAliases(Map<String, String> artistSlugByAlias) {
+        this.artistSlugByAlias = Map.copyOf(artistSlugByAlias);
+    }
+
+    /**
+     * The genres an artist is placed in on the map, matched by slug, also when the line-up writes a spelling that was
+     * merged into a map artist; empty when the artist isn't on the map.
+     */
     public List<String> genresOfArtist(String artistName) {
-        return genreIdsByArtistSlug.getOrDefault(ArtistNames.slug(artistName), List.of());
+        String slug = ArtistNames.slug(artistName);
+        List<String> genreIds = genreIdsByArtistSlug.get(slug);
+        if (genreIds == null && artistSlugByAlias.containsKey(slug)) {
+            genreIds = genreIdsByArtistSlug.get(artistSlugByAlias.get(slug));
+        }
+        return genreIds == null ? List.of() : genreIds;
     }
 
     /**

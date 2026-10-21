@@ -7,6 +7,7 @@ import tools.jackson.databind.json.JsonMapper;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -44,6 +45,12 @@ class MapGenresTest {
         assertThat(mapGenres.genresOfArtist("DERANGO")).containsExactly("forest");
         assertThat(mapGenres.genresOfArtist("Talamasca")).containsExactlyInAnyOrder("fullon", "night");
         assertThat(mapGenres.genresOfArtist("Nobody On The Map")).isEmpty();
+    }
+
+    @Test
+    void aMergedSpellingPlaysWhatTheArtistPlays() {
+        mapGenres.useAliases(Map.of("derango-experience", "derango"));
+        assertThat(mapGenres.genresOfArtist("Derango Experience")).containsExactly("forest");
     }
 
     @Test

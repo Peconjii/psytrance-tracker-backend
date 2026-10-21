@@ -4,6 +4,7 @@ import com.psytrance.psytrance_tracker_backend.model.AdminChange;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface AdminChangeRepository extends JpaRepository<AdminChange, Long> {
 
@@ -11,4 +12,6 @@ public interface AdminChangeRepository extends JpaRepository<AdminChange, Long> 
     List<AdminChange> findTop200ByOrderByCreatedAtDescIdDesc();
 
     boolean existsByUndoOf(Long undoOf);
+
+    Optional<AdminChange> findFirstByUndoOf(Long undoOf);
 }

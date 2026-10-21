@@ -38,6 +38,16 @@ class TimetableParserTest {
     }
 
     @Test
+    void namesAreUnescapedAndLoseALeadingLive() {
+        // As Goabase sends them: "&amp;" escaped, and "Live" written before the act (line-up 117775)
+        assertThat(parse("""
+                23:00 Tom &amp; Jerry
+                02:15 – 04:15 Live M3dra
+                """)).extracting(Slot::artist)
+                .containsExactly("Tom & Jerry", "M3dra");
+    }
+
+    @Test
     void startTimesOnlyAndSetsAfterMidnightAreTheNextDay() {
         assertThat(parse("""
                 20:00 DOORS
@@ -63,7 +73,7 @@ class TimetableParserTest {
                 new Slot(null, "Gorjie", at(24, 0, 30), at(24, 2, 0)),
                 // Earlier than the set before it by more than six hours: a new night on the same timetable
                 new Slot(null, "Naraka", at(24, 22, 0), at(25, 0, 0)),
-                new Slot(null, "Live M3dra", at(25, 2, 15), at(25, 4, 15)),
+                new Slot(null, "M3dra", at(25, 2, 15), at(25, 4, 15)),
                 new Slot(null, "Dj Nous", at(25, 22, 30), at(26, 0, 0)));
     }
 

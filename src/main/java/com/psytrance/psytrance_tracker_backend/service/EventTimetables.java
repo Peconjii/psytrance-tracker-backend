@@ -15,7 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Clock;
-import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -145,10 +144,7 @@ public class EventTimetables {
             return before;
         }
         slotRepository.deleteByEventId(eventId);
-        lineupScanRepository.findById(eventId).ifPresent(scan -> {
-            scan.setScannedAt(Instant.EPOCH);
-            lineupScanRepository.save(scan);
-        });
+        lineupScanRepository.rereadSoon(List.of(eventId));
         log(eventId, before, "from the line-up", adminUsername);
         return get(eventId);
     }

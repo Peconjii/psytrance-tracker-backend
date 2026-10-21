@@ -12,7 +12,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Clock;
-import java.time.Instant;
 import java.util.LinkedHashSet;
 import java.util.List;
 
@@ -72,10 +71,7 @@ public class EventGenreAdmin {
         if (wanted.isEmpty()) {
             mapService.replaceGenres(eventId, List.of());
             // Read soon again, so the worked-out genres come back within a few minutes
-            lineupScanRepository.findById(eventId).ifPresent(scan -> {
-                scan.setScannedAt(Instant.EPOCH);
-                lineupScanRepository.save(scan);
-            });
+            lineupScanRepository.rereadSoon(List.of(eventId));
         } else {
             mapService.replaceGenres(eventId, wanted.stream()
                     .map(id -> new GenreShare(id, 1.0 / wanted.size(), GenreShare.Source.MANUAL))

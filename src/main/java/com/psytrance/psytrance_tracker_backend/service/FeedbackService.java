@@ -58,16 +58,28 @@ public class FeedbackService {
             return;
         }
         Instant now = clock.instant();
-        Deque<Instant> recent = recentByClient.computeIfAbsent(clientKey, key -> new ArrayDeque<>());
-        synchronized (recent) {
-            while (!recent.isEmpty() && recent.peekFirst().isBefore(now.minus(WINDOW))) {
-                recent.pollFirst();
+        Instant windowStart = now.minus(WINDOW);
+        // Addresses quiet for an hour are forgotten, so the map doesn't grow with every address that ever sent.
+        // The deques are only touched inside compute calls, which the map runs one at a time per address.
+        for (String key : recentByClient.keySet()) {
+            recentByClient.computeIfPresent(key, (k, recent) -> recent.peekLast().isBefore(windowStart) ? null : recent);
+        }
+        boolean[] tooMany = {false};
+        recentByClient.compute(clientKey, (key, recent) -> {
+            Deque<Instant> times = recent == null ? new ArrayDeque<>() : recent;
+            while (!times.isEmpty() && times.peekFirst().isBefore(windowStart)) {
+                times.pollFirst();
             }
-            if (recent.size() >= maxPerHour) {
-                throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,
-                        "That's a lot of feedback in a short time. Please try again in an hour.");
+            if (times.size() >= maxPerHour) {
+                tooMany[0] = true;
+            } else {
+                times.addLast(now);
             }
-            recent.addLast(now);
+            return times.isEmpty() ? null : times;
+        });
+        if (tooMany[0]) {
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,
+                    "That's a lot of feedback in a short time. Please try again in an hour.");
         }
         Long userId = username == null ? null : userRepository.findByUsername(username).map(User::getId).orElse(null);
         feedbackRepository.save(new Feedback(request.kind(), request.aboutType(), blankToNull(request.aboutRef()),

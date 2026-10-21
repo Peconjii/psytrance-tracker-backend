@@ -41,10 +41,7 @@ public class MapService {
 
     /** Events running at some point from today until the end of the period, soonest first. */
     public List<MapEventDto> findEvents(MapPeriod period) {
-        LocalDate lastDay = LocalDate.now(clock).plusDays(period.days() - 1L);
-        List<EventDto> events = eventService.findUpcoming().stream()
-                .filter(event -> event.dateStart() != null && !event.dateStart().isAfter(lastDay))
-                .toList();
+        List<EventDto> events = eventsIn(period);
         if (events.isEmpty()) {
             return List.of();
         }
@@ -55,6 +52,18 @@ public class MapService {
                 .collect(Collectors.toSet());
         return events.stream()
                 .map(event -> MapEventDto.from(event, read.contains(event.id()), genres.getOrDefault(event.id(), List.of())))
+                .toList();
+    }
+
+    /** The ids of the events {@link #findEvents} lists, without working out their genres */
+    public List<Long> findEventIds(MapPeriod period) {
+        return eventsIn(period).stream().map(EventDto::id).toList();
+    }
+
+    private List<EventDto> eventsIn(MapPeriod period) {
+        LocalDate lastDay = LocalDate.now(clock).plusDays(period.days() - 1L);
+        return eventService.findUpcoming().stream()
+                .filter(event -> event.dateStart() != null && !event.dateStart().isAfter(lastDay))
                 .toList();
     }
 

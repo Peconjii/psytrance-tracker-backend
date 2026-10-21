@@ -98,6 +98,18 @@ class FeedbackIntegrationTest extends IntegrationTest {
     }
 
     @Test
+    void aDifferentlyCasedCopyOfAnAdminNameIsNotAnAdmin() throws Exception {
+        // Usernames are case-sensitive, so "Feedback_Admin" can be registered next to "feedback_admin"
+        String copy = "Feedback_Admin";
+        register(copy, PASSWORD);
+        String token = login(copy, PASSWORD);
+        mockMvc.perform(get("/api/admin/feedback").header("Authorization", bearer(token)))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/auth/me").header("Authorization", bearer(token)))
+                .andExpect(jsonPath("$.admin").value(false));
+    }
+
+    @Test
     void invalidFeedbackIsRejected() throws Exception {
         send("""
                 {"kind": "IDEA", "message": "hi", "email": "not-an-email"}

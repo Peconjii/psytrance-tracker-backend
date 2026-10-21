@@ -13,6 +13,8 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.springframework.web.util.HtmlUtils;
+
 /**
  * Reads set times from Goabase line-ups, where some organizers write them in front of the names:
  * <pre>
@@ -35,6 +37,8 @@ public final class TimetableParser {
     private static final Pattern DATE = Pattern.compile("(?:^|\\D)(\\d{1,2})[./](\\d{1,2})(?:[./](\\d{2,4}))?(?:\\D|$)");
     // What follows the name in timetable lines: "@handle", "• Twilight/Forest"
     private static final Pattern AFTER_NAME = Pattern.compile("\\s+(@|•|·)\\s*.*$");
+    // "02:15 – 04:15 Live M3dra": a live set by M3dra. Only after a set time: without one, "Live Earth" is a name
+    private static final Pattern LIVE_SET = Pattern.compile("(?i)^live\\s+(?=\\S)");
     // Programme items that are not acts
     private static final Set<String> NOT_ACTS = Set.of("doors", "doors open", "intro", "outro", "opening", "closing",
             "opening ceremony", "closing ceremony", "break", "pause", "end", "ende", "soundcheck", "warm up", "warmup",
@@ -63,7 +67,7 @@ public final class TimetableParser {
         if (!m.matches() || Integer.parseInt(m.group(1)) > 24) {
             return line;
         }
-        String name = AFTER_NAME.matcher(m.group(7)).replaceFirst("").strip();
+        String name = LIVE_SET.matcher(AFTER_NAME.matcher(m.group(7)).replaceFirst("").strip()).replaceFirst("");
         // "20:00 DOORS" is a programme item, not an act
         return NOT_ACTS.contains(name.toLowerCase(Locale.ROOT)) ? "" : name;
     }
@@ -83,7 +87,8 @@ public final class TimetableParser {
         String stage = null;
         LocalDate day = firstDay;
         LocalDateTime previous = null;
-        for (String raw : lineUp.split("\\R")) {
+        // Unescaped like LineUpParser.parse does, so "Tom &amp; Jerry" gets the same name and slug as in the line-up
+        for (String raw : HtmlUtils.htmlUnescape(lineUp).split("\\R")) {
             String line = raw.strip();
             if (line.isEmpty()) {
                 continue;
@@ -143,7 +148,7 @@ public final class TimetableParser {
     }
 
     private static String artistOf(String rest) {
-        String name = AFTER_NAME.matcher(rest).replaceFirst("").strip();
+        String name = LIVE_SET.matcher(AFTER_NAME.matcher(rest).replaceFirst("").strip()).replaceFirst("");
         if (name.isEmpty()) {
             return null;
         }

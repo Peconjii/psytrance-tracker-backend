@@ -5,7 +5,6 @@ import com.psytrance.psytrance_tracker_backend.model.Artist;
 import com.psytrance.psytrance_tracker_backend.model.ArtistAlias;
 import com.psytrance.psytrance_tracker_backend.model.ArtistBlock;
 import com.psytrance.psytrance_tracker_backend.model.ArtistEvent;
-import com.psytrance.psytrance_tracker_backend.model.LineupScan;
 import com.psytrance.psytrance_tracker_backend.repository.AdminChangeRepository;
 import com.psytrance.psytrance_tracker_backend.repository.ArtistAliasRepository;
 import com.psytrance.psytrance_tracker_backend.repository.ArtistBlockRepository;
@@ -14,16 +13,18 @@ import com.psytrance.psytrance_tracker_backend.repository.ArtistRepository;
 import com.psytrance.psytrance_tracker_backend.repository.LineupScanRepository;
 import com.psytrance.psytrance_tracker_backend.repository.MapArtistGenreRepository;
 import com.psytrance.psytrance_tracker_backend.util.ArtistNames;
+import jakarta.annotation.PostConstruct;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Clock;
-import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Cleaning up the artists found in line-ups: words that aren't artists ("Lounge", "Coming Soon") are hidden and
@@ -43,12 +44,13 @@ public class ArtistCleanup {
     private final MapArtistGenreRepository placementRepository;
     private final LineupScanRepository lineupScanRepository;
     private final AdminChangeRepository changeRepository;
+    private final MapGenres mapGenres;
     private final Clock clock;
 
     public ArtistCleanup(ArtistRepository artistRepository, ArtistEventRepository artistEventRepository,
                          ArtistBlockRepository blockRepository, ArtistAliasRepository aliasRepository,
                          MapArtistGenreRepository placementRepository, LineupScanRepository lineupScanRepository,
-                         AdminChangeRepository changeRepository, Clock clock) {
+                         AdminChangeRepository changeRepository, MapGenres mapGenres, Clock clock) {
         this.artistRepository = artistRepository;
         this.artistEventRepository = artistEventRepository;
         this.blockRepository = blockRepository;
@@ -56,7 +58,19 @@ public class ArtistCleanup {
         this.placementRepository = placementRepository;
         this.lineupScanRepository = lineupScanRepository;
         this.changeRepository = changeRepository;
+        this.mapGenres = mapGenres;
         this.clock = clock;
+    }
+
+    // Event genres count a merged spelling as the artist it was merged into ("Ajja Experience" plays what Ajja plays)
+    @PostConstruct
+    void useAliases() {
+        List<ArtistAlias> aliases = aliasRepository.findAll();
+        Map<Long, String> slugById = artistRepository.findAllById(aliases.stream().map(ArtistAlias::getArtistId).toList())
+                .stream().collect(Collectors.toMap(Artist::getId, Artist::getSlug));
+        mapGenres.useAliases(aliases.stream()
+                .filter(alias -> slugById.containsKey(alias.getArtistId()))
+                .collect(Collectors.toMap(ArtistAlias::getAliasSlug, alias -> slugById.get(alias.getArtistId()))));
     }
 
     @Transactional
@@ -133,7 +147,8 @@ public class ArtistCleanup {
         artistRepository.delete(from);
         artistRepository.flush();
         aliasRepository.save(new ArtistAlias(fromSlug, into.getId()));
-        rereadSoon(fromEvents);
+        useAliases();
+        lineupScanRepository.rereadSoon(fromEvents);
         log(AdminChange.ARTIST_MERGED, from.getName(), from.getName(), into.getName(), adminUsername, null);
     }
 
@@ -148,13 +163,8 @@ public class ArtistCleanup {
         artistEventRepository.deleteByArtistId(artist.getId());
         aliasRepository.deleteAll(aliasRepository.findByArtistId(artist.getId()));
         artistRepository.delete(artist);
-        rereadSoon(eventIds);
-    }
-
-    private void rereadSoon(List<Long> eventIds) {
-        List<LineupScan> scans = lineupScanRepository.findAllById(eventIds);
-        scans.forEach(scan -> scan.setScannedAt(Instant.EPOCH));
-        lineupScanRepository.saveAll(scans);
+        useAliases();
+        lineupScanRepository.rereadSoon(eventIds);
     }
 
     private void log(String kind, String target, String before, String after, String adminUsername, Long undoOf) {

@@ -49,7 +49,7 @@ public class MapController {
      */
     @GetMapping("/timetables")
     public List<TimetableDto> getTimetables(@RequestParam(defaultValue = "WEEK") MapPeriod period) {
-        return eventTimetables.forEvents(mapService.findEvents(period).stream().map(MapEventDto::id).toList());
+        return eventTimetables.forEvents(mapService.findEventIds(period));
     }
 
     /**
