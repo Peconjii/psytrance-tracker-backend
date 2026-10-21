@@ -197,6 +197,8 @@ public final class LineUpParser {
         name = TRAILING_SYMBOLS.matcher(name).replaceFirst("").strip();
         // Styled letters some organizers paste in ("𝗔𝗚𝗡𝗘𝗧𝗢𝗡") become plain ones, so the same artist gets the same slug
         name = Normalizer.normalize(name, Normalizer.Form.NFKC);
+        // Blank characters that count as letters ("ᅠ", the Hangul filler some organizers use as a spacer) are not a name
+        name = INVISIBLE.matcher(name).replaceAll("").strip();
 
         if (name.isEmpty() || name.length() > MAX_NAME_LENGTH
                 || name.split("\\s+").length > MAX_NAME_WORDS
@@ -227,6 +229,9 @@ public final class LineUpParser {
         return Arrays.stream(GENRE_SEPARATORS.split(name.toLowerCase(Locale.ROOT)))
                 .allMatch(GENRE_WORDS::contains);
     }
+
+    // Hangul fillers, the blank Braille pattern and zero-width characters
+    private static final Pattern INVISIBLE = Pattern.compile("[\\u115F\\u1160\\u3164\\uFFA0\\u2800\\u200B-\\u200D\\u2060\\uFEFF]");
 
     private static boolean containsLetter(String value) {
         return value.codePoints().anyMatch(Character::isLetter);

@@ -84,6 +84,8 @@ class LineUpParserTest {
             "4 Rooms", "10 KW FUNCTION ONE", "Ab 18 Jahren", "Freitag Start 22 UHR",
             "facebook.com/rene.ragas", "COSMIC CIRCUS presents", "Braingames Records", "Aajaadee Rec",
             "Earlybird 10", "Abendkasse vorhanden", "Come early. Stay late", "ATTENTION! Limited capacity",
+            // Blank spacers that count as letters: a Hangul filler (seen in 11 real line-ups), a blank Braille pattern
+            "ㅤ", "⠀⠀",
     })
     void skipsPartyDetailsThatLookLikeNames(String line) {
         assertThat(LineUpParser.findArtist(line)).isNull();
