@@ -39,6 +39,10 @@ public class AdminChange {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
+    // The earlier change this one undoes, or null for an ordinary change
+    @Column(name = "undo_of")
+    private Long undoOf;
+
     protected AdminChange() {
     }
 
@@ -49,6 +53,12 @@ public class AdminChange {
         this.beforeValue = beforeValue;
         this.afterValue = afterValue;
         this.createdAt = createdAt;
+    }
+
+    public AdminChange(String username, String kind, String target, String beforeValue, String afterValue, Instant createdAt,
+                       Long undoOf) {
+        this(username, kind, target, beforeValue, afterValue, createdAt);
+        this.undoOf = undoOf;
     }
 
     public Long getId() {
@@ -77,5 +87,9 @@ public class AdminChange {
 
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    public Long getUndoOf() {
+        return undoOf;
     }
 }

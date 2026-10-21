@@ -1,6 +1,7 @@
 package com.psytrance.psytrance_tracker_backend.service;
 
 import com.psytrance.psytrance_tracker_backend.dto.AdminArtistDto;
+import com.psytrance.psytrance_tracker_backend.dto.AdminChangeDto;
 import com.psytrance.psytrance_tracker_backend.model.AdminChange;
 import com.psytrance.psytrance_tracker_backend.model.Artist;
 import com.psytrance.psytrance_tracker_backend.model.LineupScan;
@@ -20,10 +21,12 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Which artists orbit which genre on the map. The placements live in the database, so admins can move an
@@ -113,6 +116,10 @@ public class MapPlacements {
      */
     @Transactional
     public AdminArtistDto setGenres(String name, List<String> genreIds, String adminUsername) {
+        return setGenres(name, genreIds, adminUsername, null);
+    }
+
+    private AdminArtistDto setGenres(String name, List<String> genreIds, String adminUsername, Long undoOf) {
         String slug = ArtistNames.slug(name);
         if (slug.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Artist name is empty");
@@ -142,11 +149,58 @@ public class MapPlacements {
 
         if (!removed.isEmpty() || !added.isEmpty()) {
             changeRepository.save(new AdminChange(adminUsername, AdminChange.ARTIST_GENRES, mapName,
-                    String.join(", ", before), String.join(", ", wanted), clock.instant()));
+                    String.join(", ", before), String.join(", ", wanted), clock.instant(), undoOf));
             mapGenres.usePlacements(placements());
             rereadEventsWith(slug);
         }
         return new AdminArtistDto(mapName, slug, wanted, !wanted.isEmpty());
+    }
+
+    /** The admin history, newest first, each change with the change that undid it (if any) */
+    public List<AdminChangeDto> history() {
+        List<AdminChange> changes = changeRepository.findTop200ByOrderByCreatedAtDescIdDesc();
+        Map<Long, Long> undoneBy = new HashMap<>();
+        for (AdminChange change : changes) {
+            if (change.getUndoOf() != null) {
+                undoneBy.put(change.getUndoOf(), change.getId());
+            }
+        }
+        return changes.stream().map(change -> AdminChangeDto.from(change, undoneBy.get(change.getId()))).toList();
+    }
+
+    /**
+     * Puts the genres an artist had before a change back, as a new change of its own. Refused when the change
+     * was undone already, or when the artist was changed again since: then the newer change must be undone first,
+     * so an undo never silently throws away a later fix.
+     */
+    @Transactional
+    public AdminChangeDto undo(long changeId, String adminUsername) {
+        AdminChange change = changeRepository.findById(changeId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Change not found"));
+        if (!AdminChange.ARTIST_GENRES.equals(change.getKind())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "This change can't be undone here");
+        }
+        if (changeRepository.existsByUndoOf(changeId)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "This change was undone already");
+        }
+        String slug = ArtistNames.slug(change.getTarget());
+        String now = placementRepository.findAllByOrderByIdAsc().stream()
+                .filter(row -> ArtistNames.slug(row.getArtistName()).equals(slug))
+                .map(MapArtistGenre::getGenreId)
+                .collect(Collectors.joining(", "));
+        if (!now.equals(nullToEmpty(change.getAfterValue()))) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    change.getTarget() + " was changed again since. Undo the newer change first.");
+        }
+        List<String> before = nullToEmpty(change.getBeforeValue()).isEmpty()
+                ? List.of()
+                : List.of(change.getBeforeValue().split(",\\s*"));
+        setGenres(change.getTarget(), before, adminUsername, changeId);
+        return history().stream().filter(c -> changeId == c.id()).findFirst().orElseThrow();
+    }
+
+    private static String nullToEmpty(String value) {
+        return value == null ? "" : value;
     }
 
     // The artist's events get their genres worked out again: marked as read long ago, the artist index
