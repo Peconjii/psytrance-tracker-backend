@@ -43,8 +43,15 @@ public final class TimetableParser {
     private TimetableParser() {
     }
 
-    /** A set: stage header it is under (or null), artist, start and (when written) end */
-    public record Slot(String stage, String artist, OffsetDateTime startsAt, OffsetDateTime endsAt) {
+    /**
+     * A set: stage header it is under (or null), artist, start and (when written) end. {@code note} is what the line
+     * says after the name ("• Twilight/Forest", "- Nano Rec - UK"), where organizers often name the set's genre.
+     */
+    public record Slot(String stage, String artist, OffsetDateTime startsAt, OffsetDateTime endsAt, String note) {
+
+        public Slot(String stage, String artist, OffsetDateTime startsAt, OffsetDateTime endsAt) {
+            this(stage, artist, startsAt, endsAt, null);
+        }
     }
 
     /**
@@ -126,7 +133,11 @@ public final class TimetableParser {
                     endsAt = endsAt.plusDays(1);
                 }
             }
-            slots.add(new Slot(stage, artist, startsAt.atOffset(offset), endsAt == null ? null : endsAt.atOffset(offset)));
+            String rest = m.group(7);
+            int at = rest.indexOf(artist);
+            String note = at < 0 ? null : rest.substring(at + artist.length()).strip();
+            slots.add(new Slot(stage, artist, startsAt.atOffset(offset), endsAt == null ? null : endsAt.atOffset(offset),
+                    note == null || note.isEmpty() ? null : note));
         }
         return slots;
     }

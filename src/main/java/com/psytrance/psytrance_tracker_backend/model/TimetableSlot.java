@@ -44,6 +44,10 @@ public class TimetableSlot {
     @Column(name = "utc_offset_minutes")
     private Integer utcOffsetMinutes;
 
+    // What the line says after the name, often the set's genre ("• Twilight/Forest")
+    @Column(name = "note", length = 200)
+    private String note;
+
     @Column(name = "source", nullable = false, length = 10)
     private String source;
 
@@ -51,7 +55,7 @@ public class TimetableSlot {
     }
 
     public TimetableSlot(Long eventId, int position, String stage, String artistName,
-                         LocalDateTime startsAt, LocalDateTime endsAt, Integer utcOffsetMinutes, String source) {
+                         LocalDateTime startsAt, LocalDateTime endsAt, Integer utcOffsetMinutes, String note, String source) {
         this.eventId = eventId;
         this.position = position;
         this.stage = stage;
@@ -59,6 +63,7 @@ public class TimetableSlot {
         this.startsAt = startsAt;
         this.endsAt = endsAt;
         this.utcOffsetMinutes = utcOffsetMinutes;
+        this.note = note;
         this.source = source;
     }
 
@@ -84,6 +89,10 @@ public class TimetableSlot {
 
     public Integer getUtcOffsetMinutes() {
         return utcOffsetMinutes;
+    }
+
+    public String getNote() {
+        return note;
     }
 
     public String getSource() {

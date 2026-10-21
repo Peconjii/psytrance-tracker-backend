@@ -20,8 +20,21 @@ class TimetableParserTest {
         return OffsetDateTime.of(2026, 10, day, hour, minute, 0, 0, CET);
     }
 
+    // Without the notes after the names, which one test checks on its own
     private static List<Slot> parse(String lineUp) {
-        return TimetableParser.parse(lineUp, FRIDAY, 22, CET);
+        return TimetableParser.parse(lineUp, FRIDAY, 22, CET).stream()
+                .map(s -> new Slot(s.stage(), s.artist(), s.startsAt(), s.endsAt()))
+                .toList();
+    }
+
+    @Test
+    void keepsWhatTheLineSaysAfterTheName() {
+        assertThat(TimetableParser.parse("""
+                22:00 - 00:00 | Naraka • Twilight/Forest
+                02:30 TRISTAN - Nano Rec - UK
+                05:00 Plain Name
+                """, FRIDAY, 22, CET)).extracting(Slot::note)
+                .containsExactly("• Twilight/Forest", "- Nano Rec - UK", null);
     }
 
     @Test

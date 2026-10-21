@@ -58,7 +58,8 @@ class TimetableIntegrationTest extends IntegrationTest {
                 "Club", "Scheduled", "Serbia", "Beograd", 44.8, 20.4, null, null)));
         when(goabaseClient.fetchParty(eventId)).thenReturn(Optional.of(new GoabasePartyDetails(eventId, "Timed Night", start,
                 null, "Club", "Scheduled", "Serbia", "Beograd", 44.8, 20.4, null, null, null,
-                "MAIN FLOOR\r\n22:00 - 00:00 | Derango\r\n00:00 - 02:00 | Megalopsy", "", "", "", null, null)));
+                "MAIN FLOOR\r\n22:00 - 00:00 | Derango\r\n00:00 - 02:00 | Megalopsy\r\n02:00 - 04:00 | Local Hero • Darkpsy/Forest",
+                "", "", "", null, null)));
         artistIndexer.indexNextBatch();
     }
 
@@ -67,7 +68,10 @@ class TimetableIntegrationTest extends IntegrationTest {
         mockMvc.perform(get("/api/events/{id}/timetable", eventId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.manual").value(false))
-                .andExpect(jsonPath("$.sets.length()").value(2))
+                .andExpect(jsonPath("$.sets.length()").value(3))
+                // Derango is forest on the map; Local Hero is not, but the line names the genre of the set
+                .andExpect(jsonPath("$.sets[0].genreId").value("forest"))
+                .andExpect(jsonPath("$.sets[2].genreId").value("dark"))
                 .andExpect(jsonPath("$.utcOffsetMinutes").value(120))
                 .andExpect(jsonPath("$.sets[0].stage").value("MAIN FLOOR"))
                 .andExpect(jsonPath("$.sets[0].startsAt").value(day + "T22:00:00"))
@@ -86,7 +90,7 @@ class TimetableIntegrationTest extends IntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].eventId").value(eventId))
-                .andExpect(jsonPath("$[0].sets.length()").value(2));
+                .andExpect(jsonPath("$[0].sets.length()").value(3));
     }
 
     @Test
@@ -105,7 +109,7 @@ class TimetableIntegrationTest extends IntegrationTest {
 
         mockMvc.perform(get("/api/admin/changes").header("Authorization", bearer(adminToken)))
                 .andExpect(jsonPath("$[0].kind").value("EVENT_TIMETABLE"))
-                .andExpect(jsonPath("$[0].before").value("2 sets, from the line-up"))
+                .andExpect(jsonPath("$[0].before").value("3 sets, from the line-up"))
                 .andExpect(jsonPath("$[0].after").value("1 sets, set by hand"));
 
         mockMvc.perform(delete("/api/admin/events/{id}/timetable", eventId).header("Authorization", bearer(adminToken)))
@@ -113,7 +117,7 @@ class TimetableIntegrationTest extends IntegrationTest {
                 .andExpect(jsonPath("$.sets.length()").value(0));
         artistIndexer.indexNextBatch();
         mockMvc.perform(get("/api/events/{id}/timetable", eventId))
-                .andExpect(jsonPath("$.sets.length()").value(2));
+                .andExpect(jsonPath("$.sets.length()").value(3));
     }
 
     @Test

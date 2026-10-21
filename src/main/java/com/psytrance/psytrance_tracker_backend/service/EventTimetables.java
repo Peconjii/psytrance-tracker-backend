@@ -39,16 +39,18 @@ public class EventTimetables {
     private final AdminChangeRepository changeRepository;
     private final EventService eventService;
     private final GoabaseClient goabaseClient;
+    private final MapGenres mapGenres;
     private final Clock clock;
 
     public EventTimetables(TimetableSlotRepository slotRepository, LineupScanRepository lineupScanRepository,
                            AdminChangeRepository changeRepository, EventService eventService,
-                           GoabaseClient goabaseClient, Clock clock) {
+                           GoabaseClient goabaseClient, MapGenres mapGenres, Clock clock) {
         this.slotRepository = slotRepository;
         this.lineupScanRepository = lineupScanRepository;
         this.changeRepository = changeRepository;
         this.eventService = eventService;
         this.goabaseClient = goabaseClient;
+        this.mapGenres = mapGenres;
         this.clock = clock;
     }
 
@@ -66,13 +68,35 @@ public class EventTimetables {
         return byEvent.entrySet().stream().map(e -> toDto(e.getKey(), e.getValue())).toList();
     }
 
-    private static TimetableDto toDto(long eventId, List<TimetableSlot> slots) {
+    private TimetableDto toDto(long eventId, List<TimetableSlot> slots) {
         boolean manual = slots.stream().anyMatch(s -> TimetableSlot.MANUAL.equals(s.getSource()));
         Integer offset = slots.isEmpty() ? null : slots.get(0).getUtcOffsetMinutes();
         return new TimetableDto(eventId, manual, offset, slots.stream()
                 .map(s -> new TimetableDto.Set(s.getStage(), s.getArtistName(), ArtistNames.slug(s.getArtistName()),
-                        s.getStartsAt(), s.getEndsAt()))
+                        s.getStartsAt(), s.getEndsAt(), genreOf(s)))
                 .toList());
+    }
+
+    // An admin who picks a set's genre: kept in the note as "#genre:forest"
+    private static final String GENRE_NOTE = "#genre:";
+
+    /** The set's genre: the artist's genre on the map, else the genre named next to the set, else the stage's */
+    private String genreOf(TimetableSlot slot) {
+        String note = slot.getNote();
+        if (note != null && note.startsWith(GENRE_NOTE)) {
+            String id = note.substring(GENRE_NOTE.length());
+            return mapGenres.isGenre(id) ? id : null;
+        }
+        List<String> artist = mapGenres.genresOfArtist(slot.getArtistName());
+        if (!artist.isEmpty()) {
+            return artist.get(0);
+        }
+        List<String> written = mapGenres.genresIn(note);
+        if (!written.isEmpty()) {
+            return written.get(0);
+        }
+        List<String> stage = mapGenres.genresIn(slot.getStage());
+        return stage.isEmpty() ? null : stage.get(0);
     }
 
     /** The timetable read from a line-up; an admin's timetable is kept as it is */
@@ -85,7 +109,7 @@ public class EventTimetables {
         replace(eventId, slots.stream()
                 .map(s -> new TimetableDto.Set(s.stage(), s.artist(), null, s.startsAt().toLocalDateTime(),
                         s.endsAt() == null ? null : s.endsAt().toLocalDateTime()))
-                .toList(), offset, TimetableSlot.AUTO);
+                .toList(), slots.stream().map(TimetableParser.Slot::note).toList(), offset, TimetableSlot.AUTO);
     }
 
     /** An admin's timetable for the event; it replaces the one read from the line-up */
@@ -103,7 +127,11 @@ public class EventTimetables {
             }
         }
         TimetableDto before = get(eventId);
-        replace(eventId, sets, before.utcOffsetMinutes() != null ? before.utcOffsetMinutes() : venueOffset(eventId),
+        // A genre the admin picked for a set is kept with it; without one the set's genre is worked out as usual
+        List<String> notes = sets.stream()
+                .map(set -> set.genreId() != null && mapGenres.isGenre(set.genreId()) ? GENRE_NOTE + set.genreId() : null)
+                .toList();
+        replace(eventId, sets, notes, before.utcOffsetMinutes() != null ? before.utcOffsetMinutes() : venueOffset(eventId),
                 TimetableSlot.MANUAL);
         log(eventId, before, sets.size() + " sets, set by hand", adminUsername);
         return get(eventId);
@@ -136,14 +164,15 @@ public class EventTimetables {
         }
     }
 
-    private void replace(long eventId, List<TimetableDto.Set> sets, Integer utcOffsetMinutes, String source) {
+    private void replace(long eventId, List<TimetableDto.Set> sets, List<String> notes, Integer utcOffsetMinutes, String source) {
         slotRepository.deleteByEventId(eventId);
         slotRepository.flush();
         List<TimetableSlot> rows = new ArrayList<>();
         for (int i = 0; i < sets.size(); i++) {
             TimetableDto.Set set = sets.get(i);
             String stage = set.stage() == null || set.stage().isBlank() ? null : cut(set.stage().strip());
-            rows.add(new TimetableSlot(eventId, i, stage, cut(set.artist().strip()), set.startsAt(), set.endsAt(), utcOffsetMinutes, source));
+            rows.add(new TimetableSlot(eventId, i, stage, cut(set.artist().strip()), set.startsAt(), set.endsAt(),
+                    utcOffsetMinutes, notes.get(i) == null ? null : cut200(notes.get(i)), source));
         }
         slotRepository.saveAll(rows);
     }
@@ -155,6 +184,10 @@ public class EventTimetables {
                 : before.sets().size() + " sets, " + (before.manual() ? "set by hand" : "from the line-up");
         changeRepository.save(new AdminChange(adminUsername, AdminChange.EVENT_TIMETABLE,
                 target.length() > 200 ? target.substring(0, 199) + "…" : target, beforeValue, after, clock.instant()));
+    }
+
+    private static String cut200(String value) {
+        return value.length() > 200 ? value.substring(0, 200) : value;
     }
 
     private static String cut(String value) {
