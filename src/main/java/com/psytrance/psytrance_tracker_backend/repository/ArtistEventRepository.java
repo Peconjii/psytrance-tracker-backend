@@ -16,4 +16,8 @@ public interface ArtistEventRepository extends JpaRepository<ArtistEvent, Long> 
     @Modifying
     @Query("delete from ArtistEvent ae where ae.eventId = :eventId")
     void deleteByEventId(@Param("eventId") Long eventId);
+
+    @Modifying
+    @Query("delete from ArtistEvent ae where ae.artist.id = :artistId")
+    void deleteByArtistId(@Param("artistId") Long artistId);
 }

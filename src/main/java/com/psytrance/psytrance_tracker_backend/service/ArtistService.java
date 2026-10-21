@@ -4,8 +4,12 @@ import com.psytrance.psytrance_tracker_backend.dto.ArtistDto;
 import com.psytrance.psytrance_tracker_backend.dto.ArtistSummary;
 import com.psytrance.psytrance_tracker_backend.dto.EventDto;
 import com.psytrance.psytrance_tracker_backend.model.Artist;
+import com.psytrance.psytrance_tracker_backend.model.ArtistAlias;
+import com.psytrance.psytrance_tracker_backend.model.ArtistBlock;
 import com.psytrance.psytrance_tracker_backend.model.ArtistEvent;
 import com.psytrance.psytrance_tracker_backend.model.LineupScan;
+import com.psytrance.psytrance_tracker_backend.repository.ArtistAliasRepository;
+import com.psytrance.psytrance_tracker_backend.repository.ArtistBlockRepository;
 import com.psytrance.psytrance_tracker_backend.repository.ArtistEventRepository;
 import com.psytrance.psytrance_tracker_backend.repository.ArtistRepository;
 import com.psytrance.psytrance_tracker_backend.repository.LineupScanRepository;
@@ -34,15 +38,21 @@ public class ArtistService {
     private final ArtistRepository artistRepository;
     private final ArtistEventRepository artistEventRepository;
     private final LineupScanRepository lineupScanRepository;
+    private final ArtistBlockRepository artistBlockRepository;
+    private final ArtistAliasRepository artistAliasRepository;
     private final EventService eventService;
 
     public ArtistService(ArtistRepository artistRepository,
                          ArtistEventRepository artistEventRepository,
                          LineupScanRepository lineupScanRepository,
+                         ArtistBlockRepository artistBlockRepository,
+                         ArtistAliasRepository artistAliasRepository,
                          EventService eventService) {
         this.artistRepository = artistRepository;
         this.artistEventRepository = artistEventRepository;
         this.lineupScanRepository = lineupScanRepository;
+        this.artistBlockRepository = artistBlockRepository;
+        this.artistAliasRepository = artistAliasRepository;
         this.eventService = eventService;
     }
 
@@ -77,11 +87,24 @@ public class ArtistService {
     public void saveLineUp(long eventId, List<String> artistNames, Instant scannedAt) {
         artistEventRepository.deleteByEventId(eventId);
 
-        // Organizers sometimes list an artist twice (two sets, two stages): keep one, best spelling
+        // Organizers sometimes list an artist twice (two sets, two stages): keep one, best spelling.
+        // Words admins marked as "not an artist" are skipped, and merged spellings count for their artist.
+        Set<String> blocked = artistBlockRepository.findAllById(artistNames.stream().map(ArtistNames::slug).toList()).stream()
+                .map(ArtistBlock::getSlug).collect(Collectors.toSet());
+        Map<String, Long> aliases = artistAliasRepository.findAllById(artistNames.stream().map(ArtistNames::slug).toList()).stream()
+                .collect(Collectors.toMap(ArtistAlias::getAliasSlug, ArtistAlias::getArtistId));
+        Map<Long, Artist> aliasTargets = artistRepository.findAllById(aliases.values()).stream()
+                .collect(Collectors.toMap(Artist::getId, Function.identity()));
         Map<String, String> namesBySlug = new LinkedHashMap<>();
         for (String name : artistNames) {
             String slug = ArtistNames.slug(name);
-            if (!slug.isEmpty()) {
+            if (slug.isEmpty() || blocked.contains(slug)) {
+                continue;
+            }
+            Artist target = aliases.containsKey(slug) ? aliasTargets.get(aliases.get(slug)) : null;
+            if (target != null) {
+                namesBySlug.putIfAbsent(target.getSlug(), target.getName());
+            } else {
                 namesBySlug.merge(slug, name, ArtistNames::preferredName);
             }
         }

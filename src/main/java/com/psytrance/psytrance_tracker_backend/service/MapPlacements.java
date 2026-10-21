@@ -46,6 +46,7 @@ public class MapPlacements {
     private final LineupScanRepository lineupScanRepository;
     private final MapGenres mapGenres;
     private final EventGenreAdmin eventGenreAdmin;
+    private final ArtistCleanup artistCleanup;
     private final Clock clock;
 
     public MapPlacements(MapArtistGenreRepository placementRepository,
@@ -55,6 +56,7 @@ public class MapPlacements {
                          LineupScanRepository lineupScanRepository,
                          MapGenres mapGenres,
                          EventGenreAdmin eventGenreAdmin,
+                         ArtistCleanup artistCleanup,
                          Clock clock) {
         this.placementRepository = placementRepository;
         this.changeRepository = changeRepository;
@@ -63,6 +65,7 @@ public class MapPlacements {
         this.lineupScanRepository = lineupScanRepository;
         this.mapGenres = mapGenres;
         this.eventGenreAdmin = eventGenreAdmin;
+        this.artistCleanup = artistCleanup;
         this.clock = clock;
     }
 
@@ -181,13 +184,16 @@ public class MapPlacements {
         AdminChange change = changeRepository.findById(changeId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Change not found"));
         boolean event = AdminChange.EVENT_GENRES.equals(change.getKind());
-        if (!event && !AdminChange.ARTIST_GENRES.equals(change.getKind())) {
+        boolean hidden = AdminChange.ARTIST_HIDDEN.equals(change.getKind());
+        if (!event && !hidden && !AdminChange.ARTIST_GENRES.equals(change.getKind())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "This change can't be undone here");
         }
         if (changeRepository.existsByUndoOf(changeId)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "This change was undone already");
         }
-        String now = event ? eventGenreAdmin.manualValue(EventGenreAdmin.eventIdOf(change.getTarget())) : artistGenres(change.getTarget());
+        String now = event ? eventGenreAdmin.manualValue(EventGenreAdmin.eventIdOf(change.getTarget()))
+                : hidden ? artistCleanup.hiddenValue(change.getTarget())
+                : artistGenres(change.getTarget());
         if (!now.equals(nullToEmpty(change.getAfterValue()))) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     change.getTarget() + " was changed again since. Undo the newer change first.");
@@ -195,7 +201,9 @@ public class MapPlacements {
         List<String> before = nullToEmpty(change.getBeforeValue()).isEmpty()
                 ? List.of()
                 : List.of(change.getBeforeValue().split(",\\s*"));
-        if (event) {
+        if (hidden) {
+            artistCleanup.setHidden(change.getTarget(), ArtistCleanup.HIDDEN.equals(change.getBeforeValue()), adminUsername, changeId);
+        } else if (event) {
             eventGenreAdmin.setGenres(EventGenreAdmin.eventIdOf(change.getTarget()), before, adminUsername, changeId);
         } else {
             setGenres(change.getTarget(), before, adminUsername, changeId);

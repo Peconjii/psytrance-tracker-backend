@@ -18,6 +18,10 @@ public class AdminChange {
     public static final String ARTIST_GENRES = "ARTIST_GENRES";
     /** Genres an admin set by hand for an event; target is "<event id> · <event name>" */
     public static final String EVENT_GENRES = "EVENT_GENRES";
+    /** A line-up word marked as "not an artist", or shown again; target is the word */
+    public static final String ARTIST_HIDDEN = "ARTIST_HIDDEN";
+    /** Two spellings merged; target is the spelling that was merged away, after is the artist it went into */
+    public static final String ARTIST_MERGED = "ARTIST_MERGED";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
