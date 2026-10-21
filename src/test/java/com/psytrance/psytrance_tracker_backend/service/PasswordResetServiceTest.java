@@ -25,6 +25,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -56,6 +57,19 @@ class PasswordResetServiceTest {
 
         verify(tokenRepository, never()).save(any());
         verify(mailer, never()).sendResetLink(any(), anyString(), any());
+    }
+
+    @Test
+    void oneAddressGetsAtMostThreeResetEmailsAnHour() {
+        User user = user("milos", "milos@example.com", "old-password");
+        // The lookup ignores case, like the real repository
+        when(userRepository.findAllByEmailIgnoreCase(anyString())).thenReturn(List.of(user));
+
+        for (int i = 0; i < 5; i++) {
+            service.requestReset(i % 2 == 0 ? "milos@example.com" : "MILOS@example.com");
+        }
+
+        verify(mailer, times(PasswordResetService.MAX_EMAILS_PER_HOUR)).sendResetLink(eq(user), anyString(), eq(TTL));
     }
 
     @Test

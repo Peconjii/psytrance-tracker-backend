@@ -16,14 +16,24 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayDeque;
 import java.util.Base64;
+import java.util.Deque;
 import java.util.HexFormat;
+import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * "Forgot password" flow: email a one-time link, then accept a new password for it.
  */
 @Service
 public class PasswordResetService {
+
+    /** Reset emails one address can get per hour; more are skipped without telling, so nobody can flood an inbox */
+    static final int MAX_EMAILS_PER_HOUR = 3;
+    private static final Duration WINDOW = Duration.ofHours(1);
 
     private final UserRepository userRepository;
     private final PasswordResetTokenRepository tokenRepository;
@@ -33,6 +43,9 @@ public class PasswordResetService {
     private final Duration tokenTtl;
     private final String frontendUrl;
     private final SecureRandom random = new SecureRandom();
+    // When each address was last sent reset emails, within the hour. The deques are only touched inside compute
+    // calls, which the map runs one at a time per address. In memory: a restart forgets it, which is fine.
+    private final Map<String, Deque<Instant>> sentByEmail = new ConcurrentHashMap<>();
 
     public PasswordResetService(UserRepository userRepository,
                                 PasswordResetTokenRepository tokenRepository,
@@ -56,6 +69,9 @@ public class PasswordResetService {
      */
     @Transactional
     public void requestReset(String email) {
+        if (!mayEmail(email.trim().toLowerCase(Locale.ROOT))) {
+            return;
+        }
         // Email isn't unique, so one address can own several accounts; each gets its own link
         for (User user : userRepository.findAllByEmailIgnoreCase(email.trim())) {
             tokenRepository.deleteByUser(user); // only the newest link works
@@ -76,6 +92,29 @@ public class PasswordResetService {
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
         tokenRepository.delete(token); // a link works only once
+    }
+
+    // True when this address got fewer than MAX_EMAILS_PER_HOUR requests in the last hour, and counts this one
+    private boolean mayEmail(String email) {
+        Instant now = clock.instant();
+        Instant windowStart = now.minus(WINDOW);
+        // Addresses quiet for an hour are forgotten, so the map doesn't grow with every address ever typed
+        for (String key : sentByEmail.keySet()) {
+            sentByEmail.computeIfPresent(key, (k, times) -> times.peekLast().isBefore(windowStart) ? null : times);
+        }
+        boolean[] allowed = {false};
+        sentByEmail.compute(email, (key, times) -> {
+            Deque<Instant> kept = times == null ? new ArrayDeque<>() : times;
+            while (!kept.isEmpty() && kept.peekFirst().isBefore(windowStart)) {
+                kept.pollFirst();
+            }
+            if (kept.size() < MAX_EMAILS_PER_HOUR) {
+                kept.addLast(now);
+                allowed[0] = true;
+            }
+            return kept.isEmpty() ? null : kept;
+        });
+        return allowed[0];
     }
 
     // 32 random bytes, URL-safe so it can go straight into the link
