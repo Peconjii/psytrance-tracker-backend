@@ -73,9 +73,21 @@ public class MapService {
                                 .toList()))));
     }
 
-    /** Replaces the stored genres of an event (line-ups change as organizers announce more artists). */
+    /**
+     * Replaces the worked-out genres of an event (line-ups change as organizers announce more artists).
+     * Genres an admin set by hand win: then nothing is replaced.
+     */
     @Transactional
     public void saveGenres(long eventId, List<GenreShare> genres) {
+        if (eventGenreRepository.existsByEventIdAndSource(eventId, GenreShare.Source.MANUAL)) {
+            return;
+        }
+        replaceGenres(eventId, genres);
+    }
+
+    /** Replaces the stored genres of an event whatever they were, for the admin panel */
+    @Transactional
+    public void replaceGenres(long eventId, List<GenreShare> genres) {
         eventGenreRepository.deleteByEventId(eventId);
         // The delete must reach the database before the inserts, or the unique (event, genre) constraint fails
         eventGenreRepository.flush();

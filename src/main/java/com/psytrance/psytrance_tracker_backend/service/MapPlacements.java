@@ -45,6 +45,7 @@ public class MapPlacements {
     private final ArtistEventRepository artistEventRepository;
     private final LineupScanRepository lineupScanRepository;
     private final MapGenres mapGenres;
+    private final EventGenreAdmin eventGenreAdmin;
     private final Clock clock;
 
     public MapPlacements(MapArtistGenreRepository placementRepository,
@@ -53,6 +54,7 @@ public class MapPlacements {
                          ArtistEventRepository artistEventRepository,
                          LineupScanRepository lineupScanRepository,
                          MapGenres mapGenres,
+                         EventGenreAdmin eventGenreAdmin,
                          Clock clock) {
         this.placementRepository = placementRepository;
         this.changeRepository = changeRepository;
@@ -60,6 +62,7 @@ public class MapPlacements {
         this.artistEventRepository = artistEventRepository;
         this.lineupScanRepository = lineupScanRepository;
         this.mapGenres = mapGenres;
+        this.eventGenreAdmin = eventGenreAdmin;
         this.clock = clock;
     }
 
@@ -177,17 +180,14 @@ public class MapPlacements {
     public AdminChangeDto undo(long changeId, String adminUsername) {
         AdminChange change = changeRepository.findById(changeId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Change not found"));
-        if (!AdminChange.ARTIST_GENRES.equals(change.getKind())) {
+        boolean event = AdminChange.EVENT_GENRES.equals(change.getKind());
+        if (!event && !AdminChange.ARTIST_GENRES.equals(change.getKind())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "This change can't be undone here");
         }
         if (changeRepository.existsByUndoOf(changeId)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "This change was undone already");
         }
-        String slug = ArtistNames.slug(change.getTarget());
-        String now = placementRepository.findAllByOrderByIdAsc().stream()
-                .filter(row -> ArtistNames.slug(row.getArtistName()).equals(slug))
-                .map(MapArtistGenre::getGenreId)
-                .collect(Collectors.joining(", "));
+        String now = event ? eventGenreAdmin.manualValue(EventGenreAdmin.eventIdOf(change.getTarget())) : artistGenres(change.getTarget());
         if (!now.equals(nullToEmpty(change.getAfterValue()))) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     change.getTarget() + " was changed again since. Undo the newer change first.");
@@ -195,8 +195,21 @@ public class MapPlacements {
         List<String> before = nullToEmpty(change.getBeforeValue()).isEmpty()
                 ? List.of()
                 : List.of(change.getBeforeValue().split(",\\s*"));
-        setGenres(change.getTarget(), before, adminUsername, changeId);
+        if (event) {
+            eventGenreAdmin.setGenres(EventGenreAdmin.eventIdOf(change.getTarget()), before, adminUsername, changeId);
+        } else {
+            setGenres(change.getTarget(), before, adminUsername, changeId);
+        }
         return history().stream().filter(c -> changeId == c.id()).findFirst().orElseThrow();
+    }
+
+    // The genres an artist is placed in now, as the history writes them: "forest, twilight"
+    private String artistGenres(String name) {
+        String slug = ArtistNames.slug(name);
+        return placementRepository.findAllByOrderByIdAsc().stream()
+                .filter(row -> ArtistNames.slug(row.getArtistName()).equals(slug))
+                .map(MapArtistGenre::getGenreId)
+                .collect(Collectors.joining(", "));
     }
 
     private static String nullToEmpty(String value) {

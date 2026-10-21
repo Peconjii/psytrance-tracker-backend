@@ -8,6 +8,8 @@ public record GenreShare(String genreId, double share, Source source) {
 
     /** Where a genre comes from, most reliable first. */
     public enum Source {
+        /** An admin set the genres of this event by hand; the artist index leaves them alone. */
+        MANUAL,
         /** An artist in the line-up is placed in this genre on the map. */
         ARTIST,
         /** A stage header in the line-up names the genre ("DARKPSY / FOREST STAGE"). */

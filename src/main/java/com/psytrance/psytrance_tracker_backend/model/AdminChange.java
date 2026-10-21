@@ -16,6 +16,8 @@ public class AdminChange {
 
     /** What was changed; target says which one (an artist name, an event id...) */
     public static final String ARTIST_GENRES = "ARTIST_GENRES";
+    /** Genres an admin set by hand for an event; target is "<event id> · <event name>" */
+    public static final String EVENT_GENRES = "EVENT_GENRES";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
