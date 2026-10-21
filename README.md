@@ -1,20 +1,20 @@
-# PsyTrance Event Tracker — Backend
+# Map of Psy: backend
 
 [![CI](https://github.com/Peconjii/psytrance-tracker-backend/actions/workflows/ci.yml/badge.svg)](https://github.com/Peconjii/psytrance-tracker-backend/actions/workflows/ci.yml)
 
-REST API for **PsyTrance Event Tracker**, a web app for discovering psytrance festivals and parties around the world.
-It pulls events from the public [Goabase](https://www.goabase.net) API, serves them searchable and paginated,
-and lets users register, save favorite events, say they're going, write reviews, get reminder emails before
-their events and look up where an artist plays next.
+REST API for **Map of Psy**, a galaxy of psytrance genres where every upcoming party sails as a ship to the
+stars of the genres it plays. It pulls events from the public [Goabase](https://www.goabase.net) API, reads
+their line-ups to work out who plays where and which **map genres** each party has, reads **timetables** from
+the line-ups, and lets users register, save events, say they're going, write reviews, **follow artists** and
+get emails. Admins correct the data in an **admin panel** with a change history and undo.
 
 **Frontend (React):** [Peconjii/psytrance-tracker](https://github.com/Peconjii/psytrance-tracker)
 
-**Live demo: [psytrance-tracker.vercel.app](https://psytrance-tracker.vercel.app)** · API:
+**Live: [psyatlas-one.vercel.app](https://psyatlas-one.vercel.app)** · API:
 [psytrance-tracker-backend.onrender.com/api/events](https://psytrance-tracker-backend.onrender.com/api/events)
 
 > Hosted on free tiers (Vercel, Render, Neon). The backend sleeps when nobody uses it, so the first load can take 1–2 minutes.
-
-![Events page served by this API](docs/events.png)
+> An outside cron job pings `GET /api/health` every 14 minutes to keep it awake, so the background jobs keep running.
 
 ## Tech stack
 
@@ -39,10 +39,10 @@ flowchart LR
         S --> G[GoabaseClient]
         S --> Y[YouTubeClient]
         F[JwtFilter] -.checks token.-> C
-        J[BackgroundJobs<br/>reminders hourly,<br/>artist index every 3 min] --> S
+        J[BackgroundJobs<br/>reminders + new-gig emails hourly,<br/>artist index every few minutes] --> S
     end
 
-    R --> DB[(PostgreSQL<br/>users, favorites, reviews, going,<br/>reminders sent, artists,<br/>aftermovie lookups)]
+    R --> DB[(PostgreSQL<br/>users, favorites, reviews, going,<br/>artists, event genres, timetables,<br/>map placements, follows,<br/>feedback, admin changes)]
     G -->|full list, at most every 10 min| GA[Goabase API]
     Y -->|festival aftermovies, about once a month each| YT[YouTube Data API]
 ```
@@ -70,8 +70,8 @@ Requests go through the usual layers: **controller** (HTTP, validation) → **se
   Genre titles ("Darkpsy/Forest"), credits ("Artwork by ...") and country tags ("[DE]") are left out.
 - **An artist index built in the background.** Goabase only has line-ups on its single-event endpoint, so
   "where does this artist play?" would mean hundreds of Goabase calls per request. Instead `ArtistIndexer`
-  reads 25 line-ups every 3 minutes (events never read first, then the oldest reads, since organizers keep
-  adding artists) and stores who plays where in PostgreSQL. The same artist written differently ("ACE VENTURA",
+  reads 25 line-ups every few minutes (`APP_ARTISTS_INTERVAL`; events never read first, then the oldest reads,
+  since organizers keep adding artists; on a tie the soonest event first) and stores who plays where in PostgreSQL. The same artist written differently ("ACE VENTURA",
   "Ace Ventura") is matched by a slug (`ace-ventura`) that also serves as the page address, and the normal
   spelling is preferred over all-caps.
 - **Reminder emails that are safe to run any time.** `ReminderService` runs every hour and emails users about
@@ -83,6 +83,26 @@ Requests go through the usual layers: **controller** (HTTP, validation) → **se
   (`GET /api/events/going?ids=...`), answered with one `GROUP BY` query plus one query for the user's own
   marks. Marking twice is harmless: the insert uses PostgreSQL's `ON CONFLICT DO NOTHING` against a unique
   constraint, so even two clicks at the same moment can't create a duplicate.
+- **Map genres from the line-up.** `EventGenres` gives each party its Map of Psy genres from the best evidence
+  it has: artists placed on the map count most, then genres named in stage headers ("DARKPSY / FOREST STAGE"),
+  and only when the line-up says nothing the genres the organizer ticked on Goabase (read from its JSON-LD,
+  ignored when more than 4 are ticked). Every artist counts once, split between their genres, so the shares say
+  where the party's ship sits between the stars. Genres an admin set by hand (`MANUAL`) are never overwritten.
+- **Timetables from free text.** `TimetableParser` reads set times written in line-ups ("22:00 - 00:00 | Naraka",
+  "7:00 PM – 8:00 PM", sets after midnight, stage headers, date lines), on the venue's clock with its UTC offset.
+  Each set gets a map genre (its artist, a genre written next to it, or its stage) for the live fleets.
+- **Map placements in the database.** Which artist orbits which genre started as `genres.json` and now lives in
+  `map_artist_genres` (seeded from the JSON on first start), so admins can change it and it applies at once:
+  to the map, and to the genres of that artist's events, whose line-ups are marked to be read again.
+- **Admin panel without roles in the database.** Admins are the usernames in `ADMIN_USERNAMES`, compared exactly.
+  `/api/admin/**` is closed in `SecurityConfig` and every endpoint checks again; a test finds every admin
+  endpoint and checks that guests get 401 and users 403. Every change is logged in `admin_changes` (who,
+  before, after) and can be undone as a new change, refused when the same thing was changed again since.
+- **Following artists.** Follows and the gigs a follower already knows about are stored, so the hourly job
+  emails only gigs that are new, each once, and the gigs known when following starts are not mailed.
+- **Abuse limits.** 10 wrong passwords for one username lock it for 15 minutes; one address gets at most 3
+  password reset emails an hour; the feedback form takes 5 messages an hour per address and quietly drops
+  bots that fill a hidden field. Feedback page links must be pages of this site.
 - **Testable time.** Date logic ("upcoming", "this weekend") uses an injected `java.time.Clock`, so tests can
   pin "today" to a fixed date and move time forward to test cache expiry.
 - **Stateless auth.** Login returns a signed JWT; every protected request is authenticated from its
@@ -120,6 +140,24 @@ Requests go through the usual layers: **controller** (HTTP, validation) → **se
 | `PUT` | `/api/me/reminders` | ✔ | Turn reminder emails on or off (`enabled`) |
 | `GET` | `/api/artists?search=` | – | Artists playing upcoming events (`slug`, `name`, `upcomingEvents`), busiest first; search ignores case and accents |
 | `GET` | `/api/artists/{slug}` | – | One artist and their upcoming events, soonest first |
+| `GET` | `/api/events/{id}/timetable` | – | Set times read from the line-up or set by an admin (`stage`, `artist`, `startsAt`, `endsAt`, `genreId`) |
+| `GET` | `/api/map/events?period=` | – | The events of the next `WEEK` or `MONTH` with their map genres (`genreId`, `share`, `source`) |
+| `GET` | `/api/map/genres?ids=1,2,3` | – | Map genres of up to 100 events, for the event tickets |
+| `GET` | `/api/map/timetables?period=` | – | The period's timetables, for the live fleets |
+| `GET` | `/api/map/placements` | – | Which artists orbit which genre: `{ genreId: [names] }` |
+| `GET` | `/api/me/follows` | ✔ | Artists you follow |
+| `PUT` / `DELETE` | `/api/me/follows/{slug}` | ✔ | Follow / unfollow an artist |
+| `GET` | `/api/me/follows/gigs` | ✔ | Upcoming events where artists you follow play |
+| `POST` | `/api/feedback` | – | Send feedback (`kind`, `aboutType`, `aboutRef`, `pageUrl`, `message`, `email`) |
+| `GET` | `/api/health` | – | `{ "status": "ok" }` without touching the database, for a keep-awake ping |
+| `GET` / `PATCH` | `/api/admin/feedback[/{id}]` | admin | Feedback inbox; change a message's status |
+| `GET` | `/api/admin/artists?search=` | admin | Map and line-up artists with their map genres |
+| `PUT` | `/api/admin/artists/genres` | admin | Place an artist in exactly these genres (`name`, `genres`) |
+| `POST` | `/api/admin/artists/hidden`, `/merge` | admin | Hide a word that isn't an artist; merge two spellings of one artist |
+| `GET` / `PUT` | `/api/admin/events/{id}/genres` | admin | An event's genres; set them by hand (`[]` hands back to the line-up) |
+| `PUT` / `DELETE` | `/api/admin/events/{id}/timetable` | admin | Set a timetable by hand; back to the line-up |
+| `GET` | `/api/admin/changes` | admin | Change history, newest first |
+| `POST` | `/api/admin/changes/{id}/undo` | admin | Undo a change |
 | `GET` | `/api/favorites/{userId}` | ✔ own | User's favorites |
 | `POST` | `/api/favorites/{userId}` | ✔ own | Add favorite (`eventId`, `eventName`) |
 | `DELETE` | `/api/favorites/{userId}?eventId=` | ✔ own | Remove favorite |
@@ -221,6 +259,13 @@ In IntelliJ, set the same variables under *Run → Edit Configurations → Envir
 | `MAIL_FROM` | `you@gmail.com` |
 | `FRONTEND_URL` | `http://localhost:5173` (default), used to build the reset link and allowed by CORS |
 
+**Other settings**
+
+| Variable | What it does |
+|---|---|
+| `ADMIN_USERNAMES` | Comma-separated usernames that may use the admin panel, compared exactly (`admin,psyatlas`) |
+| `APP_ARTISTS_INTERVAL` | How often the artist index reads a batch of 25 line-ups (default `PT3M`; `PT30M` saves free database hours) |
+
 Without `SPRING_MAIL_HOST`, the emails (reset links, reminders) are written to the application log instead,
 which is enough for local development.
 
@@ -250,7 +295,10 @@ GitHub Actions runs the same tests on every push.
   expired or made-up links are rejected
 - `ReminderServiceTest`: only events starting in the next 3 days, saved and going events in one email, nothing
   sent twice, failed emails retried, reminders that were turned off stay off
-- `ArtistIndexerTest`: events never read come first, at most one batch per run, stops when Goabase is down
+- `ArtistIndexerTest`: events never read come first, then the oldest reads, soonest event first on a tie; at
+  most one batch per run; stops when Goabase is down; map genres stored with the line-up
+- `EventGenresTest`, `MapGenresTest`: genres from map artists, stage headers and keywords; merged spellings
+- `TimetableParserTest`: set times in many styles, after midnight, stages and dates, HTML entities, "Live" acts
 - `LineUpParserTest`, `ArtistNamesTest`: artist names from real line-ups; spellings of one artist share a slug
 
 **Integration tests** start the whole application with real security and a real PostgreSQL, and call the API
@@ -268,6 +316,12 @@ through MockMvc. Only Goabase is faked.
 - `ReminderIntegrationTest`: one reminder per user and event even across runs, users can turn reminders off
 - `ArtistIntegrationTest`: indexing line-ups, artist pages, busiest-first list, accent-free search, a re-read
   line-up replaces the old one
+- `MapIntegrationTest`, `TimetableIntegrationTest`: map events with genres, placements, timetables
+- `AdminAccessIntegrationTest`: every admin endpoint, found automatically, is closed to guests (401) and users (403)
+- `AdminArtistIntegrationTest`, `AdminEventIntegrationTest`, `AdminChangeIntegrationTest`,
+  `ArtistCleanupIntegrationTest`: the admin panel, its history and undo
+- `FeedbackIntegrationTest`: guests can send, only admins read, rate limit, hidden bot field, links to this site only
+- `FollowIntegrationTest`: follow and unfollow, the gigs for the map, only new gigs emailed, each once
 
 ## Roadmap
 
@@ -279,6 +333,10 @@ through MockMvc. Only Goabase is faked.
 - [x] "I'm going" with attendance counts
 - [x] Reminder emails before saved events (scheduled job)
 - [x] Artist pages built from event line-ups
+- [x] Map of Psy as the home page: map genres, timetables and live fleets
+- [x] Feedback form and admin panel with history and undo
+- [x] Following artists with new-gig emails
+- [ ] Event filters by map genre instead of words in the event name
 - [ ] Deployment to AWS
 
 ## Credits
