@@ -127,6 +127,13 @@ class AuthIntegrationTest extends IntegrationTest {
     }
 
     @Test
+    void theHealthPingNeedsNoLogin() throws Exception {
+        mockMvc.perform(get("/api/health"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("ok"));
+    }
+
+    @Test
     void protectedEndpointsNeedAValidToken() throws Exception {
         mockMvc.perform(get("/api/auth/me"))
                 .andExpect(status().isUnauthorized());
