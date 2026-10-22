@@ -6,11 +6,14 @@ import com.psytrance.psytrance_tracker_backend.dto.RegisterRequest;
 import com.psytrance.psytrance_tracker_backend.dto.ResetPasswordRequest;
 import com.psytrance.psytrance_tracker_backend.config.Admins;
 import com.psytrance.psytrance_tracker_backend.dto.UserResponse;
+import com.psytrance.psytrance_tracker_backend.model.User;
+import com.psytrance.psytrance_tracker_backend.service.EmailVerification;
 import com.psytrance.psytrance_tracker_backend.service.LoginAttempts;
 import com.psytrance.psytrance_tracker_backend.service.PasswordResetService;
 import com.psytrance.psytrance_tracker_backend.service.UserService;
 import com.psytrance.psytrance_tracker_backend.util.JwtUtil;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -32,19 +35,24 @@ public class AuthController {
     private final PasswordResetService passwordResetService;
     private final Admins admins;
     private final LoginAttempts loginAttempts;
+    private final EmailVerification emailVerification;
 
     public AuthController(UserService userService, JwtUtil jwtUtil, PasswordResetService passwordResetService, Admins admins,
-                          LoginAttempts loginAttempts) {
+                          LoginAttempts loginAttempts, EmailVerification emailVerification) {
         this.userService = userService;
         this.jwtUtil = jwtUtil;
         this.passwordResetService = passwordResetService;
         this.admins = admins;
         this.loginAttempts = loginAttempts;
+        this.emailVerification = emailVerification;
     }
 
     @PostMapping("/register")
     public ResponseEntity<UserResponse> register(@Valid @RequestBody RegisterRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(UserResponse.from(userService.register(request)));
+        User user = userService.register(request);
+        // The account works right away; the link only unlocks adding events
+        emailVerification.sendLink(user);
+        return ResponseEntity.status(HttpStatus.CREATED).body(UserResponse.from(user));
     }
 
     @PostMapping("/login")
@@ -75,6 +83,23 @@ public class AuthController {
         passwordResetService.requestReset(request.email());
         // Same answer whether or not the email exists, so this can't be used to find out who has an account
         return ResponseEntity.ok(Map.of("message", "If an account exists for that email, a reset link has been sent."));
+    }
+
+    public record VerifyEmailRequest(@NotBlank String token) {
+    }
+
+    /** The link from the verification email (the frontend's /verify-email page sends its token here) */
+    @PostMapping("/verify-email")
+    public Map<String, String> verifyEmail(@Valid @RequestBody VerifyEmailRequest request) {
+        return Map.of("username", emailVerification.verify(request.token()),
+                "message", "Your email is confirmed. You can add events now.");
+    }
+
+    /** "Send the link again" on the profile. Needs login (SecurityConfig). */
+    @PostMapping("/resend-verification")
+    public Map<String, String> resendVerification(Authentication authentication) {
+        emailVerification.resend(authentication.getName());
+        return Map.of("message", "We sent you a new link. Check your inbox (and spam).");
     }
 
     @PostMapping("/reset-password")

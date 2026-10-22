@@ -17,6 +17,8 @@ public class User {
     private String password;
     // Reminder emails before events the user saved or is going to; can be turned off on the profile
     private boolean eventReminders = true;
+    // Confirmed by opening the emailed link (see EmailVerification); only verified accounts may add events
+    private boolean emailVerified;
 
     public String getUsername() {
         return username;
@@ -56,5 +58,13 @@ public class User {
 
     public void setEventReminders(boolean eventReminders) {
         this.eventReminders = eventReminders;
+    }
+
+    public boolean isEmailVerified() {
+        return emailVerified;
+    }
+
+    public void setEmailVerified(boolean emailVerified) {
+        this.emailVerified = emailVerified;
     }
 }

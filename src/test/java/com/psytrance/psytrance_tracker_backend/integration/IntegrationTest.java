@@ -3,6 +3,7 @@ package com.psytrance.psytrance_tracker_backend.integration;
 import com.jayway.jsonpath.JsonPath;
 import com.psytrance.psytrance_tracker_backend.client.GoabaseClient;
 import com.psytrance.psytrance_tracker_backend.client.YouTubeClient;
+import com.psytrance.psytrance_tracker_backend.service.VerificationMailer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
@@ -19,7 +20,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /**
  * Base for tests that run the whole application: real HTTP handling through MockMvc, real security,
- * and a real PostgreSQL started in Docker by Testcontainers. Only Goabase and YouTube are faked,
+ * and a real PostgreSQL started in Docker by Testcontainers. Only Goabase, YouTube and the verification email are faked,
  * so tests don't depend on the internet.
  */
 @SpringBootTest(properties = {
@@ -48,6 +49,10 @@ abstract class IntegrationTest {
 
     @MockitoBean
     protected YouTubeClient youTubeClient;
+
+    // Faked so tests can read the verification link instead of finding it in the log
+    @MockitoBean
+    protected VerificationMailer verificationMailer;
 
     /**
      * Letters unique per call (a random id with each digit turned into its own letter), for artist names: all tests
