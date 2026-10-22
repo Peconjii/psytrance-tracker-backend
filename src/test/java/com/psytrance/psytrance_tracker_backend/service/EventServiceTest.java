@@ -1,6 +1,7 @@
 package com.psytrance.psytrance_tracker_backend.service;
 
 import com.psytrance.psytrance_tracker_backend.client.GoabaseClient;
+import com.psytrance.psytrance_tracker_backend.repository.HiddenEventRepository;
 import com.psytrance.psytrance_tracker_backend.repository.OurEventRepository;
 import com.psytrance.psytrance_tracker_backend.client.GoabaseParty;
 import com.psytrance.psytrance_tracker_backend.client.GoabasePartyDetails;
@@ -45,7 +46,7 @@ class EventServiceTest {
     void setUp() {
         goabaseClient = mock(GoabaseClient.class);
         clock = new MutableClock(WEDNESDAY);
-        eventService = new EventService(new Parties(goabaseClient, mock(OurEventRepository.class)), clock, Duration.ofMinutes(10));
+        eventService = new EventService(new Parties(goabaseClient, mock(OurEventRepository.class), mock(HiddenEventRepository.class)), clock, Duration.ofMinutes(10));
     }
 
     @Test

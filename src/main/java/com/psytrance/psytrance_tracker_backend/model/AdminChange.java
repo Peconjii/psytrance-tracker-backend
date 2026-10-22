@@ -43,6 +43,8 @@ public class AdminChange {
     public static final String OUR_EVENT = "OUR_EVENT";
     /** An admin deleted someone's review; before is "rating ★ comment" (no undo) */
     public static final String REVIEW_DELETED = "REVIEW_DELETED";
+    /** An admin hid an event from the site or showed it again; before/after are "shown"/"hidden: reason" (no undo) */
+    public static final String EVENT_HIDDEN = "EVENT_HIDDEN";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -112,24 +112,39 @@ public class ArtistIndexer {
                 failed("Goabase is unavailable: " + e.getMessage());
                 break;
             }
-            // An event Goabase no longer knows is stored with no artists, so it isn't asked about again soon
-            List<LineUpParser.Section> lineUp = party
-                    .map(details -> LineUpParser.sections(details.textLineUp()))
-                    .orElse(List.of());
-            List<String> keywords = party.isPresent() ? keywords(eventId) : List.of();
-            mapService.saveGenres(eventId, eventGenres.compute(lineUp, keywords));
-            party.ifPresent(details -> eventTimetables.saveParsed(eventId, timetable(details)));
-            List<String> artists = lineUp.stream().flatMap(section -> section.artists().stream()).toList();
-            // Saved last, because it also marks the event as read
-            Set<String> live = party.map(details -> LineUpParser.liveArtistSlugs(details.textLineUp())).orElse(Set.of());
-            artistService.saveLineUp(eventId, artists, live, now);
-            // Name, dates, place and organizer as they are now (the organizer may have renamed or moved it)
-            String organizer = party.map(details -> organizers.record(details.nameOrganizer(), details.urlOrganizer())).orElse(null);
-            artistService.saveSummary(byId.get(eventId), organizer);
+            store(eventId, party, byId.get(eventId), now);
             read++;
         }
         status = new Status(now, read, status.lastError(), status.lastErrorAt());
         return read;
+    }
+
+    /**
+     * Reads one event's line-up right away (the admin's "read the line-up again now"), instead of waiting for its turn.
+     * Returns the artists found; throws GoabaseUnavailableException when Goabase is down.
+     */
+    public List<String> readNow(long eventId) {
+        Optional<GoabasePartyDetails> party = parties.fetchParty(eventId);
+        return store(eventId, party, eventService.findById(eventId), clock.instant());
+    }
+
+    // Stores what a line-up says: genres, set times, artists (live or not) and the organizer. Returns the artists.
+    private List<String> store(long eventId, Optional<GoabasePartyDetails> party, EventDto event, Instant now) {
+        // An event Goabase no longer knows is stored with no artists, so it isn't asked about again soon
+        List<LineUpParser.Section> lineUp = party
+                .map(details -> LineUpParser.sections(details.textLineUp()))
+                .orElse(List.of());
+        List<String> keywords = party.isPresent() ? keywords(eventId) : List.of();
+        mapService.saveGenres(eventId, eventGenres.compute(lineUp, keywords));
+        party.ifPresent(details -> eventTimetables.saveParsed(eventId, timetable(details)));
+        List<String> artists = lineUp.stream().flatMap(section -> section.artists().stream()).toList();
+        // Saved last, because it also marks the event as read
+        Set<String> live = party.map(details -> LineUpParser.liveArtistSlugs(details.textLineUp())).orElse(Set.of());
+        artistService.saveLineUp(eventId, artists, live, now);
+        // Name, dates, place and organizer as they are now (the organizer may have renamed or moved it)
+        String organizer = party.map(details -> organizers.record(details.nameOrganizer(), details.urlOrganizer())).orElse(null);
+        artistService.saveSummary(event, organizer);
+        return artists;
     }
 
     /** When the index last ran, how many line-ups it read then, and its last error (null when none since the start) */

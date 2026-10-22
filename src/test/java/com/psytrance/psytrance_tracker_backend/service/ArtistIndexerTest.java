@@ -1,6 +1,7 @@
 package com.psytrance.psytrance_tracker_backend.service;
 
 import com.psytrance.psytrance_tracker_backend.client.GoabaseClient;
+import com.psytrance.psytrance_tracker_backend.repository.HiddenEventRepository;
 import com.psytrance.psytrance_tracker_backend.repository.OurEventRepository;
 import com.psytrance.psytrance_tracker_backend.client.GoabaseParty;
 import com.psytrance.psytrance_tracker_backend.client.GoabasePartyDetails;
@@ -54,7 +55,7 @@ class ArtistIndexerTest {
         mapService = mock(MapService.class);
         // A tiny map: one forest star with one artist
         MapGenres mapGenres = new MapGenres(List.of(new MapGenres.Genre("forest", "Forest", "dark", List.of("Derango"))));
-        indexer = new ArtistIndexer(eventService, new Parties(goabaseClient, mock(OurEventRepository.class)), lineupScanRepository, artistService,
+        indexer = new ArtistIndexer(eventService, new Parties(goabaseClient, mock(OurEventRepository.class), mock(HiddenEventRepository.class)), lineupScanRepository, artistService,
                 new EventGenres(mapGenres), mapService, mock(EventTimetables.class), mock(Organizers.class),
                 Clock.fixed(NOW, ZoneOffset.UTC));
     }
