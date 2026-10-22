@@ -18,8 +18,10 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -108,6 +110,22 @@ public class MapGenres {
 
     public boolean isGenre(String genreId) {
         return genres.stream().anyMatch(genre -> genre.id().equals(genreId));
+    }
+
+    // A map genre's exact name in brackets at the end: "Main Stage (Morning full-on)", how our event form writes it
+    private static final Pattern NAMED_IN_BRACKETS = Pattern.compile("\\(([^()]+)\\)\\s*$");
+
+    /** The genre whose map name is in brackets at the end of the text ("Chai Shop (Psybient)"), if any */
+    public Optional<String> genreInBrackets(String text) {
+        if (text == null) {
+            return Optional.empty();
+        }
+        Matcher m = NAMED_IN_BRACKETS.matcher(text);
+        if (!m.find()) {
+            return Optional.empty();
+        }
+        String name = m.group(1).strip();
+        return genres.stream().filter(genre -> genre.name().equalsIgnoreCase(name)).map(Genre::id).findFirst();
     }
 
     /** Spellings admins merged into another artist ({@code alias slug -> artist slug}), instead of the ones used so far. */

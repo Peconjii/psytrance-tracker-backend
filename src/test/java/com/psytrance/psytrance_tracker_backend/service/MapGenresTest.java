@@ -54,6 +54,16 @@ class MapGenresTest {
     }
 
     @Test
+    void aGenreNameInBracketsIsTheStagesGenre() {
+        // How our event form writes a stage with its genre
+        assertThat(mapGenres.genreInBrackets("Main Stage (Morning full-on)")).contains("morning");
+        assertThat(mapGenres.genreInBrackets("Chai Shop (Psybient / Psychill)")).contains("psybient");
+        assertThat(mapGenres.genreInBrackets("Garden (south african scene)")).contains("sapsy");
+        assertThat(mapGenres.genreInBrackets("Main Stage (by night)")).isEmpty();
+        assertThat(mapGenres.genreInBrackets("Forest Stage")).isEmpty();
+    }
+
+    @Test
     void everyGenreWordPointsToAGenreOnTheMap() {
         List<String> ids = mapGenres.all().stream().map(MapGenres.Genre::id).toList();
         assertThat(ids).containsAll(MapGenres.aliasGenreIds());

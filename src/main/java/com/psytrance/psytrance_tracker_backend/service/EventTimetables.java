@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -93,6 +94,11 @@ public class EventTimetables {
         List<String> written = mapGenres.genresIn(note);
         if (!written.isEmpty()) {
             return written.get(0);
+        }
+        // "Main Stage (Forest)": the stage's genre picked in our event form, else a genre word in the stage's name
+        Optional<String> picked = mapGenres.genreInBrackets(slot.getStage());
+        if (picked.isPresent()) {
+            return picked.get();
         }
         List<String> stage = mapGenres.genresIn(slot.getStage());
         return stage.isEmpty() ? null : stage.get(0);

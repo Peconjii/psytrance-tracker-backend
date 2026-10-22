@@ -140,4 +140,28 @@ class TimetableParserTest {
         assertThat(LineUpParser.findArtist("20:00 DOORS")).isNull();
         assertThat(LineUpParser.findArtist("18:30-19:30")).isNull();
     }
+
+    @Test
+    void theStageCardsOfOurEventFormAreReadAsWritten() {
+        // What AddEvent's stage cards write (src/components/stageText.js): a header per stage with its genre in
+        // brackets, then the weekday, start, end and name of each set; the weekday leaves no guessing about the night
+        String lineUp = """
+                Main Stage (Morning full-on):
+                Fri 23:00-01:00 Ajja
+                Sat 01:00-02:30 Live Tristan
+                Sat 10:00 Opening Act
+
+                Chai Shop (Psybient / Psychill):
+                Sat 14:00-16:00 Kaya Project
+                Some Friend
+                """;
+        assertThat(parse(lineUp)).containsExactly(
+                new Slot("Main Stage (Morning full-on)", "Ajja", at(23, 23, 0), at(24, 1, 0)),
+                new Slot("Main Stage (Morning full-on)", "Tristan", at(24, 1, 0), at(24, 2, 30)),
+                new Slot("Main Stage (Morning full-on)", "Opening Act", at(24, 10, 0), null),
+                new Slot("Chai Shop (Psybient / Psychill)", "Kaya Project", at(24, 14, 0), at(24, 16, 0)));
+        // The headers are no artists; every set and the one without a time are
+        assertThat(LineUpParser.parse(lineUp).stream().map(com.psytrance.psytrance_tracker_backend.dto.LineUpLine::artist).filter(java.util.Objects::nonNull))
+                .containsExactly("Ajja", "Tristan", "Opening Act", "Kaya Project", "Some Friend");
+    }
 }
