@@ -4,6 +4,7 @@ import com.psytrance.psytrance_tracker_backend.dto.EventDto;
 import com.psytrance.psytrance_tracker_backend.service.ArtistService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -13,6 +14,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -84,6 +86,45 @@ class StatsIntegrationTest extends IntegrationTest {
                 .andExpect(jsonPath("$.editions[0].artists").value(1))
                 .andExpect(jsonPath("$.topArtists[0].key").value("Edition Act " + festival));
         mockMvc.perform(get("/api/festivals/stats").param("match", "ab")).andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void editorsSetEditionsTheNameDoesntShow() throws Exception {
+        String festival = "fest" + uniqueLetters();
+        long named = NEXT_EVENT_ID.getAndIncrement();
+        long renamed = NEXT_EVENT_ID.getAndIncrement();
+        artistService.saveSummary(named(named, festival + " 2026"));
+        artistService.saveSummary(named(renamed, "One Day in Budapest " + festival.toUpperCase() + "x"));
+        mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON).content("""
+                {"username": "feedback_admin", "email": "feedback_admin@example.com", "password": "secret-password-123"}
+                """));
+        String admin = bearer(login("feedback_admin", "secret-password-123"));
+
+        // The renamed one is an edition after all, the named one isn't (ozora: a festival of the map)
+        mockMvc.perform(put("/api/admin/events/{id}/festival-edition", renamed).header("Authorization", admin)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"festivalId\": \"ozora\", \"edition\": true}"))
+                .andExpect(status().isNoContent());
+        mockMvc.perform(get("/api/festivals/stats").param("match", festival).param("id", "ozora"))
+                .andExpect(jsonPath("$.editions.length()").value(2))
+                .andExpect(jsonPath("$.editions[?(@.eventId == %d)].linked".formatted(renamed)).value(true));
+        mockMvc.perform(put("/api/admin/events/{id}/festival-edition", named).header("Authorization", admin)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"festivalId\": \"ozora\", \"edition\": false}"))
+                .andExpect(status().isNoContent());
+        mockMvc.perform(get("/api/festivals/stats").param("match", festival).param("id", "ozora"))
+                .andExpect(jsonPath("$.editions.length()").value(1))
+                .andExpect(jsonPath("$.editions[0].eventId").value((int) renamed));
+        // Back to the name for both: only the named one again
+        for (long id : List.of(named, renamed)) {
+            mockMvc.perform(put("/api/admin/events/{id}/festival-edition", id).header("Authorization", admin)
+                            .contentType(MediaType.APPLICATION_JSON).content("{\"festivalId\": \"ozora\", \"edition\": null}"))
+                    .andExpect(status().isNoContent());
+        }
+        mockMvc.perform(get("/api/festivals/stats").param("match", festival).param("id", "ozora"))
+                .andExpect(jsonPath("$.editions.length()").value(1))
+                .andExpect(jsonPath("$.editions[0].eventId").value((int) named));
+        mockMvc.perform(put("/api/admin/events/{id}/festival-edition", named).header("Authorization", admin)
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"festivalId\": \"no-such-festival\", \"edition\": true}"))
+                .andExpect(status().isNotFound());
     }
 
     private static EventDto named(long id, String name) {

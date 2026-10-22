@@ -4,7 +4,9 @@ import com.psytrance.psytrance_tracker_backend.config.Admins;
 import com.psytrance.psytrance_tracker_backend.service.ArtistIndexer;
 import com.psytrance.psytrance_tracker_backend.service.EventFeaturing;
 import com.psytrance.psytrance_tracker_backend.service.EventHiding;
+import com.psytrance.psytrance_tracker_backend.service.FestivalEditions;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -29,10 +31,12 @@ public class AdminEventToolsController {
     private final ArtistIndexer artistIndexer;
     private final EventHiding eventHiding;
     private final EventFeaturing eventFeaturing;
+    private final FestivalEditions festivalEditions;
     private final Admins admins;
 
     public AdminEventToolsController(ArtistIndexer artistIndexer, EventHiding eventHiding, EventFeaturing eventFeaturing,
-                                     Admins admins) {
+                                     FestivalEditions festivalEditions, Admins admins) {
+        this.festivalEditions = festivalEditions;
         this.artistIndexer = artistIndexer;
         this.eventHiding = eventHiding;
         this.eventFeaturing = eventFeaturing;
@@ -91,5 +95,16 @@ public class AdminEventToolsController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void show(@PathVariable long id, Authentication authentication) {
         eventHiding.show(id, admins.requireEditor(authentication));
+    }
+
+    /** edition: true (an edition of the festival), false (not one, whatever its name says), null (go by the name) */
+    public record FestivalEdition(@NotBlank @Size(max = 100) String festivalId, Boolean edition) {
+    }
+
+    /** {@code PUT /api/admin/events/118537/festival-edition {"festivalId": "ozora", "edition": true}} */
+    @PutMapping("/{id}/festival-edition")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void setFestivalEdition(@PathVariable long id, @Valid @RequestBody FestivalEdition change, Authentication authentication) {
+        festivalEditions.set(change.festivalId(), id, change.edition(), admins.requireEditor(authentication));
     }
 }

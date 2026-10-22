@@ -61,6 +61,8 @@ public class AdminChange {
     public static final String FESTIVAL_OWNER = "FESTIVAL_OWNER";
     /** An admin gave an account a role or took it away; target is the username, before/after ADMIN, EDITOR or "" (no undo) */
     public static final String USER_ROLE = "USER_ROLE";
+    /** An event set as a festival's edition (true), as not one (false), or back to its name (""); target "Festival: event" (no undo) */
+    public static final String FESTIVAL_EDITION = "FESTIVAL_EDITION";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

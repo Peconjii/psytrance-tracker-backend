@@ -36,10 +36,13 @@ public class StatsController {
         return stats.label(label);
     }
 
-    /** Example: {@code GET /api/festivals/stats?match=ozora}: the events named like a festival of the map, and more */
+    /**
+     * Example: {@code GET /api/festivals/stats?match=ozora&id=ozora}: the events named like a festival of the map, with
+     * the editions set by hand for that festival id, and more
+     */
     @GetMapping("/api/festivals/stats")
-    public FestivalStats.Numbers festival(@RequestParam String match) {
-        return festivalStats.festival(match);
+    public FestivalStats.Numbers festival(@RequestParam String match, @RequestParam(required = false) String id) {
+        return festivalStats.festival(match, id);
     }
 
     // The owner's numbers. GET under /api/artists and /api/organizers is public in SecurityConfig, so the login is
