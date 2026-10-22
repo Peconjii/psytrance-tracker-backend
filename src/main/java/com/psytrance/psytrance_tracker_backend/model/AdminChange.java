@@ -41,6 +41,8 @@ public class AdminChange {
     public static final String ORGANIZER_OWNER = "ORGANIZER_OWNER";
     /** An event added on our site was approved or taken down; before/after are the statuses (no undo) */
     public static final String OUR_EVENT = "OUR_EVENT";
+    /** An admin deleted someone's review; before is "rating ★ comment" (no undo) */
+    public static final String REVIEW_DELETED = "REVIEW_DELETED";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

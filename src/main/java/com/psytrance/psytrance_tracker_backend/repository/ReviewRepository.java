@@ -10,4 +10,7 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     List<Review> findByEventId(String eventId);
     Optional<Review> findByEventIdAndUserId(String eventId, Long userId);
     List<Review> findByUserUsername(String username);
+
+    /** The newest reviews of the whole site, for admins */
+    List<Review> findTop100ByOrderByIdDesc();
 }
