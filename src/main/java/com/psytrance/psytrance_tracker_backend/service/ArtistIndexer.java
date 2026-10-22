@@ -51,6 +51,8 @@ public class ArtistIndexer {
     private final EventTimetables eventTimetables;
     private final Organizers organizers;
     private final Clock clock;
+    // How the last runs went, for the admin dashboard; in memory, so a restart starts empty
+    private volatile Status status = new Status(null, 0, null, null);
 
     public ArtistIndexer(EventService eventService,
                          Parties parties,
@@ -107,6 +109,7 @@ public class ArtistIndexer {
             } catch (GoabaseUnavailableException e) {
                 // No point asking about the rest of the batch now; the next run carries on
                 log.warn("Goabase is unavailable, artist index stopped after {} events", read, e);
+                failed("Goabase is unavailable: " + e.getMessage());
                 break;
             }
             // An event Goabase no longer knows is stored with no artists, so it isn't asked about again soon
@@ -125,7 +128,21 @@ public class ArtistIndexer {
             artistService.saveSummary(byId.get(eventId), organizer);
             read++;
         }
+        status = new Status(now, read, status.lastError(), status.lastErrorAt());
         return read;
+    }
+
+    /** When the index last ran, how many line-ups it read then, and its last error (null when none since the start) */
+    public record Status(Instant lastRunAt, int lastRead, String lastError, Instant lastErrorAt) {
+    }
+
+    public Status status() {
+        return status;
+    }
+
+    /** Keeps an error of a run for the dashboard (BackgroundJobs reports the ones it catches) */
+    public void failed(String error) {
+        status = new Status(status.lastRunAt(), status.lastRead(), error, clock.instant());
     }
 
     // Set times written in the line-up, on the event's own clock (Goabase gives the start with its UTC offset)

@@ -63,6 +63,7 @@ public class BackgroundJobs {
             }
         } catch (RuntimeException e) {
             log.warn("Artist index job failed", e);
+            artistIndexer.failed(e.getClass().getSimpleName() + ": " + e.getMessage());
         }
     }
 }
