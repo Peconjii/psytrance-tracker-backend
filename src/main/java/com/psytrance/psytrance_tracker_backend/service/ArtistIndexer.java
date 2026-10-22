@@ -78,7 +78,11 @@ public class ArtistIndexer {
         // Goabase doesn't list events by date, so the date is the tie-break: when many line-ups are due at once
         // (never read, or all marked for re-reading), the soonest events are read first
         Map<Long, LocalDate> startById = new HashMap<>();
-        upcoming.forEach(event -> startById.putIfAbsent(event.id(), event.dateStart()));
+        Map<Long, EventDto> byId = new HashMap<>();
+        upcoming.forEach(event -> {
+            startById.putIfAbsent(event.id(), event.dateStart());
+            byId.putIfAbsent(event.id(), event);
+        });
 
         List<Long> due = upcomingIds.stream()
                 .filter(id -> !lastRead.containsKey(id) || lastRead.get(id).plus(REREAD_AFTER).isBefore(now))
@@ -86,6 +90,10 @@ public class ArtistIndexer {
                         .thenComparing(startById::get, Comparator.nullsLast(Comparator.naturalOrder())))
                 .limit(BATCH_SIZE)
                 .toList();
+
+        // Every upcoming event is remembered by name, dates and place, so it stays listed as a past gig on the
+        // pages of the artists who played it after Goabase drops it
+        artistService.saveMissingSummaries(upcoming);
 
         int read = 0;
         for (Long eventId : due) {
@@ -107,6 +115,8 @@ public class ArtistIndexer {
             List<String> artists = lineUp.stream().flatMap(section -> section.artists().stream()).toList();
             // Saved last, because it also marks the event as read
             artistService.saveLineUp(eventId, artists, now);
+            // Name, dates and place as they are now (the organizer may have renamed or moved it)
+            artistService.saveSummary(byId.get(eventId));
             read++;
         }
         return read;

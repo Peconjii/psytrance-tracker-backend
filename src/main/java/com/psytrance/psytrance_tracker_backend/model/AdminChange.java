@@ -24,6 +24,8 @@ public class AdminChange {
     public static final String ARTIST_MERGED = "ARTIST_MERGED";
     /** An admin wrote or handed back an event timetable; target is "<event id> · <event name>" (no undo) */
     public static final String EVENT_TIMETABLE = "EVENT_TIMETABLE";
+    /** An artist's profile was written; target is the artist, before/after the filled fields (no undo) */
+    public static final String ARTIST_PROFILE = "ARTIST_PROFILE";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

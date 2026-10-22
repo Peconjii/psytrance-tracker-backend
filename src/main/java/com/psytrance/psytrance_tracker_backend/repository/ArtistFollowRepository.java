@@ -15,6 +15,8 @@ public interface ArtistFollowRepository extends JpaRepository<ArtistFollow, Long
 
     long countByUserId(Long userId);
 
+    long countByArtistSlug(String artistSlug);
+
     /** Every follow with its user (the new-gig job needs the emails), in one query. */
     @Query("select f from ArtistFollow f join fetch f.user")
     List<ArtistFollow> findAllWithUser();
