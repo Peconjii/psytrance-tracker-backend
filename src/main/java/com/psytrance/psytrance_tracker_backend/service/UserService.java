@@ -53,4 +53,13 @@ public class UserService {
         user.setEventReminders(enabled);
         return user.isEventReminders();
     }
+
+    /** Turns the weekly email on or off; returns the new setting. */
+    @Transactional
+    public boolean setWeeklyDigest(String username, boolean enabled) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unknown user"));
+        user.setWeeklyDigest(enabled);
+        return user.isWeeklyDigest();
+    }
 }

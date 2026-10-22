@@ -4,6 +4,7 @@ import com.jayway.jsonpath.JsonPath;
 import com.psytrance.psytrance_tracker_backend.client.GoabaseClient;
 import com.psytrance.psytrance_tracker_backend.client.YouTubeClient;
 import com.psytrance.psytrance_tracker_backend.service.DecisionMailer;
+import com.psytrance.psytrance_tracker_backend.service.DigestMailer;
 import com.psytrance.psytrance_tracker_backend.service.VerificationMailer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -59,6 +60,10 @@ abstract class IntegrationTest {
     // Faked so tests can check who hears of an admin's decision
     @MockitoBean
     protected DecisionMailer decisionMailer;
+
+    // Faked so tests can check what the weekly email would tell
+    @MockitoBean
+    protected DigestMailer digestMailer;
 
     /**
      * Letters unique per call (a random id with each digit turned into its own letter), for artist names: all tests

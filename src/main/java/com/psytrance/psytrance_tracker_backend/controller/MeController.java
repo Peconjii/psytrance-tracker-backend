@@ -78,4 +78,10 @@ public class MeController {
         boolean enabled = userService.setEventReminders(authentication.getName(), settings.enabled());
         return new ReminderSettings(enabled);
     }
+
+    /** Turns the weekly email (the next gigs of who you follow) on or off. */
+    @PutMapping("/weekly-digest")
+    public ReminderSettings setWeeklyDigest(@Valid @RequestBody ReminderSettings settings, Authentication authentication) {
+        return new ReminderSettings(userService.setWeeklyDigest(authentication.getName(), settings.enabled()));
+    }
 }

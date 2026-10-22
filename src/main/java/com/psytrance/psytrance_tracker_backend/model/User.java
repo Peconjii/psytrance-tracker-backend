@@ -19,6 +19,9 @@ public class User {
     private String password;
     // Reminder emails before events the user saved or is going to; can be turned off on the profile
     private boolean eventReminders = true;
+    // The Monday email with the next gigs of the artists and labels the user follows (see WeeklyDigest)
+    @Column(name = "weekly_digest")
+    private boolean weeklyDigest = true;
     // Confirmed by opening the emailed link (see EmailVerification); only verified accounts may add events
     private boolean emailVerified;
     // When the account was made; null for accounts from before the site kept the date
@@ -63,6 +66,14 @@ public class User {
 
     public void setEventReminders(boolean eventReminders) {
         this.eventReminders = eventReminders;
+    }
+
+    public boolean isWeeklyDigest() {
+        return weeklyDigest;
+    }
+
+    public void setWeeklyDigest(boolean weeklyDigest) {
+        this.weeklyDigest = weeklyDigest;
     }
 
     public boolean isEmailVerified() {

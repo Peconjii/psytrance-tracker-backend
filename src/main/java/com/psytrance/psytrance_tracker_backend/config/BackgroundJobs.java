@@ -3,6 +3,7 @@ package com.psytrance.psytrance_tracker_backend.config;
 import com.psytrance.psytrance_tracker_backend.service.ArtistFollows;
 import com.psytrance.psytrance_tracker_backend.service.ArtistIndexer;
 import com.psytrance.psytrance_tracker_backend.service.ReminderService;
+import com.psytrance.psytrance_tracker_backend.service.WeeklyDigest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -25,8 +26,11 @@ public class BackgroundJobs {
     private final ReminderService reminderService;
     private final ArtistIndexer artistIndexer;
     private final ArtistFollows artistFollows;
+    private final WeeklyDigest weeklyDigest;
 
-    public BackgroundJobs(ReminderService reminderService, ArtistIndexer artistIndexer, ArtistFollows artistFollows) {
+    public BackgroundJobs(ReminderService reminderService, ArtistIndexer artistIndexer, ArtistFollows artistFollows,
+                          WeeklyDigest weeklyDigest) {
+        this.weeklyDigest = weeklyDigest;
         this.reminderService = reminderService;
         this.artistIndexer = artistIndexer;
         this.artistFollows = artistFollows;
@@ -51,6 +55,15 @@ public class BackgroundJobs {
             }
         } catch (RuntimeException e) {
             log.warn("New-gig job failed", e);
+        }
+        // The weekly email, on Mondays, on the same timer
+        try {
+            int sent = weeklyDigest.sendDue();
+            if (sent > 0) {
+                log.info("Sent {} weekly emails", sent);
+            }
+        } catch (RuntimeException e) {
+            log.warn("Weekly email job failed", e);
         }
     }
 
