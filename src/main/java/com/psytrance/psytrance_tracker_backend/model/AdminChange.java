@@ -59,6 +59,8 @@ public class AdminChange {
     public static final String FESTIVAL_PROFILE = "FESTIVAL_PROFILE";
     /** An account was linked to a festival as its owner, or unlinked; before/after are the usernames (no undo) */
     public static final String FESTIVAL_OWNER = "FESTIVAL_OWNER";
+    /** An admin gave an account a role or took it away; target is the username, before/after ADMIN, EDITOR or "" (no undo) */
+    public static final String USER_ROLE = "USER_ROLE";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

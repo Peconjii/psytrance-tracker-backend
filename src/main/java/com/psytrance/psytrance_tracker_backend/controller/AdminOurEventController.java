@@ -32,13 +32,13 @@ public class AdminOurEventController {
     /** Example: {@code GET /api/admin/our-events?status=PENDING} (the default), APPROVED or REJECTED */
     @GetMapping
     public List<OurEventDto> list(@RequestParam(required = false) String status, Authentication authentication) {
-        admins.requireAdmin(authentication);
+        admins.requireEditor(authentication);
         return ourEvents.list(status);
     }
 
     @PostMapping("/{id}/approve")
     public OurEventDto approve(@PathVariable long id, Authentication authentication) {
-        return ourEvents.approve(id, admins.requireAdmin(authentication));
+        return ourEvents.approve(id, admins.requireEditor(authentication));
     }
 
     public record Rejection(@Size(max = 500) String reason) {
@@ -48,7 +48,7 @@ public class AdminOurEventController {
     @PostMapping("/{id}/reject")
     public OurEventDto reject(@PathVariable long id, @Valid @RequestBody(required = false) Rejection rejection,
                               Authentication authentication) {
-        String admin = admins.requireAdmin(authentication);
+        String admin = admins.requireEditor(authentication);
         return ourEvents.reject(id, rejection == null ? null : rejection.reason(), admin);
     }
 }

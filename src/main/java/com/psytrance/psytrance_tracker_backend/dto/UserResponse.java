@@ -3,19 +3,20 @@ package com.psytrance.psytrance_tracker_backend.dto;
 import com.psytrance.psytrance_tracker_backend.model.User;
 
 /**
- * What the API shows about a user. The password hash never leaves the backend. {@code admin}
- * tells the frontend to show the feedback admin page (the backend checks it again on every request).
- * {@code emailVerified}: the user opened the emailed link, so they may add events.
+ * What the API shows about a user. The password hash never leaves the backend. {@code admin} and {@code editor}
+ * tell the frontend which admin pages to show (the backend checks them again on every request); an admin is an
+ * editor too. {@code emailVerified}: the user opened the emailed link, so they may add events.
  */
 public record UserResponse(Long id, String username, String email, boolean eventReminders, boolean admin,
-                           boolean emailVerified) {
+                           boolean editor, boolean emailVerified) {
 
     public static UserResponse from(User user) {
-        return from(user, false);
+        return from(user, null);
     }
 
-    public static UserResponse from(User user, boolean admin) {
-        return new UserResponse(user.getId(), user.getUsername(), user.getEmail(), user.isEventReminders(), admin,
-                user.isEmailVerified());
+    /** role: ADMIN, EDITOR or null (see Admins) */
+    public static UserResponse from(User user, String role) {
+        return new UserResponse(user.getId(), user.getUsername(), user.getEmail(), user.isEventReminders(),
+                "ADMIN".equals(role), role != null, user.isEmailVerified());
     }
 }

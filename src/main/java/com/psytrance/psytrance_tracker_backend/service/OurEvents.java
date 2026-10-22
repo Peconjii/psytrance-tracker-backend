@@ -76,8 +76,8 @@ public class OurEvents {
     public OurEventDto submit(OurEventRequest request, String username) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unknown user"));
-        boolean admin = admins.isAdmin(username);
-        // Admins are named in the configuration, so they need no confirmed email
+        boolean admin = admins.isEditor(username);
+        // Admins and editors were picked by an admin, so they need no confirmed email
         if (!admin && !user.isEmailVerified()) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Confirm your email first: open the link we sent you");
         }
@@ -135,7 +135,7 @@ public class OurEvents {
     // The sender's own event, or any for an admin
     private OurEvent editable(long id, String username) {
         return repository.findById(id)
-                .filter(event -> event.getSubmittedBy().getUsername().equals(username) || admins.isAdmin(username))
+                .filter(event -> event.getSubmittedBy().getUsername().equals(username) || admins.isEditor(username))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No event " + id + " of yours"));
     }
 

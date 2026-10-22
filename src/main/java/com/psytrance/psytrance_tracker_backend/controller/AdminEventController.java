@@ -41,14 +41,14 @@ public class AdminEventController {
     @PutMapping("/{id}/timetable")
     public TimetableDto setTimetable(@PathVariable long id, @Valid @RequestBody TimetableChange change,
                                      Authentication authentication) {
-        String admin = admins.requireAdmin(authentication);
+        String admin = admins.requireEditor(authentication);
         return eventTimetables.setManual(id, change.sets(), admin);
     }
 
     /** {@code DELETE /api/admin/events/118537/timetable}: back to the set times written in the line-up */
     @DeleteMapping("/{id}/timetable")
     public TimetableDto handBackTimetable(@PathVariable long id, Authentication authentication) {
-        String admin = admins.requireAdmin(authentication);
+        String admin = admins.requireEditor(authentication);
         return eventTimetables.handBack(id, admin);
     }
 
@@ -58,14 +58,14 @@ public class AdminEventController {
     /** {@code GET /api/admin/events/118537/genres}: the event's genres and whether they were set by hand */
     @GetMapping("/{id}/genres")
     public AdminEventGenresDto get(@PathVariable long id, Authentication authentication) {
-        admins.requireAdmin(authentication);
+        admins.requireEditor(authentication);
         return eventGenreAdmin.get(id);
     }
 
     /** {@code PUT /api/admin/events/118537/genres {"genres": ["forest", "twilight"]}}; [] goes back to the line-up */
     @PutMapping("/{id}/genres")
     public AdminEventGenresDto set(@PathVariable long id, @Valid @RequestBody GenreChange change, Authentication authentication) {
-        String admin = admins.requireAdmin(authentication);
+        String admin = admins.requireEditor(authentication);
         return eventGenreAdmin.setGenres(id, change.genres(), admin);
     }
 

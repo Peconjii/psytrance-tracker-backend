@@ -26,6 +26,11 @@ import java.util.stream.Stream;
 @EnableWebSecurity
 public class SecurityConfig {
 
+    /** The admin side an editor may use: events, artist genres, added events, reviews and the dashboard (see Admins) */
+    static final String[] EDITOR_PATHS = {"/api/admin/events/**", "/api/admin/our-events/**", "/api/admin/reviews/**",
+            "/api/admin/artists", "/api/admin/artists/genres", "/api/admin/artists/hidden", "/api/admin/artists/merge",
+            "/api/admin/artists/organizer", "/api/admin/dashboard", "/api/admin/waiting"};
+
     private final JwtFilter jwtFilter;
     private final Admins admins;
     private final String frontendUrl;
@@ -62,7 +67,9 @@ public class SecurityConfig {
                         // a guest would get a misleading 401 instead of the real 404
                         .requestMatchers("/error").permitAll()
                         // The admin side as a whole, so an endpoint that forgets Admins.requireAdmin is still closed.
-                        // Guests get 401 (log in first), other users 403
+                        // Guests get 401 (log in first), other users 403. Editors only reach the content.
+                        .requestMatchers(EDITOR_PATHS).access((authentication, context) ->
+                                new AuthorizationDecision(admins.isEditor(authentication.get().getName())))
                         .requestMatchers("/api/admin/**").access((authentication, context) ->
                                 new AuthorizationDecision(admins.isAdmin(authentication.get().getName())))
                         // Everything else (reviews POST, favorites, "I'm going", /api/me/..., /api/auth/me) requires a valid token

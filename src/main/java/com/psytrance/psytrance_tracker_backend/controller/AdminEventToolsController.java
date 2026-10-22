@@ -42,7 +42,7 @@ public class AdminEventToolsController {
     /** The featured events, newest first ({@code upcoming} false once over) */
     @GetMapping("/featured")
     public List<EventFeaturing.Featured> featured(Authentication authentication) {
-        admins.requireAdmin(authentication);
+        admins.requireEditor(authentication);
         return eventFeaturing.list();
     }
 
@@ -53,26 +53,26 @@ public class AdminEventToolsController {
     @PutMapping("/{id}/featured")
     public EventFeaturing.Featured feature(@PathVariable long id, @Valid @RequestBody(required = false) Featuring featuring,
                                            Authentication authentication) {
-        String admin = admins.requireAdmin(authentication);
+        String admin = admins.requireEditor(authentication);
         return eventFeaturing.feature(id, featuring == null ? null : featuring.note(), admin);
     }
 
     @DeleteMapping("/{id}/featured")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void unfeature(@PathVariable long id, Authentication authentication) {
-        eventFeaturing.unfeature(id, admins.requireAdmin(authentication));
+        eventFeaturing.unfeature(id, admins.requireEditor(authentication));
     }
 
     /** Reads the event's line-up right away instead of waiting for its turn: {@code {"artists": [...]}} */
     @PostMapping("/{id}/reread")
     public Map<String, List<String>> reread(@PathVariable long id, Authentication authentication) {
-        admins.requireAdmin(authentication);
+        admins.requireEditor(authentication);
         return Map.of("artists", artistIndexer.readNow(id));
     }
 
     @GetMapping("/hidden")
     public List<EventHiding.Hidden> hidden(Authentication authentication) {
-        admins.requireAdmin(authentication);
+        admins.requireEditor(authentication);
         return eventHiding.list();
     }
 
@@ -83,13 +83,13 @@ public class AdminEventToolsController {
     @PutMapping("/{id}/hidden")
     public EventHiding.Hidden hide(@PathVariable long id, @Valid @RequestBody(required = false) Hiding hiding,
                                    Authentication authentication) {
-        String admin = admins.requireAdmin(authentication);
+        String admin = admins.requireEditor(authentication);
         return eventHiding.hide(id, hiding == null ? null : hiding.reason(), admin);
     }
 
     @DeleteMapping("/{id}/hidden")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void show(@PathVariable long id, Authentication authentication) {
-        eventHiding.show(id, admins.requireAdmin(authentication));
+        eventHiding.show(id, admins.requireEditor(authentication));
     }
 }

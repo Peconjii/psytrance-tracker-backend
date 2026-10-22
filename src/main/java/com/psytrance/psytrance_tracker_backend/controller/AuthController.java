@@ -74,7 +74,7 @@ public class AuthController {
     @GetMapping("/me")
     public UserResponse getCurrentUser(Authentication authentication) {
         return userService.findByUsername(authentication.getName())
-                .map(user -> UserResponse.from(user, admins.isAdmin(user.getUsername())))
+                .map(user -> UserResponse.from(user, admins.roleOf(user.getUsername()).orElse(null)))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
     }
 

@@ -25,7 +25,7 @@ public class AdminReviewController {
 
     @GetMapping
     public List<ReviewResponse> newest(Authentication authentication) {
-        admins.requireAdmin(authentication);
+        admins.requireEditor(authentication);
         return reviewService.newest();
     }
 }

@@ -22,14 +22,14 @@ public class AdminSummaryController {
 
     @GetMapping("/dashboard")
     public AdminSummary.Dashboard dashboard(Authentication authentication) {
-        admins.requireAdmin(authentication);
+        admins.requireEditor(authentication);
         return adminSummary.dashboard();
     }
 
     /** {@code {feedback, events, artistRequests, total}} */
     @GetMapping("/waiting")
     public AdminSummary.Waiting waiting(Authentication authentication) {
-        admins.requireAdmin(authentication);
+        admins.requireEditor(authentication);
         return adminSummary.waiting();
     }
 }

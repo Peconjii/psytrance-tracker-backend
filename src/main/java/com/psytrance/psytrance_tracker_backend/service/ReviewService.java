@@ -72,8 +72,8 @@ public class ReviewService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No review " + id));
         String author = review.getUser().getUsername();
         boolean own = author.equals(username);
-        if (!own && !admins.isAdmin(username)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only its author and admins can delete a review");
+        if (!own && !admins.isEditor(username)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only its author, editors and admins can delete a review");
         }
         if (!own) {
             String said = review.getRating() + " ★ " + (review.getComment() == null ? "" : review.getComment());

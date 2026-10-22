@@ -85,7 +85,7 @@ public class AdminArtistController {
      */
     @PostMapping("/organizer")
     public Map<String, String> markAsOrganizer(@Valid @RequestBody HiddenName change, Authentication authentication) {
-        String admin = admins.requireAdmin(authentication);
+        String admin = admins.requireEditor(authentication);
         artistCleanup.setHidden(change.name(), true, admin);
         String slug = organizers.record(change.name(), null);
         return slug == null ? Map.of() : Map.of("organizer", slug);
@@ -100,14 +100,14 @@ public class AdminArtistController {
     /** Example: {@code GET /api/admin/artists?search=fungus}: map and line-up artists with their genres */
     @GetMapping
     public List<AdminArtistDto> search(@RequestParam(defaultValue = "") String search, Authentication authentication) {
-        admins.requireAdmin(authentication);
+        admins.requireEditor(authentication);
         return mapPlacements.search(search);
     }
 
     /** Example: {@code PUT /api/admin/artists/genres {"name": "Fungus Funk", "genres": ["night"]}}; [] takes them off the map */
     @PutMapping("/genres")
     public AdminArtistDto setGenres(@Valid @RequestBody GenreChange change, Authentication authentication) {
-        String admin = admins.requireAdmin(authentication);
+        String admin = admins.requireEditor(authentication);
         return mapPlacements.setGenres(change.name(), change.genres(), admin);
     }
 
@@ -115,7 +115,7 @@ public class AdminArtistController {
     @PostMapping("/hidden")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void setHidden(@Valid @RequestBody HiddenChange change, Authentication authentication) {
-        String admin = admins.requireAdmin(authentication);
+        String admin = admins.requireEditor(authentication);
         artistCleanup.setHidden(change.name(), change.hidden(), admin);
     }
 
@@ -123,7 +123,7 @@ public class AdminArtistController {
     @PostMapping("/merge")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void merge(@Valid @RequestBody Merge merge, Authentication authentication) {
-        String admin = admins.requireAdmin(authentication);
+        String admin = admins.requireEditor(authentication);
         artistCleanup.merge(merge.from(), merge.into(), admin);
     }
 
