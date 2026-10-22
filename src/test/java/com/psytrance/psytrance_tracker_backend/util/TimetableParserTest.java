@@ -28,6 +28,25 @@ class TimetableParserTest {
     }
 
     @Test
+    void aWeekdayBeforeTheTimeSaysTheDay() {
+        // Friday the 23rd: "Sat" is the 24th, "Sun 00:00" the 25th, whatever came before
+        assertThat(parse("""
+                MAIN STAGE
+                Sat 22:00 Ajja (live)
+                Sun 00:00 Tristan
+                Samstag, 14:00 Kaya Project
+                Fr. 23:00 Opening Act
+                """)).containsExactly(
+                new Slot("MAIN STAGE", "Ajja", at(24, 22, 0), null),
+                new Slot("MAIN STAGE", "Tristan", at(25, 0, 0), null),
+                new Slot("MAIN STAGE", "Kaya Project", at(24, 14, 0), null),
+                new Slot("MAIN STAGE", "Opening Act", at(23, 23, 0), null));
+        // Without a time after it, a weekday is part of a name
+        assertThat(TimetableParser.withoutTime("Sunday Service")).isEqualTo("Sunday Service");
+        assertThat(TimetableParser.withoutTime("Saturday 22:00 – Ajja")).isEqualTo("Ajja");
+    }
+
+    @Test
     void keepsWhatTheLineSaysAfterTheName() {
         assertThat(TimetableParser.parse("""
                 22:00 - 00:00 | Naraka • Twilight/Forest

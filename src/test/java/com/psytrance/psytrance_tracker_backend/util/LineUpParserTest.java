@@ -110,6 +110,16 @@ class LineUpParserTest {
     }
 
     @Test
+    void findsTheArtistAfterAWeekdayAndATime() {
+        assertThat(LineUpParser.sections("""
+                MAIN STAGE
+                Sat 22:00 Ajja (live)
+                Sun 00:00 Tristan
+                Samstag 14:00 Kaya Project
+                """).get(0).artists()).containsExactly("Ajja", "Tristan", "Kaya Project");
+    }
+
+    @Test
     void styledLettersBecomePlainOnes() {
         assertThat(LineUpParser.findArtist("𝗔𝗚𝗡𝗘𝗧𝗢𝗡")).isEqualTo("AGNETON");
     }

@@ -1,6 +1,7 @@
 package com.psytrance.psytrance_tracker_backend.util;
 
 import java.time.DateTimeException;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -9,6 +10,7 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -24,7 +26,8 @@ import org.springframework.web.util.HtmlUtils;
  * 22:00 - 00:00 | Naraka • Twilight/Forest
  * </pre>
  * A time earlier than the one before it is the next day (02:00 after 23:00), and a date line ("31.10.2026")
- * says which day the next times are on. Lines without a time or without an artist are left out.
+ * says which day the next times are on, as does a weekday before the time ("Sat 22:00 Ajja", "Samstag 22:00 Ajja").
+ * Lines without a time or without an artist are left out.
  */
 public final class TimetableParser {
 
@@ -33,6 +36,16 @@ public final class TimetableParser {
             + "(\\d{1,2})[:h](\\d{2})\\s*(am|pm)?"
             + "(?:\\s*(?:-|–|—|to|bis)\\s*(\\d{1,2}|\\?\\?)(?:[:.h](\\d{2}|\\?\\?))?\\s*(am|pm)?)?"
             + "\\s*(?:uhr\\b)?\\s*[-–—|:•·]*\\s*(.*)$");
+    // "Sat 22:00", "Saturday, 22:00", "Fr. 23:00", "Samstag 22:00": the weekday the set is on, in English or German.
+    // Only right before a time, so a name like "Sunday Service" stays a name.
+    private static final Pattern WEEKDAY = Pattern.compile("(?i)^[^\\p{L}\\p{N}]*"
+            + "(montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag|mon|tue|wed|thu|fri|sat|sun|mo|di|mi|do|fr|sa|so)"
+            + "(?:day|sday|nesday|rsday|urday)?\\.?,?\\s+(?=\\d{1,2}[:h]\\d{2})");
+    private static final Map<String, DayOfWeek> DAYS = Map.ofEntries(
+            Map.entry("mo", DayOfWeek.MONDAY), Map.entry("tu", DayOfWeek.TUESDAY), Map.entry("di", DayOfWeek.TUESDAY),
+            Map.entry("we", DayOfWeek.WEDNESDAY), Map.entry("mi", DayOfWeek.WEDNESDAY), Map.entry("th", DayOfWeek.THURSDAY),
+            Map.entry("do", DayOfWeek.THURSDAY), Map.entry("fr", DayOfWeek.FRIDAY), Map.entry("sa", DayOfWeek.SATURDAY),
+            Map.entry("su", DayOfWeek.SUNDAY), Map.entry("so", DayOfWeek.SUNDAY));
     // "31.10.2026", "-23.10.2026-", "24/10": the times below it are on that day
     private static final Pattern DATE = Pattern.compile("(?:^|\\D)(\\d{1,2})[./](\\d{1,2})(?:[./](\\d{2,4}))?(?:\\D|$)");
     // What follows the name in timetable lines: "@handle", "• Twilight/Forest"
@@ -63,7 +76,7 @@ public final class TimetableParser {
      * "Naraka". Lines that don't start with a time come back as they are.
      */
     public static String withoutTime(String line) {
-        Matcher m = TIMED.matcher(line.strip());
+        Matcher m = TIMED.matcher(withoutWeekday(line.strip()));
         if (!m.matches() || Integer.parseInt(m.group(1)) > 24) {
             return line;
         }
@@ -93,6 +106,13 @@ public final class TimetableParser {
             if (line.isEmpty()) {
                 continue;
             }
+            // A weekday written before the time says the day itself
+            LocalDate named = null;
+            Matcher weekday = WEEKDAY.matcher(line);
+            if (weekday.find()) {
+                named = firstDay.plusDays(Math.floorMod(dayOf(weekday.group(1)).getValue() - firstDay.getDayOfWeek().getValue(), 7));
+                line = line.substring(weekday.end());
+            }
             Matcher m = TIMED.matcher(line);
             if (!m.matches() || Integer.parseInt(m.group(1)) > 24) {
                 LocalDate dated = dateOf(line, firstDay);
@@ -114,11 +134,13 @@ public final class TimetableParser {
             if (start == null) {
                 continue;
             }
-            LocalDateTime startsAt = day.atTime(start);
+            LocalDateTime startsAt = (named != null ? named : day).atTime(start);
             if (m.group(1).equals("24")) {
-                startsAt = day.plusDays(1).atStartOfDay();
+                startsAt = (named != null ? named : day).plusDays(1).atStartOfDay();
             }
-            if (previous == null && start.getHour() < 12 && startHour >= 12 && day.equals(firstDay)) {
+            if (named != null) {
+                // The organizer wrote the day, so no guessing whether it is the night after
+            } else if (previous == null && start.getHour() < 12 && startHour >= 12 && day.equals(firstDay)) {
                 // An evening event's first set at 01:00 is the night after
                 startsAt = startsAt.plusDays(1);
             } else if (previous != null && startsAt.isBefore(previous.minusHours(6))) {
@@ -145,6 +167,18 @@ public final class TimetableParser {
                     note == null || note.isEmpty() ? null : note));
         }
         return slots;
+    }
+
+    // "Sat 22:00 Ajja" -> "22:00 Ajja"
+    private static String withoutWeekday(String line) {
+        Matcher weekday = WEEKDAY.matcher(line);
+        return weekday.find() ? line.substring(weekday.end()) : line;
+    }
+
+    private static DayOfWeek dayOf(String word) {
+        String lower = word.toLowerCase(Locale.ROOT);
+        // Every form starts with the two letters of its day: "sat", "saturday", "samstag", "sa"
+        return DAYS.get(lower.substring(0, 2));
     }
 
     private static String artistOf(String rest) {
