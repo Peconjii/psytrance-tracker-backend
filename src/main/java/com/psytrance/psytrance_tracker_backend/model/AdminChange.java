@@ -49,6 +49,16 @@ public class AdminChange {
     public static final String EVENT_HIDDEN = "EVENT_HIDDEN";
     /** An admin featured an event on the map or took it off; after is "featured: note" or "" (no undo) */
     public static final String EVENT_FEATURED = "EVENT_FEATURED";
+    /** A label's page was written (no undo) */
+    public static final String LABEL_PROFILE = "LABEL_PROFILE";
+    /** An account was linked to a label as its owner, or unlinked; before/after are the usernames (no undo) */
+    public static final String LABEL_OWNER = "LABEL_OWNER";
+    /** An artist was put on a label's crew or taken off it (approved request); after is "+ name" or "- name" (no undo) */
+    public static final String LABEL_CREW = "LABEL_CREW";
+    /** A festival's page was written (no undo) */
+    public static final String FESTIVAL_PROFILE = "FESTIVAL_PROFILE";
+    /** An account was linked to a festival as its owner, or unlinked; before/after are the usernames (no undo) */
+    public static final String FESTIVAL_OWNER = "FESTIVAL_OWNER";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

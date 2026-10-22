@@ -6,6 +6,8 @@ import com.psytrance.psytrance_tracker_backend.dto.OrganizerDto;
 import com.psytrance.psytrance_tracker_backend.dto.ReminderSettings;
 import com.psytrance.psytrance_tracker_backend.service.ArtistEditing;
 import com.psytrance.psytrance_tracker_backend.service.AttendanceService;
+import com.psytrance.psytrance_tracker_backend.service.FestivalPages;
+import com.psytrance.psytrance_tracker_backend.service.LabelPages;
 import com.psytrance.psytrance_tracker_backend.service.OrganizerEditing;
 import com.psytrance.psytrance_tracker_backend.service.UserService;
 import jakarta.validation.Valid;
@@ -27,13 +29,29 @@ public class MeController {
     private final UserService userService;
     private final ArtistEditing artistEditing;
     private final OrganizerEditing organizerEditing;
+    private final LabelPages labelPages;
+    private final FestivalPages festivalPages;
 
     public MeController(AttendanceService attendanceService, UserService userService, ArtistEditing artistEditing,
-                        OrganizerEditing organizerEditing) {
+                        OrganizerEditing organizerEditing, LabelPages labelPages, FestivalPages festivalPages) {
         this.attendanceService = attendanceService;
         this.userService = userService;
         this.artistEditing = artistEditing;
         this.organizerEditing = organizerEditing;
+        this.labelPages = labelPages;
+        this.festivalPages = festivalPages;
+    }
+
+    /** The labels whose page this account owns (linked by an admin) */
+    @GetMapping("/labels")
+    public List<LabelPages.Owned> getMyLabels(Authentication authentication) {
+        return labelPages.ownedBy(authentication.getName());
+    }
+
+    /** The festivals whose page this account owns (linked by an admin) */
+    @GetMapping("/festivals")
+    public List<FestivalPages.Owned> getMyFestivals(Authentication authentication) {
+        return festivalPages.ownedBy(authentication.getName());
     }
 
     /** The organizers whose page this account owns (linked by an admin) */

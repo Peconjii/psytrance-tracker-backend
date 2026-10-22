@@ -39,6 +39,15 @@ public class FestivalStats {
                         List<Count> reportedByYear) {
     }
 
+    /**
+     * The core of a festival's name, to find its editions among the events (the festival page does the same):
+     * "Hadra Trance Festival" -> "hadra", "MoDem (Momento Demento)" -> "modem", "Universo Paralello" stays
+     */
+    public static String matchOf(String name) {
+        return name.replaceAll("\\(.*?\\)", "").replaceAll("(?i)\\b(trance festival|festival|open air)\\b", "")
+                .replaceAll("\\s+", " ").strip().toLowerCase(Locale.ROOT);
+    }
+
     public Numbers festival(String match) {
         String term = match == null ? "" : match.strip().toLowerCase(Locale.ROOT);
         if (term.length() < 3 || term.length() > 60) {
