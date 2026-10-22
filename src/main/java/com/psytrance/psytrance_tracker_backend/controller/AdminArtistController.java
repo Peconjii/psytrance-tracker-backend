@@ -4,6 +4,7 @@ import com.psytrance.psytrance_tracker_backend.config.Admins;
 import com.psytrance.psytrance_tracker_backend.dto.AdminArtistDto;
 import com.psytrance.psytrance_tracker_backend.dto.ArtistRequestDto;
 import com.psytrance.psytrance_tracker_backend.service.ArtistEditing;
+import com.psytrance.psytrance_tracker_backend.service.Organizers;
 import com.psytrance.psytrance_tracker_backend.service.ArtistCleanup;
 import com.psytrance.psytrance_tracker_backend.service.MapPlacements;
 import jakarta.validation.Valid;
@@ -35,13 +36,15 @@ public class AdminArtistController {
     private final Admins admins;
     private final ArtistCleanup artistCleanup;
     private final ArtistEditing artistEditing;
+    private final Organizers organizers;
 
     public AdminArtistController(MapPlacements mapPlacements, Admins admins, ArtistCleanup artistCleanup,
-                                 ArtistEditing artistEditing) {
+                                 ArtistEditing artistEditing, Organizers organizers) {
         this.mapPlacements = mapPlacements;
         this.admins = admins;
         this.artistCleanup = artistCleanup;
         this.artistEditing = artistEditing;
+        this.organizers = organizers;
     }
 
     /** {@code PUT /api/admin/artists/ajja/owner {"username": "ajja_official"}}: that account may edit the profile */
@@ -74,6 +77,21 @@ public class AdminArtistController {
     }
 
     record OwnerChange(@NotBlank @Size(max = 255) String username) {
+    }
+
+    /**
+     * {@code POST /api/admin/artists/organizer {"name": "Cosmic Circus"}}: a line-up name that is really the organizer.
+     * It is hidden from the artists like "not an artist" (undo in the history) and gets an organizer page.
+     */
+    @PostMapping("/organizer")
+    public Map<String, String> markAsOrganizer(@Valid @RequestBody HiddenName change, Authentication authentication) {
+        String admin = admins.requireAdmin(authentication);
+        artistCleanup.setHidden(change.name(), true, admin);
+        String slug = organizers.record(change.name(), null);
+        return slug == null ? Map.of() : Map.of("organizer", slug);
+    }
+
+    record HiddenName(@NotBlank @Size(max = 100) String name) {
     }
 
     record Decision(@NotNull Boolean approve) {

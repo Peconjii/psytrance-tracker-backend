@@ -49,6 +49,7 @@ public class ArtistIndexer {
     private final EventGenres eventGenres;
     private final MapService mapService;
     private final EventTimetables eventTimetables;
+    private final Organizers organizers;
     private final Clock clock;
 
     public ArtistIndexer(EventService eventService,
@@ -58,6 +59,7 @@ public class ArtistIndexer {
                          EventGenres eventGenres,
                          MapService mapService,
                          EventTimetables eventTimetables,
+                         Organizers organizers,
                          Clock clock) {
         this.eventService = eventService;
         this.goabaseClient = goabaseClient;
@@ -66,6 +68,7 @@ public class ArtistIndexer {
         this.eventGenres = eventGenres;
         this.mapService = mapService;
         this.eventTimetables = eventTimetables;
+        this.organizers = organizers;
         this.clock = clock;
     }
 
@@ -117,8 +120,9 @@ public class ArtistIndexer {
             // Saved last, because it also marks the event as read
             Set<String> live = party.map(details -> LineUpParser.liveArtistSlugs(details.textLineUp())).orElse(Set.of());
             artistService.saveLineUp(eventId, artists, live, now);
-            // Name, dates and place as they are now (the organizer may have renamed or moved it)
-            artistService.saveSummary(byId.get(eventId));
+            // Name, dates, place and organizer as they are now (the organizer may have renamed or moved it)
+            String organizer = party.map(details -> organizers.record(details.nameOrganizer(), details.urlOrganizer())).orElse(null);
+            artistService.saveSummary(byId.get(eventId), organizer);
             read++;
         }
         return read;

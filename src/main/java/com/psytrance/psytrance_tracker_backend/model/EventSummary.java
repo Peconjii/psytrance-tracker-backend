@@ -28,6 +28,10 @@ public class EventSummary {
     @Column(name = "country", length = 255)
     private String country;
 
+    // Who ran the event (organizers.slug), when Goabase said so
+    @Column(name = "organizer_slug", length = 100)
+    private String organizerSlug;
+
     protected EventSummary() {
     }
 
@@ -63,5 +67,13 @@ public class EventSummary {
 
     public String getCountry() {
         return country;
+    }
+
+    public String getOrganizerSlug() {
+        return organizerSlug;
+    }
+
+    public void setOrganizerSlug(String organizerSlug) {
+        this.organizerSlug = organizerSlug;
     }
 }

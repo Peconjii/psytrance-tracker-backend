@@ -165,7 +165,14 @@ public class ArtistService {
 
     /** Keeps the event's name, dates and place, so it can be listed as a past gig once Goabase drops it */
     public void saveSummary(EventDto event) {
-        summaryRepository.save(summaryOf(event));
+        saveSummary(event, null);
+    }
+
+    /** As above, with who ran it (an organizer's slug, or null when Goabase doesn't say) */
+    public void saveSummary(EventDto event, String organizerSlug) {
+        EventSummary summary = summaryOf(event);
+        summary.setOrganizerSlug(organizerSlug);
+        summaryRepository.save(summary);
     }
 
     /** Keeps a summary of each of these events that has none yet (one query, then only the new ones are written) */
