@@ -68,6 +68,29 @@ class StatsIntegrationTest extends IntegrationTest {
         mockMvc.perform(get("/api/labels/stats").param("label", "No Such Records")).andExpect(status().isNotFound());
     }
 
+    @Test
+    void aFestivalsEditionsAreTheEventsWithItsNameAsAWord() throws Exception {
+        String festival = "fest" + uniqueLetters();
+        long edition = NEXT_EVENT_ID.getAndIncrement();
+        long other = NEXT_EVENT_ID.getAndIncrement();
+        artistService.saveLineUp(edition, List.of("Edition Act " + festival), Instant.now());
+        artistService.saveSummary(named(edition, festival + " Festival 2026"));
+        artistService.saveSummary(named(other, festival + "land Party"));
+
+        mockMvc.perform(get("/api/festivals/stats").param("match", festival))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.editions.length()").value(1))
+                .andExpect(jsonPath("$.editions[0].eventId").value((int) edition))
+                .andExpect(jsonPath("$.editions[0].artists").value(1))
+                .andExpect(jsonPath("$.topArtists[0].key").value("Edition Act " + festival));
+        mockMvc.perform(get("/api/festivals/stats").param("match", "ab")).andExpect(status().isBadRequest());
+    }
+
+    private static EventDto named(long id, String name) {
+        return new EventDto(id, name, "Town", "Hungary", "Festival", "Scheduled", LocalDate.now().plusDays(30), null,
+                null, null, 1.0, 1.0);
+    }
+
     private static EventDto event(long id, LocalDate day, String country) {
         return new EventDto(id, "Stats Night " + id, "Town", country, "Club", "Scheduled", day, null, null, null, 1.0, 1.0);
     }
