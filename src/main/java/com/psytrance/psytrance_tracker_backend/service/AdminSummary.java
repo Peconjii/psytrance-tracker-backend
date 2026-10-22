@@ -51,7 +51,8 @@ public class AdminSummary {
                 count("select count(*) from our_events where status = 'PENDING'"),
                 count("select (select count(*) from artist_requests where status = 'PENDING')"
                         + " + (select count(*) from label_requests where status = 'PENDING')"
-                        + " + (select count(*) from page_claims where status = 'PENDING')"));
+                        + " + (select count(*) from page_claims where status = 'PENDING')"
+                        + " + (select count(*) from page_requests where status = 'PENDING')"));
     }
 
     public Dashboard dashboard() {

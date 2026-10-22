@@ -1,6 +1,7 @@
 package com.psytrance.psytrance_tracker_backend.service;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.psytrance.psytrance_tracker_backend.util.ArtistNames;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.json.JsonMapper;
@@ -33,6 +34,13 @@ public class MapFestivals {
 
     public Optional<String> name(String id) {
         return Optional.ofNullable(id == null ? null : nameById.get(id));
+    }
+
+    /** The id of the festival with this name, ignoring case, spaces and punctuation */
+    public Optional<String> idOf(String name) {
+        String wanted = ArtistNames.slug(name);
+        return nameById.entrySet().stream().filter(e -> ArtistNames.slug(e.getValue()).equals(wanted))
+                .map(Map.Entry::getKey).findFirst();
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
