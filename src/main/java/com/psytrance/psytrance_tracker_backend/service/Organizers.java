@@ -97,7 +97,13 @@ public class Organizers {
                 .map(summary -> new PastGig(summary.getEventId(), summary.getName(), summary.getDateStart(),
                         summary.getTown(), summary.getCountry()))
                 .toList();
-        return new OrganizerDto(organizer.getSlug(), organizer.getName(), organizer.getUrl(), upcoming, past);
+        OrganizerDto.Profile profile = OrganizerDto.Profile.of(organizer);
+        return new OrganizerDto(organizer.getSlug(), organizer.getName(), organizer.getUrl(),
+                isEmpty(profile) ? null : profile, upcoming, past);
+    }
+
+    private static boolean isEmpty(OrganizerDto.Profile profile) {
+        return profile.photoUrl() == null && profile.bio() == null && profile.instagramUrl() == null && profile.websiteUrl() == null;
     }
 
     /** The organizers with these slugs, by slug (for linking event pages to organizer pages) */

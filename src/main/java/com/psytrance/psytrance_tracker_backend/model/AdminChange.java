@@ -35,6 +35,10 @@ public class AdminChange {
     public static final String ARTIST_NAME = "ARTIST_NAME";
     /** The artist's main role (DJ, PRODUCER, LIVE; empty: guessed) was picked; before/after are the roles (no undo) */
     public static final String ARTIST_ROLE = "ARTIST_ROLE";
+    /** An organizer's page was written (no undo) */
+    public static final String ORGANIZER_PROFILE = "ORGANIZER_PROFILE";
+    /** An account was linked to an organizer as its owner, or unlinked; before/after are the usernames (no undo) */
+    public static final String ORGANIZER_OWNER = "ORGANIZER_OWNER";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

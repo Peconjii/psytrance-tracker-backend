@@ -2,9 +2,11 @@ package com.psytrance.psytrance_tracker_backend.controller;
 
 import com.psytrance.psytrance_tracker_backend.dto.ArtistSummary;
 import com.psytrance.psytrance_tracker_backend.dto.GoingEvent;
+import com.psytrance.psytrance_tracker_backend.dto.OrganizerDto;
 import com.psytrance.psytrance_tracker_backend.dto.ReminderSettings;
 import com.psytrance.psytrance_tracker_backend.service.ArtistEditing;
 import com.psytrance.psytrance_tracker_backend.service.AttendanceService;
+import com.psytrance.psytrance_tracker_backend.service.OrganizerEditing;
 import com.psytrance.psytrance_tracker_backend.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.security.core.Authentication;
@@ -24,11 +26,20 @@ public class MeController {
     private final AttendanceService attendanceService;
     private final UserService userService;
     private final ArtistEditing artistEditing;
+    private final OrganizerEditing organizerEditing;
 
-    public MeController(AttendanceService attendanceService, UserService userService, ArtistEditing artistEditing) {
+    public MeController(AttendanceService attendanceService, UserService userService, ArtistEditing artistEditing,
+                        OrganizerEditing organizerEditing) {
         this.attendanceService = attendanceService;
         this.userService = userService;
         this.artistEditing = artistEditing;
+        this.organizerEditing = organizerEditing;
+    }
+
+    /** The organizers whose page this account owns (linked by an admin) */
+    @GetMapping("/organizers")
+    public List<OrganizerDto.Summary> getMyOrganizers(Authentication authentication) {
+        return organizerEditing.ownedBy(authentication.getName());
     }
 
     /** The artists whose profile this account owns (linked by an admin) */

@@ -23,6 +23,19 @@ public class Organizer {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
+    // Written by the organizer (their owner) or an admin
+    @Column(name = "photo_url", length = 500)
+    private String photoUrl;
+
+    @Column(name = "bio", length = 1000)
+    private String bio;
+
+    @Column(name = "instagram_url", length = 300)
+    private String instagramUrl;
+
+    @Column(name = "website_url", length = 300)
+    private String websiteUrl;
+
     protected Organizer() {
     }
 
@@ -47,5 +60,33 @@ public class Organizer {
 
     public void setUrl(String url) {
         this.url = url;
+    }
+
+    /** Replaces the page; blank fields are stored as null */
+    public void updateProfile(String photoUrl, String bio, String instagramUrl, String websiteUrl) {
+        this.photoUrl = blankToNull(photoUrl);
+        this.bio = blankToNull(bio);
+        this.instagramUrl = blankToNull(instagramUrl);
+        this.websiteUrl = blankToNull(websiteUrl);
+    }
+
+    private static String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value.strip();
+    }
+
+    public String getPhotoUrl() {
+        return photoUrl;
+    }
+
+    public String getBio() {
+        return bio;
+    }
+
+    public String getInstagramUrl() {
+        return instagramUrl;
+    }
+
+    public String getWebsiteUrl() {
+        return websiteUrl;
     }
 }
