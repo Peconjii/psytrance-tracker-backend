@@ -30,7 +30,7 @@ public class AdminSummary {
         this.clock = clock;
     }
 
-    /** What waits for an admin: new feedback, events added on our site, artists' and labels' requests */
+    /** What waits for an admin: new feedback, events added on our site, artists' and labels' requests, page claims */
     public record Waiting(long feedback, long events, long artistRequests, long total) {
         Waiting(long feedback, long events, long artistRequests) {
             this(feedback, events, artistRequests, feedback + events + artistRequests);
@@ -50,7 +50,8 @@ public class AdminSummary {
                 count("select count(*) from feedback where status = 'NEW'"),
                 count("select count(*) from our_events where status = 'PENDING'"),
                 count("select (select count(*) from artist_requests where status = 'PENDING')"
-                        + " + (select count(*) from label_requests where status = 'PENDING')"));
+                        + " + (select count(*) from label_requests where status = 'PENDING')"
+                        + " + (select count(*) from page_claims where status = 'PENDING')"));
     }
 
     public Dashboard dashboard() {
