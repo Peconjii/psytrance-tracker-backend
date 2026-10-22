@@ -8,6 +8,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -40,11 +42,12 @@ public class PageClaims {
     private final FestivalPages festivalPages;
     private final MapLabels mapLabels;
     private final MapFestivals mapFestivals;
+    private final DecisionMailer decisionMailer;
     private final Clock clock;
 
     public PageClaims(JdbcClient jdbc, ArtistEditing artistEditing, OrganizerEditing organizerEditing,
                       LabelPages labelPages, FestivalPages festivalPages, MapLabels mapLabels, MapFestivals mapFestivals,
-                      Clock clock) {
+                      DecisionMailer decisionMailer, Clock clock) {
         this.jdbc = jdbc;
         this.artistEditing = artistEditing;
         this.organizerEditing = organizerEditing;
@@ -52,6 +55,7 @@ public class PageClaims {
         this.festivalPages = festivalPages;
         this.mapLabels = mapLabels;
         this.mapFestivals = mapFestivals;
+        this.decisionMailer = decisionMailer;
         this.clock = clock;
     }
 
@@ -125,7 +129,23 @@ public class PageClaims {
                 .param("status", approve ? "APPROVED" : "REJECTED").param("admin", adminUsername)
                 .param("now", Timestamp.from(clock.instant())).param("reason", approve ? null : blankToNull(reason))
                 .param("id", id).update();
-        return find(id).orElseThrow();
+        Claim decided = find(id).orElseThrow();
+        String[] page = page(claim.kind(), claim.target());
+        decisionMailer.send(decided.email(), "Your claim of " + page[0], approve,
+                "The page is yours now: open it and use \"Edit\".", page[1], decided.rejectReason());
+        return decided;
+    }
+
+    // The page's name and path on the site: {"Ajja", "/artists/ajja"}
+    private String[] page(String kind, String key) {
+        return switch (kind) {
+            case "ARTIST" -> new String[]{Optional.ofNullable(text("select name from artists where slug = :key", key)).orElse(key),
+                    "/artists/" + key};
+            case "ORGANIZER" -> new String[]{Optional.ofNullable(text("select name from organizers where slug = :key", key)).orElse(key),
+                    "/organizers/" + key};
+            case "LABEL" -> new String[]{key, "/labels/" + URLEncoder.encode(key, StandardCharsets.UTF_8).replace("+", "%20")};
+            default -> new String[]{mapFestivals.name(key).orElse(key), "/festivals/" + key};
+        };
     }
 
     // ---- Helpers ----

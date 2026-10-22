@@ -84,6 +84,9 @@ class PageClaimIntegrationTest extends IntegrationTest {
                 .andExpect(jsonPath("$.status").value("APPROVED"));
         mockMvc.perform(get("/api/me/artists").header("Authorization", bearer(token)))
                 .andExpect(jsonPath("$[0].slug").value("claimed-act-" + unique));
+        // The claimer hears of it by mail, with the link to the page
+        org.mockito.Mockito.verify(decisionMailer).send(unique + "@gmail.com", "Your claim of " + artist, true,
+                "The page is yours now: open it and use \"Edit\".", "/artists/claimed-act-" + unique, null);
     }
 
     @Test

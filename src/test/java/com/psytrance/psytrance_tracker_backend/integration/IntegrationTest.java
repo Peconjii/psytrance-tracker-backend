@@ -3,6 +3,7 @@ package com.psytrance.psytrance_tracker_backend.integration;
 import com.jayway.jsonpath.JsonPath;
 import com.psytrance.psytrance_tracker_backend.client.GoabaseClient;
 import com.psytrance.psytrance_tracker_backend.client.YouTubeClient;
+import com.psytrance.psytrance_tracker_backend.service.DecisionMailer;
 import com.psytrance.psytrance_tracker_backend.service.VerificationMailer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -54,6 +55,10 @@ abstract class IntegrationTest {
     // Faked so tests can read the verification link instead of finding it in the log
     @MockitoBean
     protected VerificationMailer verificationMailer;
+
+    // Faked so tests can check who hears of an admin's decision
+    @MockitoBean
+    protected DecisionMailer decisionMailer;
 
     /**
      * Letters unique per call (a random id with each digit turned into its own letter), for artist names: all tests

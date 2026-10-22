@@ -34,10 +34,12 @@ public class NewPages {
     private final OrganizerEditing organizerEditing;
     private final MapLabels mapLabels;
     private final MapFestivals mapFestivals;
+    private final DecisionMailer decisionMailer;
     private final Clock clock;
 
     public NewPages(JdbcClient jdbc, ArtistRepository artistRepository, Organizers organizers, ArtistEditing artistEditing,
-                    OrganizerEditing organizerEditing, MapLabels mapLabels, MapFestivals mapFestivals, Clock clock) {
+                    OrganizerEditing organizerEditing, MapLabels mapLabels, MapFestivals mapFestivals,
+                    DecisionMailer decisionMailer, Clock clock) {
         this.jdbc = jdbc;
         this.artistRepository = artistRepository;
         this.organizers = organizers;
@@ -45,6 +47,7 @@ public class NewPages {
         this.organizerEditing = organizerEditing;
         this.mapLabels = mapLabels;
         this.mapFestivals = mapFestivals;
+        this.decisionMailer = decisionMailer;
         this.clock = clock;
     }
 
@@ -125,7 +128,17 @@ public class NewPages {
                 .param("status", approve ? "APPROVED" : "REJECTED").param("admin", adminUsername)
                 .param("now", Timestamp.from(clock.instant())).param("reason", approve ? null : blankToNull(reason))
                 .param("slug", createdSlug).param("id", id).update();
-        return find(id).orElseThrow();
+        Request decided = find(id).orElseThrow();
+        String what = "Your request for a page of " + decided.name();
+        if (createdSlug != null) {
+            decisionMailer.send(decided.email(), what, true, "The page is made and it is yours: open it and use \"Edit\".",
+                    ("ARTIST".equals(decided.kind()) ? "/artists/" : "/organizers/") + createdSlug, null);
+        } else {
+            decisionMailer.send(decided.email(), what, approve,
+                    "It goes on the map with the next update of the map's data; then claim it on its page.", null,
+                    decided.rejectReason());
+        }
+        return decided;
     }
 
     // ---- Helpers ----

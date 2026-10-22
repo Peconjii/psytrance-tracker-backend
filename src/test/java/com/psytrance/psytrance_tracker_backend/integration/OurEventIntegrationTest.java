@@ -117,6 +117,15 @@ class OurEventIntegrationTest extends IntegrationTest {
                 .andExpect(jsonPath("$.content[*].id").value(not(hasItem((int) eventId))));
         mockMvc.perform(get("/api/our-events/mine").header("Authorization", bearer(token)))
                 .andExpect(jsonPath("$[0].rejectReason").value("Cancelled"));
+        // The sender heard of both: approved, then taken down with the reason
+        org.mockito.Mockito.verify(decisionMailer).send(org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.startsWith("Your event Forest Gathering " + unique),
+                org.mockito.ArgumentMatchers.eq(true), org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.eq("/events/" + eventId), org.mockito.ArgumentMatchers.isNull());
+        org.mockito.Mockito.verify(decisionMailer).send(org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.startsWith("Your event Forest Gathering " + unique),
+                org.mockito.ArgumentMatchers.eq(false), org.mockito.ArgumentMatchers.isNull(),
+                org.mockito.ArgumentMatchers.isNull(), org.mockito.ArgumentMatchers.eq("Cancelled"));
     }
 
     @Test

@@ -54,12 +54,13 @@ public class OurEvents {
     private final Admins admins;
     private final AdminChangeRepository changeRepository;
     private final LineupScanRepository lineupScanRepository;
+    private final DecisionMailer decisionMailer;
     private final Clock clock;
 
     public OurEvents(OurEventRepository repository, UserRepository userRepository, EventService eventService,
                      EventGenreAdmin eventGenreAdmin, MapGenres mapGenres, OrganizerEditing organizerEditing,
                      Admins admins, AdminChangeRepository changeRepository,
-                     LineupScanRepository lineupScanRepository, Clock clock) {
+                     LineupScanRepository lineupScanRepository, DecisionMailer decisionMailer, Clock clock) {
         this.repository = repository;
         this.userRepository = userRepository;
         this.eventService = eventService;
@@ -69,6 +70,7 @@ public class OurEvents {
         this.admins = admins;
         this.changeRepository = changeRepository;
         this.lineupScanRepository = lineupScanRepository;
+        this.decisionMailer = decisionMailer;
         this.clock = clock;
     }
 
@@ -190,6 +192,7 @@ public class OurEvents {
         OurEvent event = find(id);
         if (!OurEvent.APPROVED.equals(event.getStatus())) {
             approve(event, adminUsername);
+            tell(event, adminUsername, true, "It is on the map now; its line-up is read within half an hour.", null);
         }
         return OurEventDto.of(event, event.getSubmittedBy().getUsername(), List.of());
     }
@@ -204,7 +207,20 @@ public class OurEvents {
             eventService.refreshSoon(event.eventId());
         }
         log(event, before, adminUsername);
+        if (!OurEvent.REJECTED.equals(before)) {
+            tell(event, adminUsername, false, null, event.getRejectReason());
+        }
         return OurEventDto.of(event, event.getSubmittedBy().getUsername(), List.of());
+    }
+
+    // A mail to whoever sent the event, unless the admin decided on their own event
+    private void tell(OurEvent event, String adminUsername, boolean approved, String approvedNote, String reason) {
+        User sender = event.getSubmittedBy();
+        if (sender.getUsername().equals(adminUsername)) {
+            return;
+        }
+        decisionMailer.send(sender.getEmail(), "Your event " + event.getName(), approved, approvedNote,
+                approved ? "/events/" + event.eventId() : null, reason);
     }
 
     private void approve(OurEvent event, String username) {
