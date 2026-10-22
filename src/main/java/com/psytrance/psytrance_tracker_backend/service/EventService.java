@@ -156,6 +156,7 @@ public class EventService {
     private static boolean matches(EventDto event, EventSearch search, LocalDate today) {
         return matchesSearch(event, search.search())
                 && containsIgnoreCase(event.nameCountry(), search.country())
+                && (search.eventIds() == null || search.eventIds().contains(event.id()))
                 && matchesGenre(event, search.genre())
                 && matchesTimeline(event, search, today);
     }

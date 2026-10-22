@@ -7,9 +7,11 @@ import com.psytrance.psytrance_tracker_backend.dto.EventSearch;
 import com.psytrance.psytrance_tracker_backend.dto.EventTimeline;
 import com.psytrance.psytrance_tracker_backend.dto.PageResponse;
 import com.psytrance.psytrance_tracker_backend.dto.TimetableDto;
+import com.psytrance.psytrance_tracker_backend.repository.EventGenreRepository;
 import com.psytrance.psytrance_tracker_backend.service.AftermovieService;
 import com.psytrance.psytrance_tracker_backend.service.EventService;
 import com.psytrance.psytrance_tracker_backend.service.EventTimetables;
+import com.psytrance.psytrance_tracker_backend.service.MapGenres;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import org.springframework.http.ResponseEntity;
@@ -28,11 +30,16 @@ public class EventController {
     private final EventService eventService;
     private final AftermovieService aftermovieService;
     private final EventTimetables eventTimetables;
+    private final MapGenres mapGenres;
+    private final EventGenreRepository eventGenreRepository;
 
-    public EventController(EventService eventService, AftermovieService aftermovieService, EventTimetables eventTimetables) {
+    public EventController(EventService eventService, AftermovieService aftermovieService, EventTimetables eventTimetables,
+                           MapGenres mapGenres, EventGenreRepository eventGenreRepository) {
         this.eventService = eventService;
         this.aftermovieService = aftermovieService;
         this.eventTimetables = eventTimetables;
+        this.mapGenres = mapGenres;
+        this.eventGenreRepository = eventGenreRepository;
     }
 
     /** The set times of the event: read from its line-up or set by an admin; no sets when there are none */
@@ -42,7 +49,8 @@ public class EventController {
     }
 
     /**
-     * Example: {@code GET /api/events?page=0&size=24&search=boom&country=portugal&timeline=THIS_WEEKEND}
+     * Example: {@code GET /api/events?page=0&size=24&search=boom&country=portugal&genre=forest&timeline=THIS_WEEKEND}.
+     * A genre of the map ("forest") keeps the events that have it on the map; another word is looked for in the name.
      */
     @GetMapping
     public PageResponse<EventDto> getEvents(
@@ -52,6 +60,10 @@ public class EventController {
             @RequestParam(required = false) String country,
             @RequestParam(required = false) String genre,
             @RequestParam(defaultValue = "ALL") EventTimeline timeline) {
+        if (genre != null && mapGenres.isGenre(genre)) {
+            return eventService.findEvents(new EventSearch(search, country, null, timeline,
+                    eventGenreRepository.findEventIdsByGenreId(genre)), page, size);
+        }
         return eventService.findEvents(new EventSearch(search, country, genre, timeline), page, size);
     }
 

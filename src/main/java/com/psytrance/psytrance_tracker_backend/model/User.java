@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 
+import java.time.Instant;
+
 @Entity
 @Table(name = "app_user")
 public class User {
@@ -19,6 +21,9 @@ public class User {
     private boolean eventReminders = true;
     // Confirmed by opening the emailed link (see EmailVerification); only verified accounts may add events
     private boolean emailVerified;
+    // When the account was made; null for accounts from before the site kept the date
+    @Column(name = "created_at")
+    private Instant createdAt;
 
     public String getUsername() {
         return username;
@@ -66,5 +71,13 @@ public class User {
 
     public void setEmailVerified(boolean emailVerified) {
         this.emailVerified = emailVerified;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
     }
 }

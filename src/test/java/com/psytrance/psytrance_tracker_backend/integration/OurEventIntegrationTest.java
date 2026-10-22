@@ -83,6 +83,11 @@ class OurEventIntegrationTest extends IntegrationTest {
         mockMvc.perform(get("/api/admin/events/{id}/genres", eventId).header("Authorization", bearer(adminToken)))
                 .andExpect(jsonPath("$.manual").value(true))
                 .andExpect(jsonPath("$.genres[0].genreId").value("forest"));
+        // The genre filter of the events page uses the map genres
+        mockMvc.perform(get("/api/events").param("genre", "forest").param("search", unique))
+                .andExpect(jsonPath("$.content[*].id").value(hasItem((int) eventId)));
+        mockMvc.perform(get("/api/events").param("genre", "dark").param("search", unique))
+                .andExpect(jsonPath("$.content[*].id").value(not(hasItem((int) eventId))));
 
         // The line-up is read like a Goabase one: the artist's page lists the gig
         artistIndexer.indexNextBatch();
