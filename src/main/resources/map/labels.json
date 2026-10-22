@@ -398,5 +398,28 @@
     "artists": [],
     "x": 2447,
     "y": 1364
+  },
+  "Mittai Music": {
+    "artists": [
+      "Acajou",
+      "Amras",
+      "Astroalien",
+      "Atim",
+      "Calabi Yau",
+      "Inner Coma",
+      "Mokiru",
+      "Nabhit",
+      "Nibiru",
+      "Nost",
+      "Paralocks",
+      "Psytohigh",
+      "Sonic System",
+      "Spirituvel",
+      "Vox Fabri"
+    ],
+    "country": "India",
+    "since": 2022,
+    "x": 2300,
+    "y": 2120
   }
 }
