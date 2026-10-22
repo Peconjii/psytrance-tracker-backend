@@ -78,6 +78,22 @@ class AdminEventToolsIntegrationTest extends IntegrationTest {
                 .andExpect(jsonPath("$.content[*].id").value(hasItem((int) eventId)));
     }
 
+    @Test
+    void aFeaturedEventIsMarkedOnTheMap() throws Exception {
+        mockMvc.perform(put("/api/admin/events/{id}/featured", eventId).header("Authorization", bearer(adminToken))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"note\": \"Tickets almost gone\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.upcoming").value(true));
+        mockMvc.perform(get("/api/map/events").param("period", "MONTH"))
+                .andExpect(jsonPath("$[?(@.id == %d)].featured".formatted(eventId)).value(hasItem(true)))
+                .andExpect(jsonPath("$[?(@.id == %d)].featuredNote".formatted(eventId)).value(hasItem("Tickets almost gone")));
+
+        mockMvc.perform(delete("/api/admin/events/{id}/featured", eventId).header("Authorization", bearer(adminToken)))
+                .andExpect(status().isNoContent());
+        mockMvc.perform(get("/api/map/events").param("period", "MONTH"))
+                .andExpect(jsonPath("$[?(@.id == %d)].featured".formatted(eventId)).value(hasItem(false)));
+    }
+
     private void lineUp(String text) {
         when(goabaseClient.fetchParty(eventId)).thenReturn(Optional.of(new GoabasePartyDetails(eventId, "Tools Night " + unique,
                 day, null, "Club", "Scheduled", "Austria", "Vienna", 48.2, 16.4, null, null, null, text, "", "", "", "", null)));

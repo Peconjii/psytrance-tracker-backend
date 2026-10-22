@@ -47,6 +47,8 @@ public class AdminChange {
     public static final String REVIEW_DELETED = "REVIEW_DELETED";
     /** An admin hid an event from the site or showed it again; before/after are "shown"/"hidden: reason" (no undo) */
     public static final String EVENT_HIDDEN = "EVENT_HIDDEN";
+    /** An admin featured an event on the map or took it off; after is "featured: note" or "" (no undo) */
+    public static final String EVENT_FEATURED = "EVENT_FEATURED";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

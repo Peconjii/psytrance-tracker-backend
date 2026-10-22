@@ -5,8 +5,10 @@ import com.psytrance.psytrance_tracker_backend.dto.GenreShare;
 import com.psytrance.psytrance_tracker_backend.dto.MapEventDto;
 import com.psytrance.psytrance_tracker_backend.dto.MapPeriod;
 import com.psytrance.psytrance_tracker_backend.model.EventGenre;
+import com.psytrance.psytrance_tracker_backend.model.FeaturedEvent;
 import com.psytrance.psytrance_tracker_backend.model.LineupScan;
 import com.psytrance.psytrance_tracker_backend.repository.EventGenreRepository;
+import com.psytrance.psytrance_tracker_backend.repository.FeaturedEventRepository;
 import com.psytrance.psytrance_tracker_backend.repository.LineupScanRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,15 +29,18 @@ public class MapService {
     private final EventService eventService;
     private final EventGenreRepository eventGenreRepository;
     private final LineupScanRepository lineupScanRepository;
+    private final FeaturedEventRepository featuredEventRepository;
     private final Clock clock;
 
     public MapService(EventService eventService,
                       EventGenreRepository eventGenreRepository,
                       LineupScanRepository lineupScanRepository,
+                      FeaturedEventRepository featuredEventRepository,
                       Clock clock) {
         this.eventService = eventService;
         this.eventGenreRepository = eventGenreRepository;
         this.lineupScanRepository = lineupScanRepository;
+        this.featuredEventRepository = featuredEventRepository;
         this.clock = clock;
     }
 
@@ -47,11 +52,15 @@ public class MapService {
         }
         List<Long> ids = events.stream().map(EventDto::id).toList();
         Map<Long, List<GenreShare>> genres = findGenres(ids);
+        // Event id -> note ("" without one) of the events admins feature
+        Map<Long, String> featured = featuredEventRepository.findAllById(ids).stream()
+                .collect(Collectors.toMap(FeaturedEvent::getEventId, f -> f.getNote() == null ? "" : f.getNote()));
         Set<Long> read = lineupScanRepository.findAllById(ids).stream()
                 .map(LineupScan::getEventId)
                 .collect(Collectors.toSet());
         return events.stream()
-                .map(event -> MapEventDto.from(event, read.contains(event.id()), genres.getOrDefault(event.id(), List.of())))
+                .map(event -> MapEventDto.from(event, read.contains(event.id()), genres.getOrDefault(event.id(), List.of()),
+                        featured.get(event.id())))
                 .toList();
     }
 
