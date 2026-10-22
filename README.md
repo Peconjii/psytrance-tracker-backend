@@ -6,9 +6,11 @@ REST API for **Map of Psy**, a galaxy of psytrance genres where every upcoming p
 stars of the genres it plays. It pulls events from the public [Goabase](https://www.goabase.net) API, reads
 their line-ups to work out who plays where and which **map genres** each party has, reads **timetables** from
 the line-ups, and lets users register, save events, say they're going, write reviews, **follow artists** and
-get emails. Admins correct the data in an **admin panel** with a change history and undo.
+get emails. Artists, organizers, labels and festivals can own their pages. Admins and editors correct the
+data in an **admin panel** with a change history and undo.
 
 **Frontend (React):** [Peconjii/psytrance-tracker](https://github.com/Peconjii/psytrance-tracker)
+(screenshots are in its README)
 
 **Live: [psyatlas-one.vercel.app](https://psyatlas-one.vercel.app)** · API:
 [psytrance-tracker-backend.onrender.com/api/events](https://psytrance-tracker-backend.onrender.com/api/events)
@@ -336,7 +338,12 @@ through MockMvc. Only Goabase is faked.
 - [x] Map of Psy as the home page: map genres, timetables and live fleets
 - [x] Feedback form and admin panel with history and undo
 - [x] Following artists with new-gig emails
-- [ ] Event filters by map genre instead of words in the event name
+- [x] Event filters by map genre instead of words in the event name
+- [x] Email confirmation, and events added on the site (approved by an admin) next to Goabase's
+- [x] Label and festival pages, numbers for artists, labels and festivals (owners see more)
+- [x] Page owners: "Claim this page" (email domain or an admin), "Not on the map yet?" requests
+- [x] Roles from the admin panel: admins and editors (content only)
+- [x] Stage cards in the event form, read like any line-up (a stage's genre in brackets)
 - [ ] Deployment to AWS
 
 ## Credits
