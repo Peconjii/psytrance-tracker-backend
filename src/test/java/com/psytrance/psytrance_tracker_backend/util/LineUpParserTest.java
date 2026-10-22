@@ -91,6 +91,18 @@ class LineUpParserTest {
         assertThat(LineUpParser.findArtist(line)).isNull();
     }
 
+    @Test
+    void findsTheArtistsWrittenWithLive() {
+        assertThat(LineUpParser.liveArtistSlugs("""
+                LINE UP
+                Astrix live
+                Ace Ventura
+                02:15 – 04:15 Live M3dra
+                Aleph (live act)
+                Live Earth
+                """)).containsExactlyInAnyOrder("astrix", "m3dra", "aleph", "live-earth");
+    }
+
     @ParameterizedTest(name = "\"{0}\" is still an artist")
     @CsvSource({"1200 Micrograms", "Dr.Psylocibine", "B. RYDER", "7Eleven", "4MOTION", "Dž & Mž", "Live Earth", "ATMOS", "M!GuZ & BeXXn"})
     void artistsThatLookLikeNoiseAreKept(String line) {

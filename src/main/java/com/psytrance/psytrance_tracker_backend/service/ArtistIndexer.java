@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -114,7 +115,8 @@ public class ArtistIndexer {
             party.ifPresent(details -> eventTimetables.saveParsed(eventId, timetable(details)));
             List<String> artists = lineUp.stream().flatMap(section -> section.artists().stream()).toList();
             // Saved last, because it also marks the event as read
-            artistService.saveLineUp(eventId, artists, now);
+            Set<String> live = party.map(details -> LineUpParser.liveArtistSlugs(details.textLineUp())).orElse(Set.of());
+            artistService.saveLineUp(eventId, artists, live, now);
             // Name, dates and place as they are now (the organizer may have renamed or moved it)
             artistService.saveSummary(byId.get(eventId));
             read++;

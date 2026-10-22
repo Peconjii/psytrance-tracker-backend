@@ -35,6 +35,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -96,8 +97,28 @@ public class ArtistEditing {
                 requestRepository.findByArtistSlugAndStatus(artist.getSlug(), ArtistRequest.Status.PENDING).stream()
                         .map(request -> toDto(request, artist.getName()))
                         .toList(),
-                owner);
+                owner,
+                profileRepository.findById(artist.getSlug()).map(ArtistProfile::getRole).orElse(null));
     }
+
+    /** The artist's main role, set at once: it is a label and a filter, nothing on the map moves */
+    @Transactional
+    public String setRole(String slug, String role, String username) {
+        Artist artist = requireEditor(slug, username);
+        String picked = role == null || role.isBlank() ? null : role.strip().toUpperCase(Locale.ROOT);
+        if (picked != null && !ROLES.contains(picked)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The role is DJ, PRODUCER or LIVE");
+        }
+        ArtistProfile profile = profileOf(artist);
+        String before = profile.getRole();
+        profile.setRole(picked, clock.instant());
+        profileRepository.save(profile);
+        log(username, AdminChange.ARTIST_ROLE, artist.getName(), before, picked);
+        return picked;
+    }
+
+    /** The roles an artist can pick; every role gets the same profile options */
+    static final List<String> ROLES = List.of("DJ", "PRODUCER", "LIVE");
 
     public ArtistProfileDto saveProfile(String slug, ArtistProfileRequest request, String username) {
         requireEditor(slug, username);
@@ -251,17 +272,22 @@ public class ArtistEditing {
         if (request.getKind() == ArtistRequest.Kind.GENRES) {
             mapPlacements.setGenres(artist.getName(), List.of(request.getValue().split(",")), adminUsername);
         } else {
-            ArtistProfile profile = profileRepository.findById(artist.getSlug()).orElseGet(() -> {
-                ArtistProfile created = new ArtistProfile(artist.getSlug());
-                created.update(null, null, null, null, null, null, null, clock.instant());
-                return created;
-            });
+            ArtistProfile profile = profileOf(artist);
             String before = profile.getDisplayName();
             profile.setDisplayName(request.getValue(), clock.instant());
             profileRepository.save(profile);
             log(adminUsername, AdminChange.ARTIST_NAME, artist.getName(), before, request.getValue());
         }
         request.decide(ArtistRequest.Status.APPROVED, adminUsername, clock.instant());
+    }
+
+    // The artist's profile, a new empty one when nobody wrote one yet
+    private ArtistProfile profileOf(Artist artist) {
+        return profileRepository.findById(artist.getSlug()).orElseGet(() -> {
+            ArtistProfile created = new ArtistProfile(artist.getSlug());
+            created.update(null, null, null, null, null, null, null, clock.instant());
+            return created;
+        });
     }
 
     // The artist, for an admin or the artist's owner; guests get 401 and other users 403

@@ -8,5 +8,5 @@ import java.util.List;
  */
 public record ArtistEditDto(String slug, String name, ArtistProfileDto profile,
                             List<ArtistListsRequest.Track> tracks, List<ArtistListsRequest.Festival> festivals,
-                            List<String> genres, List<ArtistRequestDto> pendingRequests, String owner) {
+                            List<String> genres, List<ArtistRequestDto> pendingRequests, String owner, String role) {
 }

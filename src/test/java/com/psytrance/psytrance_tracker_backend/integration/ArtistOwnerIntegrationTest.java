@@ -13,6 +13,7 @@ import org.springframework.http.MediaType;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.hamcrest.Matchers.hasItem;
@@ -167,6 +168,31 @@ class ArtistOwnerIntegrationTest extends IntegrationTest {
                 .andExpect(jsonPath("$.twilight", hasItem(artistName)));
         mockMvc.perform(get("/api/artists/{slug}", artistSlug))
                 .andExpect(jsonPath("$.name").value(artistName));
+    }
+
+    @Test
+    void theOwnerPicksTheRoleAndLiveGigsAreCounted() throws Exception {
+        // A second gig where the line-up wrote "live" next to the artist: half of their gigs are live
+        artistService.saveLineUp(NEXT_EVENT_ID.getAndIncrement(), List.of(artistName), Set.of(artistSlug), Instant.now());
+        mockMvc.perform(get("/api/artists/{slug}", artistSlug))
+                .andExpect(jsonPath("$.role").doesNotExist())
+                .andExpect(jsonPath("$.liveShare").value(0.5));
+
+        mockMvc.perform(put("/api/artists/{slug}/role", artistSlug).header("Authorization", bearer(ownerToken))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"role\": \"live\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.role").value("LIVE"));
+        mockMvc.perform(get("/api/artists").param("search", artistName))
+                .andExpect(jsonPath("$[0].role").value("LIVE"));
+        mockMvc.perform(put("/api/artists/{slug}/role", artistSlug).header("Authorization", bearer(ownerToken))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"role\": \"ROCKSTAR\"}"))
+                .andExpect(status().isBadRequest());
+        // Back to the guess
+        mockMvc.perform(put("/api/artists/{slug}/role", artistSlug).header("Authorization", bearer(ownerToken))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"role\": null}"))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/api/artists/{slug}", artistSlug))
+                .andExpect(jsonPath("$.role").doesNotExist());
     }
 
     @Test

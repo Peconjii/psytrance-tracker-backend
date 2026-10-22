@@ -1,6 +1,7 @@
 package com.psytrance.psytrance_tracker_backend.service;
 
 import com.psytrance.psytrance_tracker_backend.dto.ArtistDto;
+import com.psytrance.psytrance_tracker_backend.dto.ArtistListItem;
 import com.psytrance.psytrance_tracker_backend.dto.ArtistListsRequest;
 import com.psytrance.psytrance_tracker_backend.dto.ArtistProfileDto;
 import com.psytrance.psytrance_tracker_backend.dto.ArtistSummary;
@@ -10,6 +11,7 @@ import com.psytrance.psytrance_tracker_backend.model.Artist;
 import com.psytrance.psytrance_tracker_backend.model.ArtistAlias;
 import com.psytrance.psytrance_tracker_backend.model.ArtistBlock;
 import com.psytrance.psytrance_tracker_backend.model.ArtistEvent;
+import com.psytrance.psytrance_tracker_backend.model.ArtistProfile;
 import com.psytrance.psytrance_tracker_backend.model.EventSummary;
 import com.psytrance.psytrance_tracker_backend.model.LineupScan;
 import com.psytrance.psytrance_tracker_backend.repository.ArtistAliasRepository;
@@ -32,7 +34,9 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -92,12 +96,37 @@ public class ArtistService {
      * Artists with upcoming events, busiest first. The search ignores case, accents and symbols,
      * so "ace vent" finds "ACE VENTURA" and "element" finds "Ëlement".
      */
-    public List<ArtistSummary> findArtists(String search) {
+    public List<ArtistListItem> findArtists(String search) {
         List<Long> upcomingIds = eventService.findUpcoming().stream().map(EventDto::id).toList();
         if (upcomingIds.isEmpty()) {
             return List.of();
         }
-        return artistRepository.findPlayingAt(upcomingIds, ArtistNames.slug(search), PageRequest.of(0, MAX_RESULTS));
+        List<ArtistSummary> found = artistRepository.findPlayingAt(upcomingIds, ArtistNames.slug(search), PageRequest.of(0, MAX_RESULTS));
+        List<String> slugs = found.stream().map(ArtistSummary::slug).toList();
+        Map<String, String> roles = profileRepository.findAllById(slugs).stream()
+                .filter(profile -> profile.getRole() != null)
+                .collect(Collectors.toMap(ArtistProfile::getSlug, ArtistProfile::getRole));
+        Map<String, Long> idsBySlug = artistRepository.findBySlugIn(slugs).stream()
+                .collect(Collectors.toMap(Artist::getSlug, Artist::getId));
+        Map<Long, Double> liveShares = liveShares(idsBySlug.values());
+        return found.stream()
+                .map(a -> new ArtistListItem(a.slug(), a.name(), a.upcomingEvents(), roles.get(a.slug()),
+                        liveShares.getOrDefault(idsBySlug.get(a.slug()), 0.0)))
+                .toList();
+    }
+
+    // For each artist: the share of their gigs the line-up wrote "live" for
+    private Map<Long, Double> liveShares(Collection<Long> artistIds) {
+        Map<Long, Double> shares = new HashMap<>();
+        if (artistIds.isEmpty()) {
+            return shares;
+        }
+        for (Object[] row : artistEventRepository.countLiveByArtistIds(artistIds)) {
+            long live = ((Number) row[1]).longValue();
+            long all = ((Number) row[2]).longValue();
+            shares.put((Long) row[0], all == 0 ? 0.0 : (double) live / all);
+        }
+        return shares;
     }
 
     /**
@@ -128,8 +157,10 @@ public class ArtistService {
         List<ArtistListsRequest.Festival> festivals = festivalRepository.findByArtistSlugOrderByPositionAsc(artist.getSlug()).stream()
                 .map(festival -> new ArtistListsRequest.Festival(festival.getName(), festival.getYear(), festival.getUrl()))
                 .toList();
+        String role = profileRepository.findById(artist.getSlug()).map(ArtistProfile::getRole).orElse(null);
         return new ArtistDto(artist.getSlug(), name, upcoming, profile, past,
-                followRepository.countByArtistSlug(artist.getSlug()), tracks, festivals);
+                followRepository.countByArtistSlug(artist.getSlug()), tracks, festivals, role,
+                liveShares(List.of(artist.getId())).getOrDefault(artist.getId(), 0.0));
     }
 
     /** Keeps the event's name, dates and place, so it can be listed as a past gig once Goabase drops it */
@@ -159,6 +190,12 @@ public class ArtistService {
      */
     @Transactional
     public void saveLineUp(long eventId, List<String> artistNames, Instant scannedAt) {
+        saveLineUp(eventId, artistNames, Set.of(), scannedAt);
+    }
+
+    /** As above; liveSlugs are the artists the line-up wrote "live" for (see LineUpParser.liveArtistSlugs) */
+    @Transactional
+    public void saveLineUp(long eventId, List<String> artistNames, Set<String> liveSlugs, Instant scannedAt) {
         artistEventRepository.deleteByEventId(eventId);
 
         // Organizers sometimes list an artist twice (two sets, two stages): keep one, best spelling.
@@ -194,7 +231,7 @@ public class ArtistService {
                     // Saved at the end of the transaction, because the entity is managed
                     artist.setName(ArtistNames.preferredName(artist.getName(), name));
                 }
-                artistEventRepository.save(new ArtistEvent(artist, eventId));
+                artistEventRepository.save(new ArtistEvent(artist, eventId, liveSlugs.contains(slug)));
             });
         }
 

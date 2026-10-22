@@ -33,6 +33,8 @@ public class AdminChange {
     public static final String ARTIST_OWNER = "ARTIST_OWNER";
     /** An approved request changed the name on an artist's page; before/after are the names (no undo) */
     public static final String ARTIST_NAME = "ARTIST_NAME";
+    /** The artist's main role (DJ, PRODUCER, LIVE; empty: guessed) was picked; before/after are the roles (no undo) */
+    public static final String ARTIST_ROLE = "ARTIST_ROLE";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

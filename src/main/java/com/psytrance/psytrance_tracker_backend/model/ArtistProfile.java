@@ -41,6 +41,10 @@ public class ArtistProfile {
     @Column(name = "display_name", length = 100)
     private String displayName;
 
+    // DJ, PRODUCER or LIVE, picked by the artist or an admin; null: not picked (the site guesses)
+    @Column(name = "role", length = 20)
+    private String role;
+
     protected ArtistProfile() {
     }
 
@@ -99,6 +103,15 @@ public class ArtistProfile {
 
     public String getDisplayName() {
         return displayName;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role, Instant updatedAt) {
+        this.role = role;
+        this.updatedAt = updatedAt;
     }
 
     public void setDisplayName(String displayName, Instant updatedAt) {

@@ -3,11 +3,11 @@ package com.psytrance.psytrance_tracker_backend.controller;
 import com.psytrance.psytrance_tracker_backend.dto.ArtistChangeRequest;
 import com.psytrance.psytrance_tracker_backend.dto.ArtistDto;
 import com.psytrance.psytrance_tracker_backend.dto.ArtistEditDto;
+import com.psytrance.psytrance_tracker_backend.dto.ArtistListItem;
 import com.psytrance.psytrance_tracker_backend.dto.ArtistListsRequest;
 import com.psytrance.psytrance_tracker_backend.dto.ArtistProfileDto;
 import com.psytrance.psytrance_tracker_backend.dto.ArtistProfileRequest;
 import com.psytrance.psytrance_tracker_backend.dto.ArtistRequestDto;
-import com.psytrance.psytrance_tracker_backend.dto.ArtistSummary;
 import com.psytrance.psytrance_tracker_backend.service.ArtistEditing;
 import com.psytrance.psytrance_tracker_backend.service.ArtistService;
 import jakarta.validation.Valid;
@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/artists")
@@ -40,7 +41,7 @@ public class ArtistController {
 
     /** Example: {@code GET /api/artists?search=astrix}. Without a search: the artists with the most upcoming events. */
     @GetMapping
-    public List<ArtistSummary> getArtists(@RequestParam(required = false) String search) {
+    public List<ArtistListItem> getArtists(@RequestParam(required = false) String search) {
         return artistService.findArtists(search);
     }
 
@@ -77,6 +78,16 @@ public class ArtistController {
                                                           @Valid @RequestBody ArtistListsRequest.Festivals festivals,
                                                           Authentication authentication) {
         return artistEditing.saveFestivals(slug, festivals, username(authentication));
+    }
+
+    /** {@code PUT /api/artists/ajja/role {"role": "DJ"}}: DJ, PRODUCER or LIVE; null hands it back to the guess */
+    @PutMapping("/{slug}/role")
+    public Map<String, String> setRole(@PathVariable String slug, @RequestBody RoleChange change, Authentication authentication) {
+        String role = artistEditing.setRole(slug, change.role(), username(authentication));
+        return role == null ? Map.of() : Map.of("role", role);
+    }
+
+    record RoleChange(String role) {
     }
 
     /** Other map genres or another name on the page: an admin decides (an admin's own request applies at once) */

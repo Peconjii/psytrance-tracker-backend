@@ -18,12 +18,21 @@ public class ArtistEvent {
     @Column(name = "event_id", nullable = false)
     private Long eventId;
 
+    // The line-up wrote "live" next to the artist
+    @Column(name = "live", nullable = false)
+    private boolean live;
+
     protected ArtistEvent() {
     }
 
     public ArtistEvent(Artist artist, Long eventId) {
+        this(artist, eventId, false);
+    }
+
+    public ArtistEvent(Artist artist, Long eventId, boolean live) {
         this.artist = artist;
         this.eventId = eventId;
+        this.live = live;
     }
 
     public Long getId() {

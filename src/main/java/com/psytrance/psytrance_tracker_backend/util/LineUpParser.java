@@ -6,6 +6,7 @@ import org.springframework.web.util.HtmlUtils;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -145,6 +146,19 @@ public final class LineUpParser {
      * Artists before the first header get a null header. A header lasts until the next one; blank
      * lines don't end it, because organizers often leave a gap between the header and the names.
      */
+    /** The artists of the line-up written with "live" ("Astrix live", "Live M3dra", "Aleph (live act)"), by slug */
+    public static Set<String> liveArtistSlugs(String lineUp) {
+        Set<String> live = new HashSet<>();
+        for (LineUpLine line : parse(lineUp)) {
+            if (line.artist() != null && LIVE_WORD.matcher(line.text()).find()) {
+                live.add(ArtistNames.slug(line.artist()));
+            }
+        }
+        return live;
+    }
+
+    private static final Pattern LIVE_WORD = Pattern.compile("(?i)\\blive\\b");
+
     public static List<Section> sections(String lineUp) {
         List<Section> sections = new ArrayList<>();
         String header = null;

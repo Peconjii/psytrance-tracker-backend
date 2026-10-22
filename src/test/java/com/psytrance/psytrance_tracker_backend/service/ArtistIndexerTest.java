@@ -19,6 +19,7 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -63,7 +64,8 @@ class ArtistIndexerTest {
 
         assertThat(indexer.indexNextBatch()).isEqualTo(1);
 
-        verify(artistService).saveLineUp(1, List.of("Ace Ventura"), NOW);
+        // "(live)" next to the name: a live gig
+        verify(artistService).saveLineUp(1, List.of("Ace Ventura"), Set.of("ace-ventura"), NOW);
     }
 
     @Test
@@ -116,8 +118,8 @@ class ArtistIndexerTest {
 
         assertThat(indexer.indexNextBatch()).isEqualTo(1);
 
-        verify(artistService).saveLineUp(1, List.of("Astrix"), NOW);
-        verify(artistService, never()).saveLineUp(eq(2L), any(), any());
+        verify(artistService).saveLineUp(1, List.of("Astrix"), Set.of(), NOW);
+        verify(artistService, never()).saveLineUp(eq(2L), any(), any(), any());
         verify(goabaseClient, never()).fetchParty(3);
     }
 
@@ -129,7 +131,7 @@ class ArtistIndexerTest {
         indexer.indexNextBatch();
 
         verify(mapService).saveGenres(1, List.of(new GenreShare("forest", 1.0, Source.ARTIST)));
-        verify(artistService).saveLineUp(1, List.of("Derango", "Someone Unknown"), NOW);
+        verify(artistService).saveLineUp(1, List.of("Derango", "Someone Unknown"), Set.of(), NOW);
     }
 
     @Test
@@ -152,7 +154,7 @@ class ArtistIndexerTest {
         assertThat(indexer.indexNextBatch()).isEqualTo(1);
 
         verify(mapService).saveGenres(1, List.of());
-        verify(artistService).saveLineUp(1, List.of("Astrix"), NOW);
+        verify(artistService).saveLineUp(1, List.of("Astrix"), Set.of(), NOW);
     }
 
     private static EventDto event(long id) {
