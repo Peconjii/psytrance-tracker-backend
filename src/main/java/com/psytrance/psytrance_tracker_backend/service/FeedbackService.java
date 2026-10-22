@@ -8,6 +8,7 @@ import com.psytrance.psytrance_tracker_backend.repository.FeedbackRepository;
 import com.psytrance.psytrance_tracker_backend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.mail.MailException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -33,6 +34,7 @@ public class FeedbackService {
 
     private final FeedbackRepository feedbackRepository;
     private final UserRepository userRepository;
+    private final FeedbackReplyMailer replyMailer;
     private final Clock clock;
     private final int maxPerHour;
 
@@ -41,10 +43,12 @@ public class FeedbackService {
 
     public FeedbackService(FeedbackRepository feedbackRepository,
                            UserRepository userRepository,
+                           FeedbackReplyMailer replyMailer,
                            Clock clock,
                            @Value("${app.feedback.max-per-hour:5}") int maxPerHour) {
         this.feedbackRepository = feedbackRepository;
         this.userRepository = userRepository;
+        this.replyMailer = replyMailer;
         this.clock = clock;
         this.maxPerHour = maxPerHour;
     }
@@ -91,10 +95,44 @@ public class FeedbackService {
         List<Feedback> feedback = status == null
                 ? feedbackRepository.findAllByOrderByCreatedAtDesc()
                 : feedbackRepository.findByStatusOrderByCreatedAtDesc(status);
-        Map<Long, String> usernames = userRepository.findAllById(feedback.stream()
+        Map<Long, User> users = userRepository.findAllById(feedback.stream()
                         .map(Feedback::getUserId).filter(id -> id != null).distinct().toList()).stream()
-                .collect(Collectors.toMap(User::getId, User::getUsername));
-        return feedback.stream().map(f -> FeedbackDto.from(f, usernames.get(f.getUserId()))).toList();
+                .collect(Collectors.toMap(User::getId, user -> user));
+        return feedback.stream().map(f -> dto(f, users.get(f.getUserId()))).toList();
+    }
+
+    /**
+     * Emails an admin's answer to the sender and keeps it with the message. 409 when there is no address to answer;
+     * a failed email is a 502 and nothing is saved, so the admin can try again.
+     */
+    @Transactional
+    public FeedbackDto reply(long id, String text, String adminUsername) {
+        Feedback feedback = feedbackRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Feedback not found"));
+        User user = feedback.getUserId() == null ? null : userRepository.findById(feedback.getUserId()).orElse(null);
+        String to = replyTo(feedback, user);
+        if (to == null) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "This message has no email address to answer");
+        }
+        try {
+            replyMailer.send(to, text.strip(), feedback.getMessage());
+        } catch (MailException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "The email could not be sent. Try again later.", e);
+        }
+        feedback.replied(text.strip(), adminUsername, clock.instant());
+        return dto(feedback, user);
+    }
+
+    private static FeedbackDto dto(Feedback feedback, User user) {
+        return FeedbackDto.from(feedback, user == null ? null : user.getUsername(), replyTo(feedback, user));
+    }
+
+    // The address written in the form, else the account's
+    private static String replyTo(Feedback feedback, User user) {
+        if (feedback.getEmail() != null && !feedback.getEmail().isBlank()) {
+            return feedback.getEmail();
+        }
+        return user == null || user.getEmail() == null || user.getEmail().isBlank() ? null : user.getEmail();
     }
 
     @Transactional
@@ -102,9 +140,7 @@ public class FeedbackService {
         Feedback feedback = feedbackRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Feedback not found"));
         feedback.setStatus(status);
-        String username = feedback.getUserId() == null ? null
-                : userRepository.findById(feedback.getUserId()).map(User::getUsername).orElse(null);
-        return FeedbackDto.from(feedback, username);
+        return dto(feedback, feedback.getUserId() == null ? null : userRepository.findById(feedback.getUserId()).orElse(null));
     }
 
     private static String blankToNull(String value) {

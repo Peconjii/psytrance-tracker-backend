@@ -7,7 +7,9 @@ import com.psytrance.psytrance_tracker_backend.model.Feedback;
 import com.psytrance.psytrance_tracker_backend.service.FeedbackService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -60,6 +62,15 @@ public class FeedbackController {
     }
 
     public record StatusChange(@NotNull Feedback.Status status) {
+    }
+
+    /** Example: {@code POST /api/admin/feedback/7/reply {"text": "Thanks, fixed!"}}: emailed to the sender; admins only */
+    @PostMapping("/api/admin/feedback/{id}/reply")
+    public FeedbackDto reply(@PathVariable long id, @Valid @RequestBody Reply reply, Authentication authentication) {
+        return feedbackService.reply(id, reply.text(), admins.requireAdmin(authentication));
+    }
+
+    public record Reply(@NotBlank @Size(max = 3000) String text) {
     }
 
     // The form works for guests too; logged-in senders are remembered with their message

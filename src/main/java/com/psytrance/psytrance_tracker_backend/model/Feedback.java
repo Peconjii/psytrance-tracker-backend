@@ -58,6 +58,16 @@ public class Feedback {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
+    // An admin's answer, emailed to the sender
+    @Column(name = "reply_text", length = 3000)
+    private String replyText;
+
+    @Column(name = "replied_at")
+    private Instant repliedAt;
+
+    @Column(name = "replied_by")
+    private String repliedBy;
+
     protected Feedback() {
     }
 
@@ -115,5 +125,23 @@ public class Feedback {
 
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    public String getReplyText() {
+        return replyText;
+    }
+
+    public Instant getRepliedAt() {
+        return repliedAt;
+    }
+
+    public String getRepliedBy() {
+        return repliedBy;
+    }
+
+    public void replied(String text, String admin, Instant at) {
+        this.replyText = text;
+        this.repliedBy = admin;
+        this.repliedAt = at;
     }
 }
