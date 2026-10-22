@@ -83,7 +83,7 @@ public class ReminderMailer {
 
                 %s
 
-                You get this email because you follow these artists (%s/profile).
+                You get this email because you follow these artists or their labels (%s/profile).
                 You can turn emails off there too.
                 """.formatted(user.getUsername(), list, frontendUrl);
         return send(user, subject, text, "new gigs");
