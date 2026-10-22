@@ -9,6 +9,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -35,11 +37,15 @@ public class NewPages {
     private final MapLabels mapLabels;
     private final MapFestivals mapFestivals;
     private final DecisionMailer decisionMailer;
+    private final MapExtras mapExtras;
+    private final LabelPages labelPages;
+    private final FestivalPages festivalPages;
     private final Clock clock;
 
     public NewPages(JdbcClient jdbc, ArtistRepository artistRepository, Organizers organizers, ArtistEditing artistEditing,
                     OrganizerEditing organizerEditing, MapLabels mapLabels, MapFestivals mapFestivals,
-                    DecisionMailer decisionMailer, Clock clock) {
+                    DecisionMailer decisionMailer, MapExtras mapExtras, LabelPages labelPages,
+                    FestivalPages festivalPages, Clock clock) {
         this.jdbc = jdbc;
         this.artistRepository = artistRepository;
         this.organizers = organizers;
@@ -48,6 +54,9 @@ public class NewPages {
         this.mapLabels = mapLabels;
         this.mapFestivals = mapFestivals;
         this.decisionMailer = decisionMailer;
+        this.mapExtras = mapExtras;
+        this.labelPages = labelPages;
+        this.festivalPages = festivalPages;
         this.clock = clock;
     }
 
@@ -110,14 +119,29 @@ public class NewPages {
 
     @Transactional
     public Request decide(long id, boolean approve, String reason, String adminUsername) {
+        return decide(id, approve, reason, null, adminUsername);
+    }
+
+    /** What a label or festival gets on the map when an admin adds it right away: genres decide where it sits */
+    public record OnTheMap(String country, Integer since, String description, List<String> genres) {
+    }
+
+    /**
+     * Approving an artist or organizer makes its page with the asker as owner. A label or festival with
+     * {@code onTheMap} is added to the map the same way, owner included; without it, it is only noted.
+     */
+    @Transactional
+    public Request decide(long id, boolean approve, String reason, OnTheMap onTheMap, String adminUsername) {
         Request request = find(id).filter(r -> "PENDING".equals(r.status()))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No waiting request " + id));
         String createdSlug = null;
         if (approve) {
+            boolean addNow = onTheMap != null && onTheMap.genres() != null && !onTheMap.genres().isEmpty();
             createdSlug = switch (request.kind()) {
                 case "ARTIST" -> createArtist(request, adminUsername);
                 case "ORGANIZER" -> createOrganizer(request, adminUsername);
-                default -> null;
+                case "LABEL" -> addNow ? addLabel(request, onTheMap, adminUsername) : null;
+                default -> addNow ? addFestival(request, onTheMap, adminUsername) : null;
             };
         }
         jdbc.sql("""
@@ -131,8 +155,10 @@ public class NewPages {
         Request decided = find(id).orElseThrow();
         String what = "Your request for a page of " + decided.name();
         if (createdSlug != null) {
-            decisionMailer.send(decided.email(), what, true, "The page is made and it is yours: open it and use \"Edit\".",
-                    ("ARTIST".equals(decided.kind()) ? "/artists/" : "/organizers/") + createdSlug, null);
+            decisionMailer.send(decided.email(), what, true,
+                    ("LABEL".equals(decided.kind()) || "FESTIVAL".equals(decided.kind()) ? "It is on the map now, " : "The page is made ")
+                            + "and it is yours: open it and use \"Edit\".",
+                    pathOf(decided.kind(), createdSlug), null);
         } else {
             decisionMailer.send(decided.email(), what, approve,
                     "It goes on the map with the next update of the map's data; then claim it on its page.", null,
@@ -142,6 +168,34 @@ public class NewPages {
     }
 
     // ---- Helpers ----
+
+    // The page on the site of what was made: createdSlug is the slug, the label's name or the festival's id
+    static String pathOf(String kind, String createdSlug) {
+        return switch (kind) {
+            case "ARTIST" -> "/artists/" + createdSlug;
+            case "ORGANIZER" -> "/organizers/" + createdSlug;
+            case "LABEL" -> "/labels/" + URLEncoder.encode(createdSlug, StandardCharsets.UTF_8).replace("+", "%20");
+            default -> "/festivals/" + createdSlug;
+        };
+    }
+
+    private String addLabel(Request request, OnTheMap onTheMap, String adminUsername) {
+        String name = mapExtras.addLabel(request.name(), firstNonBlank(onTheMap.country(), request.country()),
+                onTheMap.since(), onTheMap.genres(), adminUsername).name();
+        labelPages.setOwner(name, request.username(), adminUsername);
+        return name;
+    }
+
+    private String addFestival(Request request, OnTheMap onTheMap, String adminUsername) {
+        String festivalId = mapExtras.addFestival(request.name(), firstNonBlank(onTheMap.country(), request.country()),
+                onTheMap.since(), onTheMap.description(), onTheMap.genres(), adminUsername).id();
+        festivalPages.setOwner(festivalId, request.username(), adminUsername);
+        return festivalId;
+    }
+
+    private static String firstNonBlank(String first, String second) {
+        return first != null && !first.isBlank() ? first : second;
+    }
 
     // The page and its owner; when the line-ups brought the artist in meanwhile, the asker becomes that page's owner
     private String createArtist(Request request, String adminUsername) {

@@ -179,7 +179,17 @@ public class MapGenres {
 
     /** One star system of the map. Only the fields the backend uses are read. */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record Genre(String id, String name, String family, List<String> artists) {
+    /** x, y: where the genre's star sits in the galaxy (null in hand-made test maps) */
+    public record Genre(String id, String name, String family, List<String> artists, Integer x, Integer y) {
+
+        public Genre(String id, String name, String family, List<String> artists) {
+            this(id, name, family, artists, null, null);
+        }
+    }
+
+    /** The genre with this id, if the map has it */
+    public Optional<Genre> genre(String genreId) {
+        return genres.stream().filter(genre -> genre.id().equals(genreId)).findFirst();
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)

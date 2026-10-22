@@ -45,7 +45,8 @@ public class NewPageController {
                               @Size(max = 300) String genres, @Size(max = 1000) String message, String website) {
     }
 
-    public record Decision(boolean approve, @Size(max = 500) String reason) {
+    /** onTheMap: for a label or festival, to add it to the map right away (with its genres) */
+    public record Decision(boolean approve, @Size(max = 500) String reason, NewPages.OnTheMap onTheMap) {
     }
 
     @PostMapping("/api/page-requests")
@@ -75,6 +76,6 @@ public class NewPageController {
     /** {@code POST /api/admin/page-requests/7 {"approve": true}}; approving an artist or organizer makes the page */
     @PostMapping("/api/admin/page-requests/{id}")
     public NewPages.Request decide(@PathVariable long id, @Valid @RequestBody Decision decision, Authentication authentication) {
-        return newPages.decide(id, decision.approve(), decision.reason(), admins.requireAdmin(authentication));
+        return newPages.decide(id, decision.approve(), decision.reason(), decision.onTheMap(), admins.requireAdmin(authentication));
     }
 }

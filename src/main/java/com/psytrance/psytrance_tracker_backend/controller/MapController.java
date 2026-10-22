@@ -5,6 +5,7 @@ import com.psytrance.psytrance_tracker_backend.dto.MapEventDto;
 import com.psytrance.psytrance_tracker_backend.dto.MapPeriod;
 import com.psytrance.psytrance_tracker_backend.dto.TimetableDto;
 import com.psytrance.psytrance_tracker_backend.service.EventTimetables;
+import com.psytrance.psytrance_tracker_backend.service.MapExtras;
 import com.psytrance.psytrance_tracker_backend.service.MapPlacements;
 import com.psytrance.psytrance_tracker_backend.service.MapService;
 import jakarta.validation.constraints.Size;
@@ -24,17 +25,26 @@ public class MapController {
     private final MapService mapService;
     private final MapPlacements mapPlacements;
     private final EventTimetables eventTimetables;
+    private final MapExtras mapExtras;
 
-    public MapController(MapService mapService, MapPlacements mapPlacements, EventTimetables eventTimetables) {
+    public MapController(MapService mapService, MapPlacements mapPlacements, EventTimetables eventTimetables,
+                         MapExtras mapExtras) {
         this.mapService = mapService;
         this.eventTimetables = eventTimetables;
         this.mapPlacements = mapPlacements;
+        this.mapExtras = mapExtras;
     }
 
     /** Which artists orbit which genre star: {@code {"forest": ["Derango", ...], ...}}. Admins edit it in the panel. */
     @GetMapping("/placements")
     public Map<String, List<String>> getPlacements() {
         return mapPlacements.placements();
+    }
+
+    /** The labels and festivals admins added to the map, next to the ones in the bundled map files */
+    @GetMapping("/extras")
+    public MapExtras.Extras getExtras() {
+        return mapExtras.all();
     }
 
     /** Example: {@code GET /api/map/events?period=MONTH}. Events with their Map of Psy genres, soonest first. */

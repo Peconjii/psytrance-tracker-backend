@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /** The festival stations of Map of Psy ({@code map/festivals.json}, copied from the frontend): id -> name */
 @Component
@@ -32,15 +33,27 @@ public class MapFestivals {
         }
     }
 
+    // Festivals admins added to the map (table map_festivals, see MapExtras): id -> name
+    private volatile Map<String, String> added = Map.of();
+
     public Optional<String> name(String id) {
-        return Optional.ofNullable(id == null ? null : nameById.get(id));
+        if (id == null) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(nameById.getOrDefault(id, added.get(id)));
     }
 
     /** The id of the festival with this name, ignoring case, spaces and punctuation */
     public Optional<String> idOf(String name) {
         String wanted = ArtistNames.slug(name);
-        return nameById.entrySet().stream().filter(e -> ArtistNames.slug(e.getValue()).equals(wanted))
+        return Stream.concat(nameById.entrySet().stream(), added.entrySet().stream())
+                .filter(e -> ArtistNames.slug(e.getValue()).equals(wanted))
                 .map(Map.Entry::getKey).findFirst();
+    }
+
+    /** Uses these festivals admins added to the map ({@code id -> name}) instead of the ones used so far */
+    public void useAddedFestivals(Map<String, String> festivals) {
+        this.added = Map.copyOf(festivals);
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)

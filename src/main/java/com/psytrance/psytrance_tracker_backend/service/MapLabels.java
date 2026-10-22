@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 /**
  * The labels of Map of Psy ({@code map/labels.json}, copied from the frontend) and the artists on each: the map's crew,
@@ -39,12 +40,22 @@ public class MapLabels {
         this.artistsByLabel = Map.copyOf(artistsByLabel);
     }
 
+    // Labels admins added to the map (table map_labels, see MapExtras); their crew is all in the crew changes
+    private volatile Set<String> added = Set.of();
+
     public boolean isLabel(String label) {
-        return label != null && artistsByLabel.containsKey(label);
+        return label != null && (artistsByLabel.containsKey(label) || added.contains(label));
     }
 
     public Set<String> names() {
-        return artistsByLabel.keySet();
+        Set<String> all = new TreeSet<>(artistsByLabel.keySet());
+        all.addAll(added);
+        return all;
+    }
+
+    /** Uses these labels admins added to the map instead of the ones used so far */
+    public void useAddedLabels(Set<String> labels) {
+        this.added = Set.copyOf(labels);
     }
 
     /** The artists on a label now: the map's, plus the ones added, minus the ones taken off; empty when no such label */
@@ -53,7 +64,7 @@ public class MapLabels {
             return Optional.empty();
         }
         Map<String, Boolean> changes = crewChanges.getOrDefault(label, Map.of());
-        List<String> crew = new ArrayList<>(artistsByLabel.get(label).stream()
+        List<String> crew = new ArrayList<>(artistsByLabel.getOrDefault(label, List.of()).stream()
                 .filter(artist -> !Boolean.FALSE.equals(changes.get(artist)))
                 .toList());
         changes.forEach((artist, added) -> {
