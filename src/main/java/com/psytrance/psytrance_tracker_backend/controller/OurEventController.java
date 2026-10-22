@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -44,6 +45,18 @@ public class OurEventController {
     @GetMapping("/mine")
     public List<OurEventDto> mine(Authentication authentication) {
         return ourEvents.mine(authentication.getName());
+    }
+
+    /** One of the account's events (any for admins), for its edit form */
+    @GetMapping("/{id}")
+    public OurEventDto get(@PathVariable long id, Authentication authentication) {
+        return ourEvents.get(id, authentication.getName());
+    }
+
+    /** Changes an event: a waiting one keeps waiting, an approved one changes on the map right away */
+    @PutMapping("/{id}")
+    public OurEventDto update(@PathVariable long id, @Valid @RequestBody OurEventRequest request, Authentication authentication) {
+        return ourEvents.update(id, request, authentication.getName());
     }
 
     /** Takes back an event that is still waiting */

@@ -41,6 +41,8 @@ public class AdminChange {
     public static final String ORGANIZER_OWNER = "ORGANIZER_OWNER";
     /** An event added on our site was approved or taken down; before/after are the statuses (no undo) */
     public static final String OUR_EVENT = "OUR_EVENT";
+    /** An approved event added on our site was changed by its sender or an admin; before/after are the names (no undo) */
+    public static final String OUR_EVENT_EDITED = "OUR_EVENT_EDITED";
     /** An admin deleted someone's review; before is "rating ★ comment" (no undo) */
     public static final String REVIEW_DELETED = "REVIEW_DELETED";
     /** An admin hid an event from the site or showed it again; before/after are "shown"/"hidden: reason" (no undo) */

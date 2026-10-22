@@ -19,6 +19,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -93,6 +94,20 @@ class OurEventIntegrationTest extends IntegrationTest {
         artistIndexer.indexNextBatch();
         mockMvc.perform(get("/api/artists/{slug}", "ground-crew-" + unique))
                 .andExpect(jsonPath("$.upcomingEvents[*].id").value(hasItem((int) eventId)));
+
+        // The sender changes it after approval: the page and the genres follow right away; nobody else may
+        mockMvc.perform(put("/api/our-events/{id}", id).header("Authorization", bearer(token))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(event("Forest Gathering " + unique + " Closing").replace("\"forest\"", "\"twilight\"")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("APPROVED"));
+        mockMvc.perform(get("/api/events/{id}/details", eventId))
+                .andExpect(jsonPath("$.nameParty").value("Forest Gathering " + unique + " Closing"));
+        mockMvc.perform(get("/api/admin/events/{id}/genres", eventId).header("Authorization", bearer(adminToken)))
+                .andExpect(jsonPath("$.genres[0].genreId").value("twilight"));
+        mockMvc.perform(put("/api/our-events/{id}", id).header("Authorization", bearer(verifiedUser()))
+                        .contentType(MediaType.APPLICATION_JSON).content(event("Hijacked " + unique)))
+                .andExpect(status().isNotFound());
 
         // Taken down: off the lists again
         mockMvc.perform(post("/api/admin/our-events/{id}/reject", id).header("Authorization", bearer(adminToken))

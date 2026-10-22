@@ -90,16 +90,62 @@ public class OurEvents {
         }
 
         OurEvent event = new OurEvent(user, clock.instant());
-        event.setDetails(request.name().strip(), eventType(request.eventType()), request.startsAt(), request.endsAt(),
-                timeZone(request), request.country().strip(), request.town().strip(), request.lat(), request.lon(),
-                blankToNull(request.lineUp()), blankToNull(request.locationText()), blankToNull(request.entryFee()),
-                blankToNull(request.info()), organizerName, blankToNull(request.organizerUrl()),
-                blankToNull(request.ticketUrl()), blankToNull(request.imageUrl()), genres(request.genres()));
+        fill(event, request);
         repository.save(event);
         if (trusted) {
             approve(event, username);
         }
         return OurEventDto.of(event, null, List.of());
+    }
+
+    /** One event for its edit form: its sender or an admin */
+    @Transactional(readOnly = true)
+    public OurEventDto get(long id, String username) {
+        return OurEventDto.of(editable(id, username), null, List.of());
+    }
+
+    /**
+     * Changes an event, by its sender or an admin. A waiting one keeps waiting; an approved one changes on the map
+     * right away (the sender has a confirmed email), and the change is in the history so admins can take it down.
+     */
+    @Transactional
+    public OurEventDto update(long id, OurEventRequest request, String username) {
+        OurEvent event = editable(id, username);
+        if (OurEvent.REJECTED.equals(event.getStatus())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "A rejected event can't be changed; add it again");
+        }
+        List<String> genresBefore = event.genreIds();
+        String nameBefore = event.getName();
+        fill(event, request);
+        repository.saveAndFlush(event);
+        if (OurEvent.APPROVED.equals(event.getStatus())) {
+            eventService.refreshSoon(event.eventId());
+            if (!genresBefore.equals(event.genreIds())) {
+                // None goes back to the genres the line-up gives
+                eventGenreAdmin.setGenres(event.eventId(), event.genreIds(), username);
+            }
+            // The line-up and set times may have changed: read first in the next run
+            lineupScanRepository.rereadSoon(List.of(event.eventId()));
+            changeRepository.save(new AdminChange(username, AdminChange.OUR_EVENT_EDITED,
+                    event.getName() + " (#" + event.eventId() + ")", nameBefore, event.getName(), clock.instant()));
+        }
+        return OurEventDto.of(event, null, List.of());
+    }
+
+    // The sender's own event, or any for an admin
+    private OurEvent editable(long id, String username) {
+        return repository.findById(id)
+                .filter(event -> event.getSubmittedBy().getUsername().equals(username) || admins.isAdmin(username))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No event " + id + " of yours"));
+    }
+
+    // Checks the request and copies it into the event
+    private void fill(OurEvent event, OurEventRequest request) {
+        event.setDetails(request.name().strip(), eventType(request.eventType()), request.startsAt(), request.endsAt(),
+                timeZone(request), request.country().strip(), request.town().strip(), request.lat(), request.lon(),
+                blankToNull(request.lineUp()), blankToNull(request.locationText()), blankToNull(request.entryFee()),
+                blankToNull(request.info()), blankToNull(request.organizerName()), blankToNull(request.organizerUrl()),
+                blankToNull(request.ticketUrl()), blankToNull(request.imageUrl()), genres(request.genres()));
     }
 
     /** The events this account added, newest first */
