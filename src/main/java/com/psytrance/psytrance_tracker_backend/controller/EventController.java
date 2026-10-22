@@ -12,6 +12,8 @@ import com.psytrance.psytrance_tracker_backend.service.AftermovieService;
 import com.psytrance.psytrance_tracker_backend.service.EventService;
 import com.psytrance.psytrance_tracker_backend.service.EventTimetables;
 import com.psytrance.psytrance_tracker_backend.service.MapGenres;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import org.springframework.http.ResponseEntity;
@@ -50,6 +52,7 @@ public class EventController {
 
     /**
      * Example: {@code GET /api/events?page=0&size=24&search=boom&country=portugal&genre=forest&timeline=THIS_WEEKEND}.
+     * With {@code lat}, {@code lon} and {@code km} (100 unless given): only the events that close ("Near me").
      * A genre of the map ("forest") keeps the events that have it on the map; another word is looked for in the name.
      */
     @GetMapping
@@ -59,12 +62,17 @@ public class EventController {
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String country,
             @RequestParam(required = false) String genre,
-            @RequestParam(defaultValue = "ALL") EventTimeline timeline) {
+            @RequestParam(defaultValue = "ALL") EventTimeline timeline,
+            @RequestParam(required = false) @DecimalMin("-90") @DecimalMax("90") Double lat,
+            @RequestParam(required = false) @DecimalMin("-180") @DecimalMax("180") Double lon,
+            @RequestParam(defaultValue = "100") @Min(1) @Max(2000) int km) {
+        // "Near me": the browser's position, never stored
+        EventSearch.Near near = lat != null && lon != null ? new EventSearch.Near(lat, lon, km) : null;
         if (genre != null && mapGenres.isGenre(genre)) {
             return eventService.findEvents(new EventSearch(search, country, null, timeline,
-                    eventGenreRepository.findEventIdsByGenreId(genre)), page, size);
+                    eventGenreRepository.findEventIdsByGenreId(genre), near), page, size);
         }
-        return eventService.findEvents(new EventSearch(search, country, genre, timeline), page, size);
+        return eventService.findEvents(new EventSearch(search, country, genre, timeline, null, near), page, size);
     }
 
     /** Every event that has coordinates, for the world map. */

@@ -158,7 +158,25 @@ public class EventService {
                 && containsIgnoreCase(event.nameCountry(), search.country())
                 && (search.eventIds() == null || search.eventIds().contains(event.id()))
                 && matchesGenre(event, search.genre())
-                && matchesTimeline(event, search, today);
+                && matchesTimeline(event, search, today)
+                && isNear(event, search.near());
+    }
+
+    private static final double EARTH_RADIUS_KM = 6371;
+
+    // Within the distance, as the crow flies (haversine); events without coordinates are never near
+    static boolean isNear(EventDto event, EventSearch.Near near) {
+        if (near == null) {
+            return true;
+        }
+        if (event.lat() == null || event.lon() == null) {
+            return false;
+        }
+        double dLat = Math.toRadians(event.lat() - near.lat());
+        double dLon = Math.toRadians(event.lon() - near.lon());
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+                + Math.cos(Math.toRadians(near.lat())) * Math.cos(Math.toRadians(event.lat())) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        return 2 * EARTH_RADIUS_KM * Math.asin(Math.sqrt(a)) <= near.km();
     }
 
     private static boolean matchesSearch(EventDto event, String term) {

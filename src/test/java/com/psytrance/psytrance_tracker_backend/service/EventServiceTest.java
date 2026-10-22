@@ -89,6 +89,17 @@ class EventServiceTest {
     }
 
     @Test
+    void nearMeKeepsTheEventsWithinTheDistance() {
+        // Belgrade is about 70 km from Novi Sad
+        EventDto belgrade = new EventDto(1L, "Party", "Belgrade", "Serbia", "Club", "Scheduled", null, null, null, null, 44.79, 20.45);
+        EventDto nowhere = new EventDto(2L, "Party", "?", "?", "Club", "Scheduled", null, null, null, null, null, null);
+        assertThat(EventService.isNear(belgrade, new EventSearch.Near(45.25, 19.84, 100))).isTrue();
+        assertThat(EventService.isNear(belgrade, new EventSearch.Near(45.25, 19.84, 50))).isFalse();
+        assertThat(EventService.isNear(nowhere, new EventSearch.Near(45.25, 19.84, 2000))).isFalse();
+        assertThat(EventService.isNear(nowhere, null)).isTrue();
+    }
+
+    @Test
     void searchMatchesNameOrTownIgnoringCase() {
         when(goabaseClient.fetchAllParties()).thenReturn(List.of(
                 party(1, "Boom Festival", "2026-10-01", null),
