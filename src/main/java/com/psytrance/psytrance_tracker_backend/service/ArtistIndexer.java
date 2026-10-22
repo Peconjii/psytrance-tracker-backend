@@ -1,6 +1,6 @@
 package com.psytrance.psytrance_tracker_backend.service;
 
-import com.psytrance.psytrance_tracker_backend.client.GoabaseClient;
+
 import com.psytrance.psytrance_tracker_backend.client.GoabasePartyDetails;
 import com.psytrance.psytrance_tracker_backend.dto.EventDto;
 import com.psytrance.psytrance_tracker_backend.exception.GoabaseUnavailableException;
@@ -43,7 +43,7 @@ public class ArtistIndexer {
     static final Duration REREAD_AFTER = Duration.ofDays(2);
 
     private final EventService eventService;
-    private final GoabaseClient goabaseClient;
+    private final Parties parties;
     private final LineupScanRepository lineupScanRepository;
     private final ArtistService artistService;
     private final EventGenres eventGenres;
@@ -53,7 +53,7 @@ public class ArtistIndexer {
     private final Clock clock;
 
     public ArtistIndexer(EventService eventService,
-                         GoabaseClient goabaseClient,
+                         Parties parties,
                          LineupScanRepository lineupScanRepository,
                          ArtistService artistService,
                          EventGenres eventGenres,
@@ -62,7 +62,7 @@ public class ArtistIndexer {
                          Organizers organizers,
                          Clock clock) {
         this.eventService = eventService;
-        this.goabaseClient = goabaseClient;
+        this.parties = parties;
         this.lineupScanRepository = lineupScanRepository;
         this.artistService = artistService;
         this.eventGenres = eventGenres;
@@ -103,7 +103,7 @@ public class ArtistIndexer {
         for (Long eventId : due) {
             Optional<GoabasePartyDetails> party;
             try {
-                party = goabaseClient.fetchParty(eventId);
+                party = parties.fetchParty(eventId);
             } catch (GoabaseUnavailableException e) {
                 // No point asking about the rest of the batch now; the next run carries on
                 log.warn("Goabase is unavailable, artist index stopped after {} events", read, e);
@@ -141,7 +141,7 @@ public class ArtistIndexer {
     // Keywords only add to the genres, so the line-up is still stored when they can't be read
     private List<String> keywords(long eventId) {
         try {
-            return goabaseClient.fetchKeywords(eventId);
+            return parties.fetchKeywords(eventId);
         } catch (GoabaseUnavailableException e) {
             log.warn("Could not read the Goabase keywords of event {}", eventId, e);
             return List.of();

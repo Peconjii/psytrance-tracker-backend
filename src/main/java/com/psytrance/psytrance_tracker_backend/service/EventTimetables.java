@@ -1,6 +1,6 @@
 package com.psytrance.psytrance_tracker_backend.service;
 
-import com.psytrance.psytrance_tracker_backend.client.GoabaseClient;
+
 import com.psytrance.psytrance_tracker_backend.dto.TimetableDto;
 import com.psytrance.psytrance_tracker_backend.model.AdminChange;
 import com.psytrance.psytrance_tracker_backend.model.TimetableSlot;
@@ -37,18 +37,18 @@ public class EventTimetables {
     private final LineupScanRepository lineupScanRepository;
     private final AdminChangeRepository changeRepository;
     private final EventService eventService;
-    private final GoabaseClient goabaseClient;
+    private final Parties parties;
     private final MapGenres mapGenres;
     private final Clock clock;
 
     public EventTimetables(TimetableSlotRepository slotRepository, LineupScanRepository lineupScanRepository,
                            AdminChangeRepository changeRepository, EventService eventService,
-                           GoabaseClient goabaseClient, MapGenres mapGenres, Clock clock) {
+                           Parties parties, MapGenres mapGenres, Clock clock) {
         this.slotRepository = slotRepository;
         this.lineupScanRepository = lineupScanRepository;
         this.changeRepository = changeRepository;
         this.eventService = eventService;
-        this.goabaseClient = goabaseClient;
+        this.parties = parties;
         this.mapGenres = mapGenres;
         this.clock = clock;
     }
@@ -152,7 +152,7 @@ public class EventTimetables {
     // The venue clock's UTC offset, from the start time Goabase gives ("2026-10-24T22:00:00+02:00"); null when unknown
     private Integer venueOffset(long eventId) {
         try {
-            return goabaseClient.fetchParty(eventId)
+            return parties.fetchParty(eventId)
                     .map(party -> OffsetDateTime.parse(party.dateStart()).getOffset().getTotalSeconds() / 60)
                     .orElse(null);
         } catch (RuntimeException e) {

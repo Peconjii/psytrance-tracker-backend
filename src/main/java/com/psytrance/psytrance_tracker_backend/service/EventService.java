@@ -1,6 +1,6 @@
 package com.psytrance.psytrance_tracker_backend.service;
 
-import com.psytrance.psytrance_tracker_backend.client.GoabaseClient;
+
 import com.psytrance.psytrance_tracker_backend.dto.EventDetailsDto;
 import com.psytrance.psytrance_tracker_backend.dto.EventDto;
 import com.psytrance.psytrance_tracker_backend.dto.EventSearch;
@@ -40,7 +40,7 @@ public class EventService {
     // Cached details older than this are dropped instead of being kept as a fallback for outages
     private static final Duration DETAILS_KEPT_FOR = Duration.ofDays(1);
 
-    private final GoabaseClient goabaseClient;
+    private final Parties parties;
     private final Clock clock;
     private final Duration cacheTtl;
 
@@ -50,10 +50,10 @@ public class EventService {
     // Details come from a separate Goabase call per event, so they are cached per event id
     private final Map<Long, CachedDetails> detailsCache = new ConcurrentHashMap<>();
 
-    public EventService(GoabaseClient goabaseClient,
+    public EventService(Parties parties,
                         Clock clock,
                         @Value("${goabase.cache-ttl}") Duration cacheTtl) {
-        this.goabaseClient = goabaseClient;
+        this.parties = parties;
         this.clock = clock;
         this.cacheTtl = cacheTtl;
     }
@@ -81,11 +81,11 @@ public class EventService {
     }
 
     public EventDto findById(long id) {
-        // Favorites can point at events that already dropped off the Goabase list, so fall back to a direct lookup
+        // Favorites can point at events that already dropped off the list, so fall back to a direct lookup
         return allEvents().stream()
                 .filter(event -> Long.valueOf(id).equals(event.id()))
                 .findFirst()
-                .or(() -> goabaseClient.fetchParty(id).map(party -> EventDto.from(party.summary())))
+                .or(() -> parties.fetchParty(id).map(party -> EventDto.from(party.summary())))
                 .orElseThrow(() -> new EventNotFoundException(id));
     }
 
@@ -97,7 +97,7 @@ public class EventService {
             return cached.details();
         }
         try {
-            EventDetailsDto details = goabaseClient.fetchParty(id)
+            EventDetailsDto details = parties.fetchParty(id)
                     .map(EventDetailsDto::from)
                     .orElseThrow(() -> new EventNotFoundException(id));
             detailsCache.values().removeIf(entry -> !entry.isFresh(now, DETAILS_KEPT_FOR));
@@ -112,6 +112,18 @@ public class EventService {
         }
     }
 
+    /**
+     * Reads the list again on the next request, e.g. after one of our events was approved or taken down. The old list
+     * stays as the fallback for when Goabase is down.
+     */
+    public void refreshSoon(long changedEventId) {
+        CachedEvents current = cache;
+        if (current != null) {
+            cache = new CachedEvents(current.events(), Instant.EPOCH);
+        }
+        detailsCache.remove(changedEventId);
+    }
+
     private List<EventDto> allEvents() {
         CachedEvents current = cache;
         if (current != null && current.isFresh(clock.instant(), cacheTtl)) {
@@ -124,7 +136,7 @@ public class EventService {
                 return current.events();
             }
             try {
-                List<EventDto> events = goabaseClient.fetchAllParties().stream()
+                List<EventDto> events = parties.fetchAllParties().stream()
                         .map(EventDto::from)
                         .sorted(BY_START_DATE)
                         .toList();

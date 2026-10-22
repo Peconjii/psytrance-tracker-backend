@@ -39,6 +39,8 @@ public class AdminChange {
     public static final String ORGANIZER_PROFILE = "ORGANIZER_PROFILE";
     /** An account was linked to an organizer as its owner, or unlinked; before/after are the usernames (no undo) */
     public static final String ORGANIZER_OWNER = "ORGANIZER_OWNER";
+    /** An event added on our site was approved or taken down; before/after are the statuses (no undo) */
+    public static final String OUR_EVENT = "OUR_EVENT";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
