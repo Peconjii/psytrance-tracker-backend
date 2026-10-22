@@ -1,7 +1,9 @@
 package com.psytrance.psytrance_tracker_backend.controller;
 
+import com.psytrance.psytrance_tracker_backend.dto.ArtistSummary;
 import com.psytrance.psytrance_tracker_backend.dto.GoingEvent;
 import com.psytrance.psytrance_tracker_backend.dto.ReminderSettings;
+import com.psytrance.psytrance_tracker_backend.service.ArtistEditing;
 import com.psytrance.psytrance_tracker_backend.service.AttendanceService;
 import com.psytrance.psytrance_tracker_backend.service.UserService;
 import jakarta.validation.Valid;
@@ -21,10 +23,18 @@ public class MeController {
 
     private final AttendanceService attendanceService;
     private final UserService userService;
+    private final ArtistEditing artistEditing;
 
-    public MeController(AttendanceService attendanceService, UserService userService) {
+    public MeController(AttendanceService attendanceService, UserService userService, ArtistEditing artistEditing) {
         this.attendanceService = attendanceService;
         this.userService = userService;
+        this.artistEditing = artistEditing;
+    }
+
+    /** The artists whose profile this account owns (linked by an admin) */
+    @GetMapping("/artists")
+    public List<ArtistSummary> getMyArtists(Authentication authentication) {
+        return artistEditing.ownedBy(authentication.getName());
     }
 
     /** Events the user marked "I'm going", soonest first. */

@@ -11,7 +11,6 @@ import org.springframework.http.MediaType;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.mockito.Mockito.when;
@@ -47,7 +46,7 @@ class ArtistProfileIntegrationTest extends IntegrationTest {
 
         upcomingGig = NEXT_EVENT_ID.getAndIncrement();
         pastGig = NEXT_EVENT_ID.getAndIncrement();
-        String unique = UUID.randomUUID().toString().substring(0, 6).replaceAll("\\d", "x");
+        String unique = uniqueLetters();
         artistName = "Profile Test " + unique;
         artistSlug = "profile-test-" + unique;
         // Goabase lists only the upcoming gig; the past one was read while it was still upcoming
@@ -59,7 +58,7 @@ class ArtistProfileIntegrationTest extends IntegrationTest {
 
     @Test
     void theArtistPageShowsTheProfilePastGigsAndFollowers() throws Exception {
-        mockMvc.perform(put("/api/admin/artists/{slug}/profile", artistSlug).header("Authorization", bearer(adminToken))
+        mockMvc.perform(put("/api/artists/{slug}/profile", artistSlug).header("Authorization", bearer(adminToken))
                         .contentType(MediaType.APPLICATION_JSON).content("""
                                 {"photoUrl": "https://img.example.com/a.jpg", "bio": "Twilight from the forest.",
                                  "instagramUrl": "https://instagram.com/test", "bookingEmail": "booking@example.com",
@@ -101,14 +100,14 @@ class ArtistProfileIntegrationTest extends IntegrationTest {
     @Test
     void linksMustBeHttpsAndTheArtistMustExist() throws Exception {
         for (String link : List.of("javascript:alert(1)", "http://example.com", "https://has space.com")) {
-            mockMvc.perform(put("/api/admin/artists/{slug}/profile", artistSlug).header("Authorization", bearer(adminToken))
+            mockMvc.perform(put("/api/artists/{slug}/profile", artistSlug).header("Authorization", bearer(adminToken))
                             .contentType(MediaType.APPLICATION_JSON).content("""
                                     {"websiteUrl": "%s"}
                                     """.formatted(link)))
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.errors.websiteUrl").exists());
         }
-        mockMvc.perform(put("/api/admin/artists/{slug}/profile", "nobody-plays-here").header("Authorization", bearer(adminToken))
+        mockMvc.perform(put("/api/artists/{slug}/profile", "nobody-plays-here").header("Authorization", bearer(adminToken))
                         .contentType(MediaType.APPLICATION_JSON).content("{}"))
                 .andExpect(status().isNotFound());
     }

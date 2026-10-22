@@ -49,6 +49,18 @@ abstract class IntegrationTest {
     @MockitoBean
     protected YouTubeClient youTubeClient;
 
+    /**
+     * Letters unique per call (a random id with each digit turned into its own letter), for artist names: all tests
+     * share one database, and line-up names with digits would read differently.
+     */
+    protected static String uniqueLetters() {
+        StringBuilder letters = new StringBuilder();
+        for (char c : UUID.randomUUID().toString().replace("-", "").substring(0, 10).toCharArray()) {
+            letters.append(Character.isDigit(c) ? (char) ('g' + (c - '0')) : c);
+        }
+        return letters.toString();
+    }
+
     /** Usernames are unique per test, because all tests share one database. */
     protected static String uniqueUsername() {
         return "user_" + UUID.randomUUID().toString().substring(0, 8);

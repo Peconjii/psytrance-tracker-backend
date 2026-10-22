@@ -37,6 +37,10 @@ public class ArtistProfile {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
+    // The name on the page when it differs from the line-ups' spelling; set when an admin approves a request
+    @Column(name = "display_name", length = 100)
+    private String displayName;
+
     protected ArtistProfile() {
     }
 
@@ -91,5 +95,14 @@ public class ArtistProfile {
 
     public String getBookingEmail() {
         return bookingEmail;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public void setDisplayName(String displayName, Instant updatedAt) {
+        this.displayName = blankToNull(displayName);
+        this.updatedAt = updatedAt;
     }
 }

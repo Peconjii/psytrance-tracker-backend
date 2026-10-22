@@ -26,6 +26,13 @@ public class AdminChange {
     public static final String EVENT_TIMETABLE = "EVENT_TIMETABLE";
     /** An artist's profile was written; target is the artist, before/after the filled fields (no undo) */
     public static final String ARTIST_PROFILE = "ARTIST_PROFILE";
+    /** The tracks or festivals on an artist's profile were written; after lists them (no undo) */
+    public static final String ARTIST_TRACKS = "ARTIST_TRACKS";
+    public static final String ARTIST_FESTIVALS = "ARTIST_FESTIVALS";
+    /** An account was linked to an artist as its owner, or unlinked; before/after are the usernames (no undo) */
+    public static final String ARTIST_OWNER = "ARTIST_OWNER";
+    /** An approved request changed the name on an artist's page; before/after are the names (no undo) */
+    public static final String ARTIST_NAME = "ARTIST_NAME";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

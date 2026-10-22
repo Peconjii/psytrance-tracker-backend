@@ -1,6 +1,7 @@
 package com.psytrance.psytrance_tracker_backend.service;
 
 import com.psytrance.psytrance_tracker_backend.dto.ArtistDto;
+import com.psytrance.psytrance_tracker_backend.dto.ArtistListsRequest;
 import com.psytrance.psytrance_tracker_backend.dto.ArtistProfileDto;
 import com.psytrance.psytrance_tracker_backend.dto.ArtistSummary;
 import com.psytrance.psytrance_tracker_backend.dto.EventDto;
@@ -14,10 +15,12 @@ import com.psytrance.psytrance_tracker_backend.model.LineupScan;
 import com.psytrance.psytrance_tracker_backend.repository.ArtistAliasRepository;
 import com.psytrance.psytrance_tracker_backend.repository.ArtistBlockRepository;
 import com.psytrance.psytrance_tracker_backend.repository.ArtistEventRepository;
+import com.psytrance.psytrance_tracker_backend.repository.ArtistFestivalRepository;
 import com.psytrance.psytrance_tracker_backend.repository.ArtistFollowRepository;
 import com.psytrance.psytrance_tracker_backend.repository.ArtistProfileRepository;
 import com.psytrance.psytrance_tracker_backend.repository.EventSummaryRepository;
 import com.psytrance.psytrance_tracker_backend.repository.ArtistRepository;
+import com.psytrance.psytrance_tracker_backend.repository.ArtistTrackRepository;
 import com.psytrance.psytrance_tracker_backend.repository.LineupScanRepository;
 import com.psytrance.psytrance_tracker_backend.util.ArtistNames;
 import org.springframework.data.domain.PageRequest;
@@ -55,6 +58,8 @@ public class ArtistService {
     private final ArtistProfileRepository profileRepository;
     private final EventSummaryRepository summaryRepository;
     private final ArtistFollowRepository followRepository;
+    private final ArtistTrackRepository trackRepository;
+    private final ArtistFestivalRepository festivalRepository;
     private final Clock clock;
 
     public ArtistService(ArtistRepository artistRepository,
@@ -66,6 +71,8 @@ public class ArtistService {
                          ArtistProfileRepository profileRepository,
                          EventSummaryRepository summaryRepository,
                          ArtistFollowRepository followRepository,
+                         ArtistTrackRepository trackRepository,
+                         ArtistFestivalRepository festivalRepository,
                          Clock clock) {
         this.artistRepository = artistRepository;
         this.artistEventRepository = artistEventRepository;
@@ -76,6 +83,8 @@ public class ArtistService {
         this.profileRepository = profileRepository;
         this.summaryRepository = summaryRepository;
         this.followRepository = followRepository;
+        this.trackRepository = trackRepository;
+        this.festivalRepository = festivalRepository;
         this.clock = clock;
     }
 
@@ -111,8 +120,16 @@ public class ArtistService {
                         summary.getTown(), summary.getCountry()))
                 .toList();
         ArtistProfileDto profile = profileRepository.findById(artist.getSlug()).map(ArtistProfileDto::from).orElse(null);
-        return new ArtistDto(artist.getSlug(), artist.getName(), upcoming, profile, past,
-                followRepository.countByArtistSlug(artist.getSlug()));
+        // The approved display name, if the artist asked for one; line-ups still match the stored name
+        String name = profile != null && profile.displayName() != null ? profile.displayName() : artist.getName();
+        List<ArtistListsRequest.Track> tracks = trackRepository.findByArtistSlugOrderByPositionAsc(artist.getSlug()).stream()
+                .map(track -> new ArtistListsRequest.Track(track.getTitle(), track.getUrl()))
+                .toList();
+        List<ArtistListsRequest.Festival> festivals = festivalRepository.findByArtistSlugOrderByPositionAsc(artist.getSlug()).stream()
+                .map(festival -> new ArtistListsRequest.Festival(festival.getName(), festival.getYear(), festival.getUrl()))
+                .toList();
+        return new ArtistDto(artist.getSlug(), name, upcoming, profile, past,
+                followRepository.countByArtistSlug(artist.getSlug()), tracks, festivals);
     }
 
     /** Keeps the event's name, dates and place, so it can be listed as a past gig once Goabase drops it */

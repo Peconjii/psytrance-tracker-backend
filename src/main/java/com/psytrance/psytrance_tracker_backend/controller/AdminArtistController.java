@@ -2,9 +2,8 @@ package com.psytrance.psytrance_tracker_backend.controller;
 
 import com.psytrance.psytrance_tracker_backend.config.Admins;
 import com.psytrance.psytrance_tracker_backend.dto.AdminArtistDto;
-import com.psytrance.psytrance_tracker_backend.dto.ArtistProfileDto;
-import com.psytrance.psytrance_tracker_backend.dto.ArtistProfileRequest;
-import com.psytrance.psytrance_tracker_backend.service.ArtistProfiles;
+import com.psytrance.psytrance_tracker_backend.dto.ArtistRequestDto;
+import com.psytrance.psytrance_tracker_backend.service.ArtistEditing;
 import com.psytrance.psytrance_tracker_backend.service.ArtistCleanup;
 import com.psytrance.psytrance_tracker_backend.service.MapPlacements;
 import jakarta.validation.Valid;
@@ -13,6 +12,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 /** The admin panel's artist genres: find an artist and place them in the right map genres. Admins only. */
 @RestController
@@ -33,29 +34,49 @@ public class AdminArtistController {
     private final MapPlacements mapPlacements;
     private final Admins admins;
     private final ArtistCleanup artistCleanup;
-    private final ArtistProfiles artistProfiles;
+    private final ArtistEditing artistEditing;
 
     public AdminArtistController(MapPlacements mapPlacements, Admins admins, ArtistCleanup artistCleanup,
-                                 ArtistProfiles artistProfiles) {
+                                 ArtistEditing artistEditing) {
         this.mapPlacements = mapPlacements;
         this.admins = admins;
         this.artistCleanup = artistCleanup;
-        this.artistProfiles = artistProfiles;
+        this.artistEditing = artistEditing;
     }
 
-    /** {@code GET /api/admin/artists/ajja/profile}: the profile to edit; every field null when there is none yet */
-    @GetMapping("/{slug}/profile")
-    public ArtistProfileDto getProfile(@PathVariable String slug, Authentication authentication) {
-        admins.requireAdmin(authentication);
-        return artistProfiles.get(slug).orElse(new ArtistProfileDto(null, null, null, null, null, null, null));
-    }
-
-    /** {@code PUT /api/admin/artists/ajja/profile}: writes the whole profile; blank fields clear them */
-    @PutMapping("/{slug}/profile")
-    public ArtistProfileDto setProfile(@PathVariable String slug, @Valid @RequestBody ArtistProfileRequest profile,
-                                       Authentication authentication) {
+    /** {@code PUT /api/admin/artists/ajja/owner {"username": "ajja_official"}}: that account may edit the profile */
+    @PutMapping("/{slug}/owner")
+    public Map<String, String> setOwner(@PathVariable String slug, @Valid @RequestBody OwnerChange change,
+                                        Authentication authentication) {
         String admin = admins.requireAdmin(authentication);
-        return artistProfiles.save(slug, profile, admin);
+        return Map.of("owner", artistEditing.setOwner(slug, change.username(), admin));
+    }
+
+    @DeleteMapping("/{slug}/owner")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void removeOwner(@PathVariable String slug, Authentication authentication) {
+        String admin = admins.requireAdmin(authentication);
+        artistEditing.removeOwner(slug, admin);
+    }
+
+    /** {@code GET /api/admin/artists/requests}: genre and name requests of artists' owners, waiting for an admin */
+    @GetMapping("/requests")
+    public List<ArtistRequestDto> pendingRequests(Authentication authentication) {
+        admins.requireAdmin(authentication);
+        return artistEditing.pendingRequests();
+    }
+
+    /** {@code POST /api/admin/artists/requests/7 {"approve": true}}: applies or rejects the request */
+    @PostMapping("/requests/{id}")
+    public ArtistRequestDto decide(@PathVariable long id, @Valid @RequestBody Decision decision, Authentication authentication) {
+        String admin = admins.requireAdmin(authentication);
+        return artistEditing.decide(id, decision.approve(), admin);
+    }
+
+    record OwnerChange(@NotBlank @Size(max = 255) String username) {
+    }
+
+    record Decision(@NotNull Boolean approve) {
     }
 
     /** Example: {@code GET /api/admin/artists?search=fungus}: map and line-up artists with their genres */

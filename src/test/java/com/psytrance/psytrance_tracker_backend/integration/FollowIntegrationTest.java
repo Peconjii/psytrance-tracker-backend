@@ -13,7 +13,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -53,7 +52,7 @@ class FollowIntegrationTest extends IntegrationTest {
         firstGig = NEXT_EVENT_ID.getAndIncrement();
         secondGig = NEXT_EVENT_ID.getAndIncrement();
         when(goabaseClient.fetchAllParties()).thenReturn(List.of(party(firstGig, 5), party(secondGig, 12)));
-        String unique = UUID.randomUUID().toString().substring(0, 6).replaceAll("\\d", "x");
+        String unique = uniqueLetters();
         artistName = "Gig Hunter " + unique;
         artistSlug = "gig-hunter-" + unique;
         artistService.saveLineUp(firstGig, List.of(artistName), Instant.now());

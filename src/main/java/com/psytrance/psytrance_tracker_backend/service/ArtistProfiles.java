@@ -17,11 +17,10 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 /**
- * Artists' profiles (photo, bio, links, booking), written by admins in the admin panel for now. Every save is
- * logged in admin_changes with the fields that were filled before and after.
+ * Artists' profiles (photo, bio, links, booking), written by the artist's owner or an admin (see ArtistEditing,
+ * which checks who may). Every save is logged in admin_changes with the fields that were filled before and after.
  */
 @Service
 public class ArtistProfiles {
@@ -39,14 +38,9 @@ public class ArtistProfiles {
         this.clock = clock;
     }
 
-    /** The profile of the artist with this slug; empty when nobody wrote one yet */
-    public Optional<ArtistProfileDto> get(String slug) {
-        return profileRepository.findById(ArtistNames.slug(slug)).map(ArtistProfileDto::from);
-    }
-
     /** Writes the whole profile (blank fields clear it). Only artists from the line-ups have a page to show it on. */
     @Transactional
-    public ArtistProfileDto save(String slug, ArtistProfileRequest request, String adminUsername) {
+    public ArtistProfileDto save(String slug, ArtistProfileRequest request, String editorUsername) {
         Artist artist = artistRepository.findBySlug(ArtistNames.slug(slug))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No artist called " + slug));
         ArtistProfile profile = profileRepository.findById(artist.getSlug()).orElseGet(() -> new ArtistProfile(artist.getSlug()));
@@ -54,7 +48,7 @@ public class ArtistProfiles {
         profile.update(request.photoUrl(), request.bio(), request.soundcloudUrl(), request.bandcampUrl(),
                 request.instagramUrl(), request.websiteUrl(), request.bookingEmail(), clock.instant());
         profileRepository.save(profile);
-        changeRepository.save(new AdminChange(adminUsername, AdminChange.ARTIST_PROFILE, artist.getName(),
+        changeRepository.save(new AdminChange(editorUsername, AdminChange.ARTIST_PROFILE, artist.getName(),
                 before, filledFields(profile), clock.instant()));
         return ArtistProfileDto.from(profile);
     }
