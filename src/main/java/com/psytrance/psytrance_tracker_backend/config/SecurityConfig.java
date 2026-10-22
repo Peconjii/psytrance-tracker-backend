@@ -51,6 +51,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/reviews/event/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/artists/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/organizers/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/labels/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/map/**").permitAll()
                         // The keep-awake ping of an outside cron job (see HealthController)
                         .requestMatchers(HttpMethod.GET, "/api/health").permitAll()
