@@ -11,6 +11,7 @@ import com.psytrance.psytrance_tracker_backend.repository.EventGenreRepository;
 import com.psytrance.psytrance_tracker_backend.service.AftermovieService;
 import com.psytrance.psytrance_tracker_backend.service.EventService;
 import com.psytrance.psytrance_tracker_backend.service.EventTimetables;
+import com.psytrance.psytrance_tracker_backend.service.PastEvents;
 import com.psytrance.psytrance_tracker_backend.service.MapGenres;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
@@ -34,14 +35,25 @@ public class EventController {
     private final EventTimetables eventTimetables;
     private final MapGenres mapGenres;
     private final EventGenreRepository eventGenreRepository;
+    private final PastEvents pastEvents;
 
     public EventController(EventService eventService, AftermovieService aftermovieService, EventTimetables eventTimetables,
-                           MapGenres mapGenres, EventGenreRepository eventGenreRepository) {
+                           MapGenres mapGenres, EventGenreRepository eventGenreRepository, PastEvents pastEvents) {
+        this.pastEvents = pastEvents;
         this.eventService = eventService;
         this.aftermovieService = aftermovieService;
         this.eventTimetables = eventTimetables;
         this.mapGenres = mapGenres;
         this.eventGenreRepository = eventGenreRepository;
+    }
+
+    /** Example: {@code GET /api/events/past?page=0&size=24&search=vienna}: the events that are over, newest first */
+    @GetMapping("/past")
+    public PageResponse<PastEvents.PastEvent> getPastEvents(
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "24") @Min(1) @Max(100) int size,
+            @RequestParam(required = false) String search) {
+        return pastEvents.find(search, page, size);
     }
 
     /** The set times of the event: read from its line-up or set by an admin; no sets when there are none */
