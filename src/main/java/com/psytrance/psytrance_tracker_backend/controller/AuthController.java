@@ -8,12 +8,16 @@ import com.psytrance.psytrance_tracker_backend.config.Admins;
 import com.psytrance.psytrance_tracker_backend.dto.UserResponse;
 import com.psytrance.psytrance_tracker_backend.model.User;
 import com.psytrance.psytrance_tracker_backend.service.EmailVerification;
+import com.psytrance.psytrance_tracker_backend.service.FormLimits;
 import com.psytrance.psytrance_tracker_backend.service.LoginAttempts;
 import com.psytrance.psytrance_tracker_backend.service.PasswordResetService;
 import com.psytrance.psytrance_tracker_backend.service.UserService;
+import com.psytrance.psytrance_tracker_backend.util.ClientAddress;
 import com.psytrance.psytrance_tracker_backend.util.JwtUtil;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -24,6 +28,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Duration;
 import java.util.Map;
 
 @RestController
@@ -36,9 +41,14 @@ public class AuthController {
     private final Admins admins;
     private final LoginAttempts loginAttempts;
     private final EmailVerification emailVerification;
+    private final FormLimits formLimits;
+    private final int registerPerHour;
 
     public AuthController(UserService userService, JwtUtil jwtUtil, PasswordResetService passwordResetService, Admins admins,
-                          LoginAttempts loginAttempts, EmailVerification emailVerification) {
+                          LoginAttempts loginAttempts, EmailVerification emailVerification, FormLimits formLimits,
+                          @Value("${app.limits.register-per-hour:5}") int registerPerHour) {
+        this.formLimits = formLimits;
+        this.registerPerHour = registerPerHour;
         this.userService = userService;
         this.jwtUtil = jwtUtil;
         this.passwordResetService = passwordResetService;
@@ -48,7 +58,13 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<UserResponse> register(@Valid @RequestBody RegisterRequest request) {
+    public ResponseEntity<UserResponse> register(@Valid @RequestBody RegisterRequest request, HttpServletRequest httpRequest) {
+        // A bot (the hidden field is filled in) learns nothing more than that it didn't work
+        if (FormLimits.isBot(request.website())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Could not register. Try again.");
+        }
+        formLimits.count("register", ClientAddress.of(httpRequest), registerPerHour, Duration.ofHours(1),
+                "Many accounts were made from your address in the last hour. Try again later.");
         User user = userService.register(request);
         // The account works right away; the link only unlocks adding events
         emailVerification.sendLink(user);

@@ -2,10 +2,12 @@ package com.psytrance.psytrance_tracker_backend.controller;
 
 import com.psytrance.psytrance_tracker_backend.config.Admins;
 import com.psytrance.psytrance_tracker_backend.service.NewPages;
+import com.psytrance.psytrance_tracker_backend.service.FormLimits;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,7 +16,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Duration;
 import java.util.List;
 
 /** "Not on the map yet?" (needs login and a confirmed email), the account's own requests, and the admins' decisions */
@@ -23,17 +27,22 @@ public class NewPageController {
 
     private final NewPages newPages;
     private final Admins admins;
+    private final FormLimits formLimits;
+    private final int requestsPerDay;
 
-    public NewPageController(NewPages newPages, Admins admins) {
+    public NewPageController(NewPages newPages, Admins admins, FormLimits formLimits,
+                             @Value("${app.limits.page-requests-per-day:5}") int requestsPerDay) {
         this.newPages = newPages;
         this.admins = admins;
+        this.formLimits = formLimits;
+        this.requestsPerDay = requestsPerDay;
     }
 
     /** kind: ARTIST, ORGANIZER, LABEL or FESTIVAL */
     public record PageRequest(@NotBlank String kind, @NotBlank @Size(max = 200) String name, @Size(max = 100) String country,
                               @Size(max = 500) @Pattern(regexp = "\\s*|https://\\S+", message = "must be an https:// address") String websiteUrl,
                               @Size(max = 500) @Pattern(regexp = "\\s*|https://\\S+", message = "must be an https:// address") String proofUrl,
-                              @Size(max = 300) String genres, @Size(max = 1000) String message) {
+                              @Size(max = 300) String genres, @Size(max = 1000) String message, String website) {
     }
 
     public record Decision(boolean approve, @Size(max = 500) String reason) {
@@ -42,6 +51,12 @@ public class NewPageController {
     @PostMapping("/api/page-requests")
     @ResponseStatus(HttpStatus.CREATED)
     public NewPages.Request ask(@Valid @RequestBody PageRequest request, Authentication authentication) {
+        // website: the hidden field only bots fill in (websiteUrl is the real one)
+        if (FormLimits.isBot(request.website())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Could not send. Try again.");
+        }
+        formLimits.count("new-page", authentication.getName(), requestsPerDay, Duration.ofDays(1),
+                "You asked for many pages today. Try again tomorrow.");
         return newPages.ask(new NewPages.Ask(request.kind(), request.name(), request.country(), request.websiteUrl(),
                 request.proofUrl(), request.genres(), request.message()), authentication.getName());
     }

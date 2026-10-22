@@ -5,6 +5,7 @@ import com.psytrance.psytrance_tracker_backend.dto.FeedbackDto;
 import com.psytrance.psytrance_tracker_backend.dto.FeedbackRequest;
 import com.psytrance.psytrance_tracker_backend.model.Feedback;
 import com.psytrance.psytrance_tracker_backend.service.FeedbackService;
+import com.psytrance.psytrance_tracker_backend.util.ClientAddress;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -42,7 +43,7 @@ public class FeedbackController {
     @ResponseStatus(HttpStatus.CREATED)
     public Map<String, String> submit(@Valid @RequestBody FeedbackRequest request, Authentication authentication,
                                       HttpServletRequest httpRequest) {
-        feedbackService.submit(request, usernameOrNull(authentication), clientKey(httpRequest));
+        feedbackService.submit(request, usernameOrNull(authentication), ClientAddress.of(httpRequest));
         return Map.of("message", "Thanks, your feedback was sent");
     }
 
@@ -78,16 +79,5 @@ public class FeedbackController {
         return authentication == null || authentication instanceof AnonymousAuthenticationToken
                 ? null
                 : authentication.getName();
-    }
-
-    // Who is sending, for the per-hour limit. Behind Render's proxy the client's address is the last one
-    // the proxy added to X-Forwarded-For; earlier entries can be written by anyone, so they aren't used.
-    private static String clientKey(HttpServletRequest request) {
-        String forwarded = request.getHeader("X-Forwarded-For");
-        if (forwarded != null && !forwarded.isBlank()) {
-            String[] hops = forwarded.split(",");
-            return hops[hops.length - 1].strip();
-        }
-        return request.getRemoteAddr();
     }
 }

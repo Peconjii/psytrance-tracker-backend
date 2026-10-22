@@ -16,11 +16,8 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
@@ -30,25 +27,23 @@ import java.util.stream.Collectors;
 @Service
 public class FeedbackService {
 
-    private static final Duration WINDOW = Duration.ofHours(1);
-
     private final FeedbackRepository feedbackRepository;
     private final UserRepository userRepository;
     private final FeedbackReplyMailer replyMailer;
+    private final FormLimits formLimits;
     private final Clock clock;
     private final int maxPerHour;
-
-    // When each address last sent feedback, within the last hour. In memory: a restart forgets it, which is fine
-    private final Map<String, Deque<Instant>> recentByClient = new ConcurrentHashMap<>();
 
     public FeedbackService(FeedbackRepository feedbackRepository,
                            UserRepository userRepository,
                            FeedbackReplyMailer replyMailer,
+                           FormLimits formLimits,
                            Clock clock,
                            @Value("${app.feedback.max-per-hour:5}") int maxPerHour) {
         this.feedbackRepository = feedbackRepository;
         this.userRepository = userRepository;
         this.replyMailer = replyMailer;
+        this.formLimits = formLimits;
         this.clock = clock;
         this.maxPerHour = maxPerHour;
     }
@@ -58,33 +53,12 @@ public class FeedbackService {
      * telling, so the bot has no reason to try another way. Too many messages from one address is a 429.
      */
     public void submit(FeedbackRequest request, String username, String clientKey) {
-        if (request.website() != null && !request.website().isBlank()) {
+        if (FormLimits.isBot(request.website())) {
             return;
         }
+        formLimits.count("feedback", clientKey, maxPerHour, Duration.ofHours(1),
+                "That's a lot of feedback in a short time. Please try again in an hour.");
         Instant now = clock.instant();
-        Instant windowStart = now.minus(WINDOW);
-        // Addresses quiet for an hour are forgotten, so the map doesn't grow with every address that ever sent.
-        // The deques are only touched inside compute calls, which the map runs one at a time per address.
-        for (String key : recentByClient.keySet()) {
-            recentByClient.computeIfPresent(key, (k, recent) -> recent.peekLast().isBefore(windowStart) ? null : recent);
-        }
-        boolean[] tooMany = {false};
-        recentByClient.compute(clientKey, (key, recent) -> {
-            Deque<Instant> times = recent == null ? new ArrayDeque<>() : recent;
-            while (!times.isEmpty() && times.peekFirst().isBefore(windowStart)) {
-                times.pollFirst();
-            }
-            if (times.size() >= maxPerHour) {
-                tooMany[0] = true;
-            } else {
-                times.addLast(now);
-            }
-            return times.isEmpty() ? null : times;
-        });
-        if (tooMany[0]) {
-            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,
-                    "That's a lot of feedback in a short time. Please try again in an hour.");
-        }
         Long userId = username == null ? null : userRepository.findByUsername(username).map(User::getId).orElse(null);
         feedbackRepository.save(new Feedback(request.kind(), request.aboutType(), blankToNull(request.aboutRef()),
                 blankToNull(request.pageUrl()), request.message().strip(), blankToNull(request.email()), userId, now));
