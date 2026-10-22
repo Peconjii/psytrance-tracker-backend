@@ -9,6 +9,7 @@ import tools.jackson.databind.json.JsonMapper;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -49,6 +50,13 @@ public class MapFestivals {
         return Stream.concat(nameById.entrySet().stream(), added.entrySet().stream())
                 .filter(e -> ArtistNames.slug(e.getValue()).equals(wanted))
                 .map(Map.Entry::getKey).findFirst();
+    }
+
+    /** Every festival of the map, the added ones too: id -> name */
+    public Map<String, String> all() {
+        Map<String, String> all = new HashMap<>(nameById);
+        all.putAll(added);
+        return all;
     }
 
     /** Uses these festivals admins added to the map ({@code id -> name}) instead of the ones used so far */
