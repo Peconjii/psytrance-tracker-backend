@@ -84,7 +84,7 @@ public class Stats {
     }
 
     // Events that don't count: hidden by an admin, and events added on our site that aren't (or are no longer) approved
-    private static final String LEFT_OUT = "select event_id from hidden_events union all "
+    static final String LEFT_OUT = "select event_id from hidden_events union all "
             + "select " + OurEvent.ID_BASE + " + id from our_events where status <> '" + OurEvent.APPROVED + "'";
 
     // The gigs of these artists, each event once, without the ones left out
