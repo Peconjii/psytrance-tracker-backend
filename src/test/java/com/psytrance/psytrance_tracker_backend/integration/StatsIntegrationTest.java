@@ -89,6 +89,26 @@ class StatsIntegrationTest extends IntegrationTest {
     }
 
     @Test
+    void theListOfLabelsAndALabelsPastGigs() throws Exception {
+        // Liquid Soul is on Iboga Records' crew: a gig coming up and one that is over
+        long next = NEXT_EVENT_ID.getAndIncrement();
+        long over = NEXT_EVENT_ID.getAndIncrement();
+        artistService.saveLineUp(next, List.of("Liquid Soul"), Instant.now());
+        artistService.saveSummary(event(next, LocalDate.now().plusDays(12), "Denmark"));
+        artistService.saveLineUp(over, List.of("Liquid Soul"), Instant.now());
+        artistService.saveSummary(event(over, LocalDate.now().minusDays(12), "Denmark"));
+
+        mockMvc.perform(get("/api/labels/overview"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.label == 'Iboga Records')].crew").value(org.hamcrest.Matchers.contains(23)))
+                .andExpect(jsonPath("$[?(@.label == 'Iboga Records')].upcomingGigs").value(
+                        org.hamcrest.Matchers.contains(greaterThanOrEqualTo(1))));
+        mockMvc.perform(get("/api/labels/stats").param("label", "Iboga Records"))
+                .andExpect(jsonPath("$.upcoming[*].eventId").value(hasItem((int) next)))
+                .andExpect(jsonPath("$.past[*].eventId").value(hasItem((int) over)));
+    }
+
+    @Test
     void editorsSetEditionsTheNameDoesntShow() throws Exception {
         String festival = "fest" + uniqueLetters();
         long named = NEXT_EVENT_ID.getAndIncrement();

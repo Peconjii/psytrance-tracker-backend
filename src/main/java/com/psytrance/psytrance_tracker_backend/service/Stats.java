@@ -14,7 +14,9 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Numbers for the artist and label pages, counted with SQL from what the site keeps: the gigs read from line-ups
@@ -55,8 +57,13 @@ public class Stats {
     public record LabelGig(long eventId, String name, LocalDate dateStart, String town, String country, List<String> artists) {
     }
 
+    /** upcoming: the crew's next gigs; past: the last ones the site read (newest first) */
     public record LabelStats(String label, int crew, int crewWithGigs, Gigs gigs, long followers,
-                             List<Month> followersByMonth, List<LabelGig> upcoming) {
+                             List<Month> followersByMonth, List<LabelGig> upcoming, List<LabelGig> past) {
+    }
+
+    /** A label in the list of all labels: how big its crew is, how busy and how followed */
+    public record LabelSummary(String label, int crew, long upcomingGigs, long followers) {
     }
 
     public ArtistStats artist(String slug) {
@@ -80,7 +87,7 @@ public class Stats {
                 .param("ids", ids).query(Long.class).single().intValue();
         return new LabelStats(label, crew.size(), withGigs, gigs(ids),
                 count("select count(*) from label_follows where label_name = :key", label),
-                months("select created_at from label_follows where label_name = :key", label), upcoming(ids));
+                months("select created_at from label_follows where label_name = :key", label), crewGigs(ids, false), crewGigs(ids, true));
     }
 
     // Events that don't count: hidden by an admin, and events added on our site that aren't (or are no longer) approved
@@ -121,7 +128,30 @@ public class Stats {
     }
 
     // The crew's next gigs, soonest first, with who of the crew plays (the label's tour on the map)
-    private List<LabelGig> upcoming(Collection<Long> artistIds) {
+    /** Every label of the map with its crew size, its crew's upcoming gigs (each event once) and its followers */
+    public List<LabelSummary> labels() {
+        LocalDate today = LocalDate.now(clock);
+        Map<String, Long> followers = new HashMap<>();
+        jdbc.sql("select label_name, count(*) as n from label_follows group by label_name")
+                .query(rs -> { followers.put(rs.getString("label_name"), rs.getLong("n")); });
+        List<LabelSummary> labels = new ArrayList<>();
+        for (String label : mapLabels.names()) {
+            List<String> slugs = mapLabels.artists(label).orElse(List.of()).stream().map(ArtistNames::slug).toList();
+            long upcoming = slugs.isEmpty() ? 0 : jdbc.sql("""
+                            select count(distinct s.event_id) from artists a
+                            join artist_events ae on ae.artist_id = a.id
+                            join event_summaries s on s.event_id = ae.event_id
+                            where a.slug in (:slugs) and coalesce(s.date_end, s.date_start) >= :today
+                              and s.event_id not in (%s)
+                            """.formatted(LEFT_OUT))
+                    .param("slugs", slugs).param("today", Date.valueOf(today)).query(Long.class).single();
+            labels.add(new LabelSummary(label, slugs.size(), upcoming, followers.getOrDefault(label, 0L)));
+        }
+        return labels;
+    }
+
+    // The crew's gigs, each event once: the next ones soonest first, or the past ones newest first
+    private List<LabelGig> crewGigs(Collection<Long> artistIds, boolean past) {
         if (artistIds.isEmpty()) {
             return List.of();
         }
@@ -130,13 +160,13 @@ public class Stats {
                         from artist_events ae
                         join event_summaries s on s.event_id = ae.event_id
                         join artists a on a.id = ae.artist_id
-                        where ae.artist_id in (:ids) and coalesce(s.date_end, s.date_start) >= :today
+                        where ae.artist_id in (:ids) and (coalesce(s.date_end, s.date_start) >= :today) <> :past
                           and s.event_id not in (%s)
                         group by s.event_id, s.name, s.date_start, s.town, s.country
-                        order by s.date_start, s.event_id
+                        order by %s
                         limit 40
-                        """.formatted(LEFT_OUT))
-                .param("ids", artistIds).param("today", Date.valueOf(LocalDate.now(clock)))
+                        """.formatted(LEFT_OUT, past ? "s.date_start desc, s.event_id" : "s.date_start, s.event_id"))
+                .param("ids", artistIds).param("today", Date.valueOf(LocalDate.now(clock))).param("past", past)
                 .query((rs, row) -> new LabelGig(rs.getLong("event_id"), rs.getString("name"),
                         rs.getDate("date_start") == null ? null : rs.getDate("date_start").toLocalDate(),
                         rs.getString("town"), rs.getString("country"), List.of(rs.getString("artists").split("\\|"))))

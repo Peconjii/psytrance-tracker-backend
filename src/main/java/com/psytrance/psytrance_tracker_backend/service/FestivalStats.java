@@ -37,9 +37,13 @@ public class FestivalStats {
                           long artists, long going, long saved, boolean linked) {
     }
 
+    /** An artist who wrote on their own profile that they played the festival (year when they gave one) */
+    public record Reported(String slug, String name, Integer year) {
+    }
+
     public record Numbers(String match, List<Edition> editions, List<Count> byGenre,
                         List<Count> topArtists,
-                        List<Count> reportedByYear) {
+                        List<Count> reportedByYear, List<Reported> reportedBy) {
     }
 
     /**
@@ -118,7 +122,16 @@ public class FestivalStats {
                 .param("like", "%" + term + "%")
                 .query((rs, row) -> new Count(rs.getString("k"), rs.getLong("n")))
                 .list();
-        return new Numbers(term, editions, byGenre, topArtists, reported);
+        List<Reported> reportedBy = jdbc.sql("""
+                        select f.artist_slug, coalesce(a.name, f.artist_slug) as name, max(f.year) as year
+                        from artist_festivals f left join artists a on a.slug = f.artist_slug
+                        where lower(f.name) like :like
+                        group by f.artist_slug, a.name order by max(f.year) desc nulls last, name limit 60
+                        """)
+                .param("like", "%" + term + "%")
+                .query((rs, row) -> new Reported(rs.getString("artist_slug"), rs.getString("name"), (Integer) rs.getObject("year")))
+                .list();
+        return new Numbers(term, editions, byGenre, topArtists, reported, reportedBy);
     }
 
     private List<Count> counts(String sql, List<Long> ids) {

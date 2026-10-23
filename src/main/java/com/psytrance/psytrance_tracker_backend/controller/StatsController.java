@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 /** Numbers for the artist, label and festival pages: gigs by country, genre and year, followers and their growth. Public. */
 @RestController
 public class StatsController {
@@ -28,6 +30,12 @@ public class StatsController {
     @GetMapping("/api/artists/{slug}/stats")
     public Stats.ArtistStats artist(@PathVariable String slug) {
         return stats.artist(slug);
+    }
+
+    /** Every label of the map with its crew size, upcoming gigs and followers, for the list of labels */
+    @GetMapping("/api/labels/overview")
+    public List<Stats.LabelSummary> labels() {
+        return stats.labels();
     }
 
     /** Example: {@code GET /api/labels/stats?label=TIP Records}: a label of the map with its crew together */
