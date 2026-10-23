@@ -16,8 +16,13 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Clock;
 import java.time.Instant;
+import java.time.Year;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * "Not on the map yet?": an account with a confirmed email asks for a page the site doesn't have. An admin decides.
@@ -60,15 +65,23 @@ public class NewPages {
         this.clock = clock;
     }
 
-    /** What the asker sends: genres only matter for an artist (where the satellite could orbit) */
+    /**
+     * What the asker sends. genres: map genre ids, comma separated (where the satellite or marker could go); since,
+     * description, imageUrl: a proposal for the page; artists: a label's artists, comma separated; town: a festival's.
+     */
     public record Ask(String kind, String name, String country, String websiteUrl, String proofUrl, String genres,
-                      String message) {
+                      String message, Integer since, String description, String imageUrl, String artists, String town) {
+
+        public Ask(String kind, String name, String country, String websiteUrl, String proofUrl, String genres, String message) {
+            this(kind, name, country, websiteUrl, proofUrl, genres, message, null, null, null, null, null);
+        }
     }
 
     /** createdSlug: the page an approved artist or organizer request made (null for labels and festivals) */
     public record Request(long id, String kind, String name, String country, String websiteUrl, String proofUrl,
                           String genres, String message, String username, String email, String status,
-                          Instant createdAt, String rejectReason, String createdSlug) {
+                          Instant createdAt, String rejectReason, String createdSlug, Integer since, String description,
+                          String imageUrl, String artists, String town) {
     }
 
     @Transactional
@@ -92,14 +105,22 @@ public class NewPages {
         if (waiting) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "You asked for this page already; an admin will look at it");
         }
+        if (ask.since() != null && (ask.since() < 1960 || ask.since() > Year.now(clock).getValue())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The year it started is between 1960 and now");
+        }
         long id = jdbc.sql("""
-                        insert into page_requests (kind, name, country, website_url, proof_url, genres, message, user_id, status, created_at)
-                        values (:kind, :name, :country, :website, :proof, :genres, :message, :user, 'PENDING', :now)
+                        insert into page_requests (kind, name, country, website_url, proof_url, genres, message, user_id, status,
+                                                   created_at, since, description, image_url, artists, town)
+                        values (:kind, :name, :country, :website, :proof, :genres, :message, :user, 'PENDING', :now,
+                                :since, :description, :image, :artists, :town)
                         returning id
                         """)
                 .param("kind", ask.kind()).param("name", name).param("country", blankToNull(ask.country()))
                 .param("website", blankToNull(ask.websiteUrl())).param("proof", blankToNull(ask.proofUrl()))
-                .param("genres", "ARTIST".equals(ask.kind()) ? blankToNull(ask.genres()) : null)
+                .param("genres", blankToNull(ask.genres())).param("since", ask.since())
+                .param("description", blankToNull(ask.description())).param("image", blankToNull(ask.imageUrl()))
+                .param("artists", "LABEL".equals(ask.kind()) ? blankToNull(ask.artists()) : null)
+                .param("town", "FESTIVAL".equals(ask.kind()) ? blankToNull(ask.town()) : null)
                 .param("message", blankToNull(ask.message())).param("user", userId)
                 .param("now", Timestamp.from(clock.instant()))
                 .query(Long.class).single();
@@ -122,8 +143,15 @@ public class NewPages {
         return decide(id, approve, reason, null, adminUsername);
     }
 
-    /** What a label or festival gets on the map when an admin adds it right away: genres decide where it sits */
-    public record OnTheMap(String country, Integer since, String description, List<String> genres) {
+    /**
+     * What a label or festival gets on the map when an admin adds it right away: genres decide where it sits;
+     * artists: a label's crew as the admin left it (null: the proposal's)
+     */
+    public record OnTheMap(String country, Integer since, String description, List<String> genres, List<String> artists) {
+
+        public OnTheMap(String country, Integer since, String description, List<String> genres) {
+            this(country, since, description, genres, null);
+        }
     }
 
     /**
@@ -179,18 +207,41 @@ public class NewPages {
         };
     }
 
+    // On the map, with its owner, its page from the proposal (words, logo, links) and its crew: the artists the site
+    // knows from the line-ups; the others can be added later, once a line-up names them
     private String addLabel(Request request, OnTheMap onTheMap, String adminUsername) {
         String name = mapExtras.addLabel(request.name(), firstNonBlank(onTheMap.country(), request.country()),
                 onTheMap.since(), onTheMap.genres(), adminUsername).name();
         labelPages.setOwner(name, request.username(), adminUsername);
+        String website = request.websiteUrl();
+        boolean bandcamp = website != null && website.toLowerCase(Locale.ROOT).contains("bandcamp.com");
+        labelPages.saveProfile(name, new LabelPages.Profile(firstNonBlank(onTheMap.description(), request.description()),
+                request.imageUrl(), bandcamp ? null : website, bandcamp ? website : null, null), adminUsername);
+        // Checked first rather than caught: a refused crew change would roll the whole decision back
+        List<String> artists = onTheMap.artists() != null ? onTheMap.artists() : namesIn(request.artists());
+        Set<String> added = new HashSet<>();
+        for (String artist : artists) {
+            String slug = ArtistNames.slug(artist);
+            if (!slug.isEmpty() && added.add(slug) && count("select count(*) from artists where slug = :slug", slug) > 0) {
+                labelPages.requestCrew(name, "ADD", artist, adminUsername);
+            }
+        }
         return name;
     }
 
     private String addFestival(Request request, OnTheMap onTheMap, String adminUsername) {
+        String description = firstNonBlank(onTheMap.description(), request.description());
         String festivalId = mapExtras.addFestival(request.name(), firstNonBlank(onTheMap.country(), request.country()),
-                onTheMap.since(), onTheMap.description(), onTheMap.genres(), adminUsername).id();
+                onTheMap.since(), description, onTheMap.genres(), adminUsername).id();
         festivalPages.setOwner(festivalId, request.username(), adminUsername);
+        festivalPages.saveProfile(festivalId, new FestivalPages.Profile(description, request.websiteUrl(), null, null, null),
+                adminUsername);
         return festivalId;
+    }
+
+    // "Ajja, Tristan\nLiquid Soul" -> [Ajja, Tristan, Liquid Soul]
+    private static List<String> namesIn(String text) {
+        return text == null ? List.of() : Arrays.stream(text.split("[,\\n]")).map(String::strip).filter(n -> !n.isEmpty()).toList();
     }
 
     private static String firstNonBlank(String first, String second) {
@@ -237,7 +288,7 @@ public class NewPages {
 
     private static final String SELECT = """
             select r.id, r.kind, r.name, r.country, r.website_url, r.proof_url, r.genres, r.message, u.username, u.email,
-                   r.status, r.created_at, r.reject_reason, r.created_slug
+                   r.status, r.created_at, r.reject_reason, r.created_slug, r.since, r.description, r.image_url, r.artists, r.town
             from page_requests r join app_user u on u.id = r.user_id
             """;
 
@@ -249,7 +300,9 @@ public class NewPages {
         return new Request(rs.getLong("id"), rs.getString("kind"), rs.getString("name"), rs.getString("country"),
                 rs.getString("website_url"), rs.getString("proof_url"), rs.getString("genres"), rs.getString("message"),
                 rs.getString("username"), rs.getString("email"), rs.getString("status"),
-                rs.getTimestamp("created_at").toInstant(), rs.getString("reject_reason"), rs.getString("created_slug"));
+                rs.getTimestamp("created_at").toInstant(), rs.getString("reject_reason"), rs.getString("created_slug"),
+                (Integer) rs.getObject("since"), rs.getString("description"), rs.getString("image_url"),
+                rs.getString("artists"), rs.getString("town"));
     }
 
     private long verifiedUser(String username) {

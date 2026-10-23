@@ -23,6 +23,9 @@ class MapExtrasIntegrationTest extends IntegrationTest {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private com.psytrance.psytrance_tracker_backend.service.ArtistService artistService;
+
     private String adminToken;
 
     @BeforeEach
@@ -79,6 +82,45 @@ class MapExtrasIntegrationTest extends IntegrationTest {
         mockMvc.perform(get("/api/labels/page").param("label", name)).andExpect(status().isNotFound());
         mockMvc.perform(delete("/api/admin/map/labels").param("name", "Iboga Records").header("Authorization", bearer(adminToken)))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void aLabelsProposalBecomesItsPageAndCrew() throws Exception {
+        String unique = uniqueLetters();
+        String known = "Known Crew " + unique;
+        artistService.saveLineUp(999_990L, java.util.List.of(known), java.time.Instant.now());
+        String token = verifiedToken();
+        String body = mockMvc.perform(post("/api/page-requests").header("Authorization", bearer(token))
+                        .contentType(MediaType.APPLICATION_JSON).content("""
+                                {"kind": "LABEL", "name": "Proposal Records %s", "country": "Serbia", "since": 2019,
+                                 "genres": "prog, psytechno", "description": "Deep night grooves",
+                                 "imageUrl": "https://example.com/logo.png", "websiteUrl": "https://proposal.bandcamp.com",
+                                 "artists": "%s, Nobody Yet %s"}
+                                """.formatted(unique, known, unique)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.since").value(2019))
+                .andExpect(jsonPath("$.artists").value(known + ", Nobody Yet " + unique))
+                .andReturn().getResponse().getContentAsString();
+        long id = ((Number) com.jayway.jsonpath.JsonPath.read(body, "$.id")).longValue();
+
+        mockMvc.perform(post("/api/admin/page-requests/{id}", id).header("Authorization", bearer(adminToken))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"approve\": true, \"onTheMap\": {\"since\": 2019, \"genres\": [\"prog\", \"psytechno\"]}}"))
+                .andExpect(jsonPath("$.createdSlug").value("Proposal Records " + unique));
+        // The known artist is on the crew, the unknown one left out; the page has the words, logo and Bandcamp
+        mockMvc.perform(get("/api/labels/page").param("label", "Proposal Records " + unique))
+                .andExpect(jsonPath("$.crew").value(org.hamcrest.Matchers.contains(known)))
+                .andExpect(jsonPath("$.profile.description").value("Deep night grooves"))
+                .andExpect(jsonPath("$.profile.logoUrl").value("https://example.com/logo.png"))
+                .andExpect(jsonPath("$.profile.bandcampUrl").value("https://proposal.bandcamp.com"));
+    }
+
+    private String verifiedToken() throws Exception {
+        String username = uniqueUsername();
+        register(username, PASSWORD);
+        var user = userRepository.findByUsername(username).orElseThrow();
+        user.setEmailVerified(true);
+        userRepository.save(user);
+        return login(username, PASSWORD);
     }
 
     @Test

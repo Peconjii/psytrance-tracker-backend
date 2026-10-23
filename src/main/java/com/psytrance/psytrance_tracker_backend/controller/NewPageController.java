@@ -42,7 +42,10 @@ public class NewPageController {
     public record PageRequest(@NotBlank String kind, @NotBlank @Size(max = 200) String name, @Size(max = 100) String country,
                               @Size(max = 500) @Pattern(regexp = "\\s*|https://\\S+", message = "must be an https:// address") String websiteUrl,
                               @Size(max = 500) @Pattern(regexp = "\\s*|https://\\S+", message = "must be an https:// address") String proofUrl,
-                              @Size(max = 300) String genres, @Size(max = 1000) String message, String website) {
+                              @Size(max = 300) String genres, @Size(max = 1000) String message, String website,
+                              Integer since, @Size(max = 1000) String description,
+                              @Size(max = 500) @Pattern(regexp = "\\s*|https://\\S+", message = "must be an https:// address") String imageUrl,
+                              @Size(max = 1000) String artists, @Size(max = 100) String town) {
     }
 
     /** onTheMap: for a label or festival, to add it to the map right away (with its genres) */
@@ -59,7 +62,8 @@ public class NewPageController {
         formLimits.count("new-page", authentication.getName(), requestsPerDay, Duration.ofDays(1),
                 "You asked for many pages today. Try again tomorrow.");
         return newPages.ask(new NewPages.Ask(request.kind(), request.name(), request.country(), request.websiteUrl(),
-                request.proofUrl(), request.genres(), request.message()), authentication.getName());
+                request.proofUrl(), request.genres(), request.message(), request.since(), request.description(),
+                request.imageUrl(), request.artists(), request.town()), authentication.getName());
     }
 
     @GetMapping("/api/me/page-requests")
