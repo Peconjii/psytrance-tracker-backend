@@ -80,10 +80,14 @@ class PageClaimIntegrationTest extends IntegrationTest {
         mockMvc.perform(get("/api/admin/claims").header("Authorization", bearer(adminToken)))
                 .andExpect(status().isOk());
         mockMvc.perform(post("/api/admin/claims/{id}", id).header("Authorization", bearer(adminToken))
-                        .contentType(MediaType.APPLICATION_JSON).content("{\"approve\": true}"))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"approve\": true, \"trusted\": true}"))
                 .andExpect(jsonPath("$.status").value("APPROVED"));
         mockMvc.perform(get("/api/me/artists").header("Authorization", bearer(token)))
                 .andExpect(jsonPath("$[0].slug").value("claimed-act-" + unique));
+        // Trusted along with the approval: their changes skip the admins from now on
+        mockMvc.perform(get("/api/me/page-trust").param("kind", "ARTIST").param("key", "claimed-act-" + unique)
+                        .header("Authorization", bearer(token)))
+                .andExpect(jsonPath("$.trusted").value(true));
         // The claimer hears of it by mail, with the link to the page
         org.mockito.Mockito.verify(decisionMailer).send(unique + "@gmail.com", "Your claim of " + artist, true,
                 "The page is yours now: open it and use \"Edit\".", "/artists/claimed-act-" + unique, null);

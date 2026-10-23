@@ -207,4 +207,42 @@ class ArtistOwnerIntegrationTest extends IntegrationTest {
         mockMvc.perform(get("/api/artists/{slug}", artistSlug))
                 .andExpect(jsonPath("$.name").value("Owner Test Live"));
     }
+
+    @Test
+    void aTrustedOwnersChangesSkipTheAdmins() throws Exception {
+        String trustBody = "{\"kind\": \"ARTIST\", \"key\": \"%s\", \"trusted\": %s}";
+        mockMvc.perform(get("/api/me/page-trust").param("kind", "ARTIST").param("key", artistSlug).header("Authorization", bearer(ownerToken)))
+                .andExpect(jsonPath("$.trusted").value(false));
+
+        mockMvc.perform(put("/api/admin/page-trust").header("Authorization", bearer(adminToken))
+                        .contentType(MediaType.APPLICATION_JSON).content(trustBody.formatted(artistSlug, true)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.trusted").value(true));
+        // Now a new name is on the page at once, with no admin in between
+        mockMvc.perform(post("/api/artists/{slug}/requests", artistSlug).header("Authorization", bearer(ownerToken))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"kind\": \"NAME\", \"name\": \"Owner Test Trusted\"}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.status").value("APPROVED"));
+        mockMvc.perform(get("/api/artists/{slug}", artistSlug)).andExpect(jsonPath("$.name").value("Owner Test Trusted"));
+
+        // Someone else may not read it; a new owner starts untrusted
+        String other = uniqueUsername();
+        register(other, PASSWORD);
+        String otherToken = login(other, PASSWORD);
+        mockMvc.perform(get("/api/me/page-trust").param("kind", "ARTIST").param("key", artistSlug).header("Authorization", bearer(otherToken)))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(put("/api/admin/artists/{slug}/owner", artistSlug).header("Authorization", bearer(adminToken))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"username\": \"%s\"}".formatted(other)))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/api/me/page-trust").param("kind", "ARTIST").param("key", artistSlug).header("Authorization", bearer(otherToken)))
+                .andExpect(jsonPath("$.owner").value(other))
+                .andExpect(jsonPath("$.trusted").value(false));
+        mockMvc.perform(post("/api/artists/{slug}/requests", artistSlug).header("Authorization", bearer(otherToken))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"kind\": \"NAME\", \"name\": \"Owner Test Again\"}"))
+                .andExpect(jsonPath("$.status").value("PENDING"));
+        // Only admins trust
+        mockMvc.perform(put("/api/admin/page-trust").header("Authorization", bearer(otherToken))
+                        .contentType(MediaType.APPLICATION_JSON).content(trustBody.formatted(artistSlug, true)))
+                .andExpect(status().isForbidden());
+    }
 }

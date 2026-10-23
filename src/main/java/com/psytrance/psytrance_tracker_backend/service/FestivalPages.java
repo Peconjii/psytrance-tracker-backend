@@ -29,14 +29,16 @@ public class FestivalPages {
     private final Admins admins;
     private final AdminChangeRepository changeRepository;
     private final Clock clock;
+    private final PageTrust pageTrust;
 
     public FestivalPages(JdbcClient jdbc, MapFestivals mapFestivals, Admins admins, AdminChangeRepository changeRepository,
-                         Clock clock) {
+                         Clock clock, PageTrust pageTrust) {
         this.jdbc = jdbc;
         this.mapFestivals = mapFestivals;
         this.admins = admins;
         this.changeRepository = changeRepository;
         this.clock = clock;
+        this.pageTrust = pageTrust;
     }
 
     public record Profile(String description, String logoUrl, String websiteUrl, String ticketUrl, String instagramUrl, String organizerSlug) {
@@ -102,6 +104,9 @@ public class FestivalPages {
                         insert into festival_owners (festival_id, user_id, created_at) values (:id, :user, :now)
                         on conflict (festival_id) do update set user_id = excluded.user_id, created_at = excluded.created_at
                         """).param("id", id).param("user", userId).param("now", Timestamp.from(clock.instant())).update();
+        if (!before.equals(ownerUsername)) {
+            pageTrust.reset(PageTrust.Kind.FESTIVAL, id);
+        }
         log(adminUsername, AdminChange.FESTIVAL_OWNER, name, before, ownerUsername);
     }
 

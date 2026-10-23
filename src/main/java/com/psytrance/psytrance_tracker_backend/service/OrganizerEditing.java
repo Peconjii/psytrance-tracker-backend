@@ -43,11 +43,12 @@ public class OrganizerEditing {
     private final EventTimetables eventTimetables;
     private final Admins admins;
     private final Clock clock;
+    private final PageTrust pageTrust;
 
     public OrganizerEditing(OrganizerRepository organizerRepository, OrganizerOwnerRepository ownerRepository,
                             EventSummaryRepository summaryRepository, UserRepository userRepository,
                             AdminChangeRepository changeRepository, EventService eventService,
-                            EventTimetables eventTimetables, Admins admins, Clock clock) {
+                            EventTimetables eventTimetables, Admins admins, Clock clock, PageTrust pageTrust) {
         this.organizerRepository = organizerRepository;
         this.ownerRepository = ownerRepository;
         this.summaryRepository = summaryRepository;
@@ -57,6 +58,7 @@ public class OrganizerEditing {
         this.eventTimetables = eventTimetables;
         this.admins = admins;
         this.clock = clock;
+        this.pageTrust = pageTrust;
     }
 
     /** The page, the organizer's upcoming events and (for admins) the owner */
@@ -101,6 +103,9 @@ public class OrganizerEditing {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No account called " + ownerUsername));
         String before = ownerRepository.findById(organizer.getSlug()).map(o -> o.getUser().getUsername()).orElse(null);
         ownerRepository.save(new OrganizerOwner(organizer.getSlug(), user, clock.instant()));
+        if (!user.getUsername().equals(before)) {
+            pageTrust.reset(PageTrust.Kind.ORGANIZER, organizer.getSlug());
+        }
         log(adminUsername, AdminChange.ORGANIZER_OWNER, organizer.getName(), before, user.getUsername());
         return user.getUsername();
     }

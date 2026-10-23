@@ -58,11 +58,12 @@ public class OurEvents {
     private final LineupScanRepository lineupScanRepository;
     private final DecisionMailer decisionMailer;
     private final Clock clock;
+    private final PageTrust pageTrust;
 
     public OurEvents(OurEventRepository repository, UserRepository userRepository, EventService eventService,
                      EventGenreAdmin eventGenreAdmin, MapGenres mapGenres, OrganizerEditing organizerEditing,
                      Admins admins, AdminChangeRepository changeRepository,
-                     LineupScanRepository lineupScanRepository, DecisionMailer decisionMailer, Clock clock) {
+                     LineupScanRepository lineupScanRepository, DecisionMailer decisionMailer, Clock clock, PageTrust pageTrust) {
         this.repository = repository;
         this.userRepository = userRepository;
         this.eventService = eventService;
@@ -74,6 +75,7 @@ public class OurEvents {
         this.lineupScanRepository = lineupScanRepository;
         this.decisionMailer = decisionMailer;
         this.clock = clock;
+        this.pageTrust = pageTrust;
     }
 
     @Transactional
@@ -87,7 +89,7 @@ public class OurEvents {
         }
         String organizerName = blankToNull(request.organizerName());
         boolean trusted = admin
-                || (organizerName != null && organizerEditing.canEdit(ArtistNames.slug(organizerName), username));
+                || (organizerName != null && pageTrust.trusts(PageTrust.Kind.ORGANIZER, ArtistNames.slug(organizerName), username));
         if (!trusted && repository.countBySubmittedByIdAndStatus(user.getId(), OurEvent.PENDING) >= MAX_PENDING) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "You have " + MAX_PENDING + " events waiting for an admin already. Wait until they are checked.");

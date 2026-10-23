@@ -46,10 +46,11 @@ public class PageClaims {
     private final MapFestivals mapFestivals;
     private final DecisionMailer decisionMailer;
     private final Clock clock;
+    private final PageTrust pageTrust;
 
     public PageClaims(JdbcClient jdbc, ArtistEditing artistEditing, OrganizerEditing organizerEditing,
                       LabelPages labelPages, FestivalPages festivalPages, MapLabels mapLabels, MapFestivals mapFestivals,
-                      DecisionMailer decisionMailer, Clock clock) {
+                      DecisionMailer decisionMailer, Clock clock, PageTrust pageTrust) {
         this.jdbc = jdbc;
         this.artistEditing = artistEditing;
         this.organizerEditing = organizerEditing;
@@ -59,6 +60,7 @@ public class PageClaims {
         this.mapFestivals = mapFestivals;
         this.decisionMailer = decisionMailer;
         this.clock = clock;
+        this.pageTrust = pageTrust;
     }
 
     public record Claim(long id, String kind, String target, String username, String email, String proofUrl,
@@ -115,7 +117,7 @@ public class PageClaims {
     }
 
     @Transactional
-    public Claim decide(long id, boolean approve, String reason, String adminUsername) {
+    public Claim decide(long id, boolean approve, String reason, boolean trusted, String adminUsername) {
         Claim claim = find(id).filter(c -> "PENDING".equals(c.status()))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No waiting claim " + id));
         if (approve) {
@@ -123,6 +125,9 @@ public class PageClaims {
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "This page has an owner already: unlink them first");
             }
             link(claim.kind(), claim.target(), claim.username(), adminUsername);
+            if (trusted) {
+                pageTrust.set(PageTrust.kind(claim.kind()), claim.target(), true, adminUsername);
+            }
         }
         jdbc.sql("""
                         update page_claims set status = :status, decided_by = :admin, decided_at = :now, reject_reason = :reason

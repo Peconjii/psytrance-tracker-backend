@@ -45,7 +45,8 @@ public class PageClaimController {
                                @Size(max = 1000) String message, String website) {
     }
 
-    public record Decision(boolean approve, @Size(max = 500) String reason) {
+    /** trusted: the new owner's changes go live without an admin (see PageTrust) */
+    public record Decision(boolean approve, @Size(max = 500) String reason, Boolean trusted) {
     }
 
     /** status APPROVED when the email proved it at once, else PENDING (an admin decides) */
@@ -75,6 +76,7 @@ public class PageClaimController {
     /** {@code POST /api/admin/claims/7 {"approve": true}}; approving links the owner */
     @PostMapping("/api/admin/claims/{id}")
     public PageClaims.Claim decide(@PathVariable long id, @Valid @RequestBody Decision decision, Authentication authentication) {
-        return pageClaims.decide(id, decision.approve(), decision.reason(), admins.requireAdmin(authentication));
+        return pageClaims.decide(id, decision.approve(), decision.reason(), Boolean.TRUE.equals(decision.trusted()),
+                admins.requireAdmin(authentication));
     }
 }

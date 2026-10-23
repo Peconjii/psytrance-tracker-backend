@@ -60,13 +60,14 @@ public class ArtistEditing {
     private final MapGenres mapGenres;
     private final Admins admins;
     private final Clock clock;
+    private final PageTrust pageTrust;
 
     public ArtistEditing(ArtistRepository artistRepository, ArtistOwnerRepository ownerRepository,
                          ArtistTrackRepository trackRepository, ArtistFestivalRepository festivalRepository,
                          ArtistRequestRepository requestRepository, ArtistProfileRepository profileRepository,
                          UserRepository userRepository, AdminChangeRepository changeRepository,
                          ArtistProfiles artistProfiles, MapPlacements mapPlacements, MapGenres mapGenres,
-                         Admins admins, Clock clock) {
+                         Admins admins, Clock clock, PageTrust pageTrust) {
         this.artistRepository = artistRepository;
         this.ownerRepository = ownerRepository;
         this.trackRepository = trackRepository;
@@ -80,6 +81,7 @@ public class ArtistEditing {
         this.mapGenres = mapGenres;
         this.admins = admins;
         this.clock = clock;
+        this.pageTrust = pageTrust;
     }
 
     // ---- What the owner and admins can do ----
@@ -187,7 +189,7 @@ public class ArtistEditing {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Log in first"));
         ArtistRequest request = requestRepository.save(new ArtistRequest(artist.getSlug(), change.kind(), value, user, now));
-        if (admins.isAdmin(username)) {
+        if (pageTrust.trusts(PageTrust.Kind.ARTIST, artist.getSlug(), username)) {
             apply(request, artist, username);
         }
         return toDto(request, artist.getName());
@@ -203,6 +205,9 @@ public class ArtistEditing {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No account called " + ownerUsername));
         String before = ownerRepository.findById(artist.getSlug()).map(o -> o.getUser().getUsername()).orElse(null);
         ownerRepository.save(new ArtistOwner(artist.getSlug(), user, clock.instant()));
+        if (!user.getUsername().equals(before)) {
+            pageTrust.reset(PageTrust.Kind.ARTIST, artist.getSlug());
+        }
         log(adminUsername, AdminChange.ARTIST_OWNER, artist.getName(), before, user.getUsername());
         return user.getUsername();
     }

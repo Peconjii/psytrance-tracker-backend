@@ -89,8 +89,11 @@ class LabelFestivalOwnerIntegrationTest extends IntegrationTest {
         mockMvc.perform(get("/api/labels/owner-stats").param("label", LABEL).header("Authorization", bearer(ownerToken)))
                 .andExpect(status().isOk());
 
-        // An admin takes the newcomer off again at once
-        mockMvc.perform(post("/api/labels/requests").param("label", LABEL).header("Authorization", bearer(adminToken))
+        // Once an admin trusts the owner, the owner takes the newcomer off again at once
+        mockMvc.perform(put("/api/admin/page-trust").header("Authorization", bearer(adminToken)).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"kind\": \"LABEL\", \"key\": \"%s\", \"trusted\": true}".formatted(LABEL)))
+                .andExpect(status().isOk());
+        mockMvc.perform(post("/api/labels/requests").param("label", LABEL).header("Authorization", bearer(ownerToken))
                         .contentType(MediaType.APPLICATION_JSON).content("{\"kind\": \"REMOVE\", \"artistName\": \"%s\"}".formatted(newcomer)))
                 .andExpect(jsonPath("$").value(not(hasItem(newcomer))));
         mockMvc.perform(delete("/api/admin/labels/owner").param("label", LABEL).header("Authorization", bearer(adminToken)))
@@ -103,6 +106,19 @@ class LabelFestivalOwnerIntegrationTest extends IntegrationTest {
         mockMvc.perform(put("/api/admin/festivals/owner").param("id", FESTIVAL).header("Authorization", bearer(adminToken))
                         .contentType(MediaType.APPLICATION_JSON).content("{\"username\": \"%s\"}".formatted(owner)))
                 .andExpect(status().isNoContent());
+
+        // Editions are for a trusted owner only
+        String edition = "{\"eventId\": 424242, \"edition\": false}";
+        mockMvc.perform(put("/api/festivals/editions").param("id", FESTIVAL).header("Authorization", bearer(ownerToken))
+                        .contentType(MediaType.APPLICATION_JSON).content(edition))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(put("/api/admin/page-trust").header("Authorization", bearer(adminToken)).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"kind\": \"FESTIVAL\", \"key\": \"%s\", \"trusted\": true}".formatted(FESTIVAL)))
+                .andExpect(status().isOk());
+        // Past the trust check now: what's left is that no event 424242 exists
+        mockMvc.perform(put("/api/festivals/editions").param("id", FESTIVAL).header("Authorization", bearer(ownerToken))
+                        .contentType(MediaType.APPLICATION_JSON).content(edition))
+                .andExpect(status().isNotFound());
 
         mockMvc.perform(put("/api/festivals/profile").param("id", FESTIVAL).header("Authorization", bearer(ownerToken))
                         .contentType(MediaType.APPLICATION_JSON).content("""

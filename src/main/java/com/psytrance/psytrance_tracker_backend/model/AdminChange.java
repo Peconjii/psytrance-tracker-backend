@@ -67,6 +67,8 @@ public class AdminChange {
     public static final String MAP_ADDED = "MAP_ADDED";
     /** A label or festival an admin added, taken off the map again; before its genres (no undo) */
     public static final String MAP_REMOVED = "MAP_REMOVED";
+    /** An admin trusted a page's owner (their changes go live at once), or stopped; target "KIND: page" (no undo) */
+    public static final String PAGE_TRUSTED = "PAGE_TRUSTED";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

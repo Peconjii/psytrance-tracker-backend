@@ -50,8 +50,11 @@ public class NewPageController {
                               @Size(max = 1000) String artists, @Size(max = 100) String town) {
     }
 
-    /** onTheMap: for a label or festival, to add it to the map right away (with its genres) */
-    public record Decision(boolean approve, @Size(max = 500) String reason, NewPages.OnTheMap onTheMap) {
+    /**
+     * onTheMap: for a label or festival, to add it to the map right away (with its genres); trusted: the new owner's
+     * changes go live without an admin (see PageTrust)
+     */
+    public record Decision(boolean approve, @Size(max = 500) String reason, NewPages.OnTheMap onTheMap, Boolean trusted) {
     }
 
     @PostMapping("/api/page-requests")
@@ -82,6 +85,7 @@ public class NewPageController {
     /** {@code POST /api/admin/page-requests/7 {"approve": true}}; approving an artist or organizer makes the page */
     @PostMapping("/api/admin/page-requests/{id}")
     public NewPages.Request decide(@PathVariable long id, @Valid @RequestBody Decision decision, Authentication authentication) {
-        return newPages.decide(id, decision.approve(), decision.reason(), decision.onTheMap(), admins.requireAdmin(authentication));
+        return newPages.decide(id, decision.approve(), decision.reason(), decision.onTheMap(), Boolean.TRUE.equals(decision.trusted()),
+                admins.requireAdmin(authentication));
     }
 }

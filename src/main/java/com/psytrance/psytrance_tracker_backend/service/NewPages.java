@@ -48,11 +48,12 @@ public class NewPages {
     private final LabelPages labelPages;
     private final FestivalPages festivalPages;
     private final Clock clock;
+    private final PageTrust pageTrust;
 
     public NewPages(JdbcClient jdbc, ArtistRepository artistRepository, Organizers organizers, ArtistEditing artistEditing,
                     OrganizerEditing organizerEditing, MapLabels mapLabels, MapFestivals mapFestivals,
                     DecisionMailer decisionMailer, MapExtras mapExtras, LabelPages labelPages,
-                    FestivalPages festivalPages, Clock clock) {
+                    FestivalPages festivalPages, Clock clock, PageTrust pageTrust) {
         this.jdbc = jdbc;
         this.artistRepository = artistRepository;
         this.organizers = organizers;
@@ -65,6 +66,7 @@ public class NewPages {
         this.labelPages = labelPages;
         this.festivalPages = festivalPages;
         this.clock = clock;
+        this.pageTrust = pageTrust;
     }
 
     /**
@@ -142,7 +144,7 @@ public class NewPages {
 
     @Transactional
     public Request decide(long id, boolean approve, String reason, String adminUsername) {
-        return decide(id, approve, reason, null, adminUsername);
+        return decide(id, approve, reason, null, false, adminUsername);
     }
 
     /**
@@ -161,7 +163,7 @@ public class NewPages {
      * {@code onTheMap} is added to the map the same way, owner included; without it, it is only noted.
      */
     @Transactional
-    public Request decide(long id, boolean approve, String reason, OnTheMap onTheMap, String adminUsername) {
+    public Request decide(long id, boolean approve, String reason, OnTheMap onTheMap, boolean trusted, String adminUsername) {
         Request request = find(id).filter(r -> "PENDING".equals(r.status()))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No waiting request " + id));
         String createdSlug = null;
@@ -173,6 +175,9 @@ public class NewPages {
                 case "LABEL" -> addNow ? addLabel(request, onTheMap, adminUsername) : null;
                 default -> addNow ? addFestival(request, onTheMap, adminUsername) : null;
             };
+            if (trusted && createdSlug != null) {
+                pageTrust.set(PageTrust.kind(request.kind()), createdSlug, true, adminUsername);
+            }
         }
         jdbc.sql("""
                         update page_requests set status = :status, decided_by = :admin, decided_at = :now,

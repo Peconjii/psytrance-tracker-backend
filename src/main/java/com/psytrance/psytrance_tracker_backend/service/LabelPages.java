@@ -42,15 +42,17 @@ public class LabelPages {
     private final Admins admins;
     private final AdminChangeRepository changeRepository;
     private final Clock clock;
+    private final PageTrust pageTrust;
 
     public LabelPages(JdbcClient jdbc, MapLabels mapLabels, ArtistRepository artistRepository, Admins admins,
-                      AdminChangeRepository changeRepository, Clock clock) {
+                      AdminChangeRepository changeRepository, Clock clock, PageTrust pageTrust) {
         this.jdbc = jdbc;
         this.mapLabels = mapLabels;
         this.artistRepository = artistRepository;
         this.admins = admins;
         this.changeRepository = changeRepository;
         this.clock = clock;
+        this.pageTrust = pageTrust;
     }
 
     public record Profile(String description, String logoUrl, String websiteUrl, String bandcampUrl, String instagramUrl) {
@@ -140,7 +142,7 @@ public class LabelPages {
             name = crew.stream().filter(n -> n.equalsIgnoreCase(artistName == null ? "" : artistName.strip())).findFirst()
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, artistName + " is not on the label"));
         }
-        if (admins.isAdmin(username)) {
+        if (pageTrust.trusts(PageTrust.Kind.LABEL, label, username)) {
             applyCrew(label, kind, name, username);
         } else {
             long userId = userId(username);
@@ -187,6 +189,9 @@ public class LabelPages {
                         insert into label_owners (label_name, user_id, created_at) values (:label, :user, :now)
                         on conflict (label_name) do update set user_id = excluded.user_id, created_at = excluded.created_at
                         """).param("label", label).param("user", userId).param("now", Timestamp.from(clock.instant())).update();
+        if (!before.equals(ownerUsername)) {
+            pageTrust.reset(PageTrust.Kind.LABEL, label);
+        }
         log(adminUsername, AdminChange.LABEL_OWNER, label, before, ownerUsername);
     }
 
