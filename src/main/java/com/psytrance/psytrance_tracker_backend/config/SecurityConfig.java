@@ -61,6 +61,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/map/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/search").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/sitemap.xml").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/share/**").permitAll()
                         // The keep-awake ping of an outside cron job (see HealthController)
                         .requestMatchers(HttpMethod.GET, "/api/health").permitAll()
                         // Guests can send feedback; reading it is for admins (checked in FeedbackController)
