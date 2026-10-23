@@ -37,6 +37,8 @@ public class MapExtras {
     private static final int FESTIVAL_DISTANCE = 90;
     // Each new marker turns by the golden angle, so markers added around the same stars don't land on each other
     private static final double GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
+    // How much further out each next marker goes (times the square root of how many came before)
+    private static final double SPIRAL_STEP = 28;
 
     private final JdbcClient jdbc;
     private final MapGenres mapGenres;
@@ -175,8 +177,11 @@ public class MapExtras {
                 .filter(genre -> genre.x() != null && genre.y() != null).toList();
         double cx = stars.stream().mapToInt(MapGenres.Genre::x).average().orElse(0);
         double cy = stars.stream().mapToInt(MapGenres.Genre::y).average().orElse(0);
+        // A sunflower spiral: each marker turns by the golden angle and sits a little further out, so however many
+        // are added around the same stars, they never land on each other
         double angle = before * GOLDEN_ANGLE + turn;
-        return new int[]{(int) Math.round(cx + Math.cos(angle) * distance), (int) Math.round(cy + Math.sin(angle) * distance)};
+        double radius = distance + SPIRAL_STEP * Math.sqrt(before);
+        return new int[]{(int) Math.round(cx + Math.cos(angle) * radius), (int) Math.round(cy + Math.sin(angle) * radius)};
     }
 
     private static String name(String name) {
