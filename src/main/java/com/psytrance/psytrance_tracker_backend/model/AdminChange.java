@@ -65,6 +65,8 @@ public class AdminChange {
     public static final String FESTIVAL_EDITION = "FESTIVAL_EDITION";
     /** A label or festival an admin added to the map; target "Label: name", after its genres (no undo) */
     public static final String MAP_ADDED = "MAP_ADDED";
+    /** A label or festival an admin added, taken off the map again; before its genres (no undo) */
+    public static final String MAP_REMOVED = "MAP_REMOVED";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

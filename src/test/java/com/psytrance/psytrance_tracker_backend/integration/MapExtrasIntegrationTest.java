@@ -7,8 +7,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 
 import static org.hamcrest.Matchers.hasItem;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -58,6 +60,25 @@ class MapExtrasIntegrationTest extends IntegrationTest {
         mockMvc.perform(post("/api/admin/map/labels").header("Authorization", bearer(login(user, PASSWORD)))
                         .contentType(MediaType.APPLICATION_JSON).content("{\"name\": \"Mine %s\", \"genres\": [\"hitech\"]}".formatted(name)))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void anAddedLabelCanBeTakenOffAgainButNotOneOfTheMapFile() throws Exception {
+        String name = "Mistake Label " + uniqueLetters();
+        mockMvc.perform(post("/api/admin/map/labels").header("Authorization", bearer(adminToken))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"name\": \"%s\", \"genres\": [\"forest\"]}".formatted(name)))
+                .andExpect(status().isCreated());
+        String user = uniqueUsername();
+        register(user, PASSWORD);
+        mockMvc.perform(put("/api/me/label-follows").param("label", name).header("Authorization", bearer(login(user, PASSWORD))))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(delete("/api/admin/map/labels").param("name", name).header("Authorization", bearer(adminToken)))
+                .andExpect(status().isNoContent());
+        mockMvc.perform(get("/api/map/extras")).andExpect(jsonPath("$.labels[?(@.name == '%s')]".formatted(name)).isEmpty());
+        mockMvc.perform(get("/api/labels/page").param("label", name)).andExpect(status().isNotFound());
+        mockMvc.perform(delete("/api/admin/map/labels").param("name", "Iboga Records").header("Authorization", bearer(adminToken)))
+                .andExpect(status().isNotFound());
     }
 
     @Test

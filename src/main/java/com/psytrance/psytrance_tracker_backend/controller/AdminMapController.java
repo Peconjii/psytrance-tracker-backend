@@ -7,9 +7,11 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -42,6 +44,20 @@ public class AdminMapController {
     @ResponseStatus(HttpStatus.CREATED)
     public MapExtras.Label addLabel(@Valid @RequestBody NewLabel label, Authentication authentication) {
         return mapExtras.addLabel(label.name(), label.country(), label.since(), label.genres(), admins.requireAdmin(authentication));
+    }
+
+    /** {@code DELETE /api/admin/map/labels?name=…}: only a label added from the panel */
+    @DeleteMapping("/labels")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void removeLabel(@RequestParam String name, Authentication authentication) {
+        mapExtras.removeLabel(name, admins.requireAdmin(authentication));
+    }
+
+    /** {@code DELETE /api/admin/map/festivals?id=…}: only a festival added from the panel */
+    @DeleteMapping("/festivals")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void removeFestival(@RequestParam String id, Authentication authentication) {
+        mapExtras.removeFestival(id, admins.requireAdmin(authentication));
     }
 
     @PostMapping("/festivals")

@@ -132,6 +132,41 @@ public class MapExtras {
         return new Festival(id, clean, blankToNull(country), since(since), text, ids, at[0], at[1]);
     }
 
+    /**
+     * Takes a label an admin added off the map again (a mistake, a duplicate), with what hangs on it: its owner,
+     * followers, page, crew changes and requests. The labels of labels.json can't be taken off here.
+     */
+    @Transactional
+    public void removeLabel(String name, String adminUsername) {
+        Label label = all().labels().stream().filter(l -> l.name().equals(name)).findFirst()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "No label called " + name + " was added from the panel (the map file's labels stay)"));
+        for (String table : List.of("label_owners", "label_follows", "label_crew", "label_requests", "label_profiles")) {
+            jdbc.sql("delete from " + table + " where label_name = :name").param("name", name).update();
+        }
+        jdbc.sql("delete from page_claims where kind = 'LABEL' and target = :name").param("name", name).update();
+        jdbc.sql("delete from map_labels where name = :name").param("name", name).update();
+        changeRepository.save(new AdminChange(adminUsername, AdminChange.MAP_REMOVED, "Label: " + name,
+                String.join(", ", label.genres()), "", clock.instant()));
+        load();
+    }
+
+    /** The same for a festival an admin added: its owner, page, editions and claims go with it */
+    @Transactional
+    public void removeFestival(String id, String adminUsername) {
+        Festival festival = all().festivals().stream().filter(f -> f.id().equals(id)).findFirst()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "No festival " + id + " was added from the panel (the map file's festivals stay)"));
+        for (String table : List.of("festival_owners", "festival_profiles", "festival_editions")) {
+            jdbc.sql("delete from " + table + " where festival_id = :id").param("id", id).update();
+        }
+        jdbc.sql("delete from page_claims where kind = 'FESTIVAL' and target = :id").param("id", id).update();
+        jdbc.sql("delete from map_festivals where id = :id").param("id", id).update();
+        changeRepository.save(new AdminChange(adminUsername, AdminChange.MAP_REMOVED, "Festival: " + festival.name(),
+                String.join(", ", festival.genres()), "", clock.instant()));
+        load();
+    }
+
     // ---- Helpers ----
 
     // Around the middle of the genres' stars, turned by the golden angle for each marker added before
