@@ -37,7 +37,7 @@ public class FestivalPages {
         this.clock = clock;
     }
 
-    public record Profile(String description, String websiteUrl, String ticketUrl, String instagramUrl, String organizerSlug) {
+    public record Profile(String description, String logoUrl, String websiteUrl, String ticketUrl, String instagramUrl, String organizerSlug) {
     }
 
     /** The organizer who runs the festival, for a link to their page */
@@ -74,14 +74,14 @@ public class FestivalPages {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No organizer page called " + profile.organizerSlug());
         }
         jdbc.sql("""
-                        insert into festival_profiles (festival_id, description, website_url, ticket_url, instagram_url, organizer_slug, updated_at)
-                        values (:id, :description, :website, :tickets, :instagram, :organizer, :now)
-                        on conflict (festival_id) do update set description = excluded.description,
+                        insert into festival_profiles (festival_id, description, logo_url, website_url, ticket_url, instagram_url, organizer_slug, updated_at)
+                        values (:id, :description, :logo, :website, :tickets, :instagram, :organizer, :now)
+                        on conflict (festival_id) do update set description = excluded.description, logo_url = excluded.logo_url,
                           website_url = excluded.website_url, ticket_url = excluded.ticket_url,
                           instagram_url = excluded.instagram_url, organizer_slug = excluded.organizer_slug,
                           updated_at = excluded.updated_at
                         """)
-                .param("id", id).param("description", blankToNull(profile.description()))
+                .param("id", id).param("description", blankToNull(profile.description())).param("logo", blankToNull(profile.logoUrl()))
                 .param("website", blankToNull(profile.websiteUrl())).param("tickets", blankToNull(profile.ticketUrl()))
                 .param("instagram", blankToNull(profile.instagramUrl())).param("organizer", organizerSlug)
                 .param("now", Timestamp.from(clock.instant())).update();
@@ -135,10 +135,10 @@ public class FestivalPages {
 
     private Optional<Profile> profile(String id) {
         return jdbc.sql("""
-                        select description, website_url, ticket_url, instagram_url, organizer_slug from festival_profiles
+                        select description, logo_url, website_url, ticket_url, instagram_url, organizer_slug from festival_profiles
                         where festival_id = :id
                         """).param("id", id)
-                .query((rs, row) -> new Profile(rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5)))
+                .query((rs, row) -> new Profile(rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5), rs.getString(6)))
                 .optional();
     }
 

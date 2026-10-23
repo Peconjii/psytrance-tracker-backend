@@ -1,5 +1,6 @@
 package com.psytrance.psytrance_tracker_backend.controller;
 
+import com.psytrance.psytrance_tracker_backend.util.ImageUrls;
 import com.psytrance.psytrance_tracker_backend.config.Admins;
 import com.psytrance.psytrance_tracker_backend.service.NewPages;
 import com.psytrance.psytrance_tracker_backend.service.FormLimits;
@@ -44,7 +45,7 @@ public class NewPageController {
                               @Size(max = 500) @Pattern(regexp = "\\s*|https://\\S+", message = "must be an https:// address") String proofUrl,
                               @Size(max = 300) String genres, @Size(max = 1000) String message, String website,
                               Integer since, @Size(max = 1000) String description,
-                              @Size(max = 500) @Pattern(regexp = "\\s*|https://\\S+", message = "must be an https:// address") String imageUrl,
+                              @Size(max = 500) @Pattern(regexp = ImageUrls.PATTERN, message = ImageUrls.MESSAGE) String imageUrl,
                               @Size(max = 1000) String artists, @Size(max = 100) String town) {
     }
 

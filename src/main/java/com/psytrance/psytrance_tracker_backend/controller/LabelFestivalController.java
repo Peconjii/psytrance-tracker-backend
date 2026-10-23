@@ -1,5 +1,6 @@
 package com.psytrance.psytrance_tracker_backend.controller;
 
+import com.psytrance.psytrance_tracker_backend.util.ImageUrls;
 import com.psytrance.psytrance_tracker_backend.service.FestivalPages;
 import com.psytrance.psytrance_tracker_backend.service.LabelPages;
 import com.psytrance.psytrance_tracker_backend.service.OwnerStats;
@@ -42,7 +43,7 @@ public class LabelFestivalController {
 
     public record LabelProfileRequest(
             @Size(max = 2000) String description,
-            @Size(max = 500) @Pattern(regexp = HTTPS, message = HTTPS_MESSAGE) String logoUrl,
+            @Size(max = 500) @Pattern(regexp = ImageUrls.PATTERN, message = ImageUrls.MESSAGE) String logoUrl,
             @Size(max = 300) @Pattern(regexp = HTTPS, message = HTTPS_MESSAGE) String websiteUrl,
             @Size(max = 300) @Pattern(regexp = HTTPS, message = HTTPS_MESSAGE) String bandcampUrl,
             @Size(max = 300) @Pattern(regexp = HTTPS, message = HTTPS_MESSAGE) String instagramUrl) {
@@ -54,6 +55,7 @@ public class LabelFestivalController {
 
     public record FestivalProfileRequest(
             @Size(max = 2000) String description,
+            @Size(max = 500) @Pattern(regexp = ImageUrls.PATTERN, message = ImageUrls.MESSAGE) String logoUrl,
             @Size(max = 300) @Pattern(regexp = HTTPS, message = HTTPS_MESSAGE) String websiteUrl,
             @Size(max = 300) @Pattern(regexp = HTTPS, message = HTTPS_MESSAGE) String ticketUrl,
             @Size(max = 300) @Pattern(regexp = HTTPS, message = HTTPS_MESSAGE) String instagramUrl,
@@ -106,7 +108,7 @@ public class LabelFestivalController {
     @PutMapping("/api/festivals/profile")
     public FestivalPages.Page festivalProfile(@RequestParam String id, @Valid @RequestBody FestivalProfileRequest request,
                                               Authentication authentication) {
-        return festivalPages.saveProfile(id, new FestivalPages.Profile(request.description(), request.websiteUrl(),
+        return festivalPages.saveProfile(id, new FestivalPages.Profile(request.description(), request.logoUrl(), request.websiteUrl(),
                 request.ticketUrl(), request.instagramUrl(), request.organizerSlug()), username(authentication));
     }
 

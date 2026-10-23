@@ -142,9 +142,12 @@ public class SharePreview {
 
     private Optional<Card> festival(String id) {
         return mapFestivals.name(id).map(name -> {
-            String description = jdbc.sql("select description from festival_profiles where festival_id = :id").param("id", id)
-                    .query(String.class).optional().orElse("Psytrance festival: its sound, sets and editions on Map of Psy.");
-            return new Card(name, description, null, "/festivals/" + encode(id));
+            record Profile(String description, String logo) {
+            }
+            Profile profile = jdbc.sql("select description, logo_url from festival_profiles where festival_id = :id").param("id", id)
+                    .query((rs, row) -> new Profile(rs.getString(1), rs.getString(2))).optional().orElse(new Profile(null, null));
+            return new Card(name, profile.description() != null ? profile.description()
+                    : "Psytrance festival: its sound, sets and editions on Map of Psy.", profile.logo(), "/festivals/" + encode(id));
         });
     }
 

@@ -2,6 +2,7 @@ package com.psytrance.psytrance_tracker_backend.config;
 
 import com.psytrance.psytrance_tracker_backend.service.ArtistFollows;
 import com.psytrance.psytrance_tracker_backend.service.ArtistIndexer;
+import com.psytrance.psytrance_tracker_backend.service.Images;
 import com.psytrance.psytrance_tracker_backend.service.ReminderService;
 import com.psytrance.psytrance_tracker_backend.service.WeeklyDigest;
 import org.slf4j.Logger;
@@ -27,10 +28,12 @@ public class BackgroundJobs {
     private final ArtistIndexer artistIndexer;
     private final ArtistFollows artistFollows;
     private final WeeklyDigest weeklyDigest;
+    private final Images images;
 
     public BackgroundJobs(ReminderService reminderService, ArtistIndexer artistIndexer, ArtistFollows artistFollows,
-                          WeeklyDigest weeklyDigest) {
+                          WeeklyDigest weeklyDigest, Images images) {
         this.weeklyDigest = weeklyDigest;
+        this.images = images;
         this.reminderService = reminderService;
         this.artistIndexer = artistIndexer;
         this.artistFollows = artistFollows;
@@ -64,6 +67,15 @@ public class BackgroundJobs {
             }
         } catch (RuntimeException e) {
             log.warn("Weekly email job failed", e);
+        }
+        // Pictures nobody uses any more (replaced, or uploaded and never saved), on the same timer
+        try {
+            int deleted = images.deleteUnused();
+            if (deleted > 0) {
+                log.info("Deleted {} unused pictures", deleted);
+            }
+        } catch (RuntimeException e) {
+            log.warn("Unused picture job failed", e);
         }
     }
 

@@ -1,5 +1,6 @@
 package com.psytrance.psytrance_tracker_backend.dto;
 
+import com.psytrance.psytrance_tracker_backend.util.ImageUrls;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
@@ -32,7 +33,7 @@ public record OurEventRequest(
         @Size(max = 200) String organizerName,
         @Size(max = 500) @Pattern(regexp = HTTPS, message = HTTPS_MESSAGE) String organizerUrl,
         @Size(max = 500) @Pattern(regexp = HTTPS, message = HTTPS_MESSAGE) String ticketUrl,
-        @Size(max = 500) @Pattern(regexp = HTTPS, message = HTTPS_MESSAGE) String imageUrl,
+        @Size(max = 500) @Pattern(regexp = ImageUrls.PATTERN, message = ImageUrls.MESSAGE) String imageUrl,
         @Size(max = 4) List<@NotBlank String> genres
 ) {
     // Blank, or an https address without spaces

@@ -234,7 +234,7 @@ public class NewPages {
         String festivalId = mapExtras.addFestival(request.name(), firstNonBlank(onTheMap.country(), request.country()),
                 onTheMap.since(), description, onTheMap.genres(), adminUsername).id();
         festivalPages.setOwner(festivalId, request.username(), adminUsername);
-        festivalPages.saveProfile(festivalId, new FestivalPages.Profile(description, request.websiteUrl(), null, null, null),
+        festivalPages.saveProfile(festivalId, new FestivalPages.Profile(description, request.imageUrl(), request.websiteUrl(), null, null, null),
                 adminUsername);
         return festivalId;
     }
