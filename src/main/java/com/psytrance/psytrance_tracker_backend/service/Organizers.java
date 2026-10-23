@@ -62,7 +62,8 @@ public class Organizers {
                         organizerRepository.save(organizer);
                     }
                 },
-                () -> organizerRepository.save(new Organizer(slug, clean, cleanUrl, clock.instant())));
+                // Flushed at once, so plain SQL in the same transaction (NewPages) finds the row
+                () -> organizerRepository.saveAndFlush(new Organizer(slug, clean, cleanUrl, clock.instant())));
         return slug;
     }
 

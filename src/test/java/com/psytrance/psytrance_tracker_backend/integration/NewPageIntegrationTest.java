@@ -5,7 +5,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.simple.JdbcClient;
 
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -19,6 +23,9 @@ class NewPageIntegrationTest extends IntegrationTest {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private JdbcClient jdbc;
 
     private String adminToken;
 
@@ -37,7 +44,7 @@ class NewPageIntegrationTest extends IntegrationTest {
 
         long id = ask(token, """
                 {"kind": "ARTIST", "name": "Brand New Act %s", "country": "Serbia", "proofUrl": "https://instagram.com/brandnew",
-                 "genres": "dark, forest"}
+                 "genres": "dark, forest", "description": "Night sounds", "imageUrl": "https://pics.example/act.jpg"}
                 """.formatted(unique));
         mockMvc.perform(get("/api/me/page-requests").header("Authorization", bearer(token)))
                 .andExpect(jsonPath("$[0].status").value("PENDING"))
@@ -49,6 +56,10 @@ class NewPageIntegrationTest extends IntegrationTest {
                 .andExpect(jsonPath("$.createdSlug").value("brand-new-act-" + unique));
         mockMvc.perform(get("/api/me/artists").header("Authorization", bearer(token)))
                 .andExpect(jsonPath("$[0].slug").value("brand-new-act-" + unique));
+        // The photo and words of the request are on the new page
+        assertThat(jdbc.sql("select photo_url, bio from artist_profiles where slug = :slug").param("slug", "brand-new-act-" + unique)
+                .query((rs, row) -> List.of(rs.getString(1), rs.getString(2))).single())
+                .containsExactly("https://pics.example/act.jpg", "Night sounds");
 
         // Now it's on the site: asking again points to the page to claim
         mockMvc.perform(post("/api/page-requests").header("Authorization", bearer(verifiedUser(uniqueLetters() + "@example.com")))
@@ -62,7 +73,8 @@ class NewPageIntegrationTest extends IntegrationTest {
         String unique = uniqueLetters();
         String token = verifiedUser(unique + "@example.com");
         long id = ask(token, """
-                {"kind": "ORGANIZER", "name": "New Crew %s", "websiteUrl": "https://newcrew.example"}
+                {"kind": "ORGANIZER", "name": "New Crew %s", "websiteUrl": "https://newcrew.example",
+                 "description": "Forest parties", "imageUrl": "https://pics.example/crew.png"}
                 """.formatted(unique));
 
         mockMvc.perform(post("/api/admin/page-requests/{id}", id).header("Authorization", bearer(adminToken))
@@ -70,6 +82,9 @@ class NewPageIntegrationTest extends IntegrationTest {
                 .andExpect(jsonPath("$.createdSlug").value("new-crew-" + unique));
         mockMvc.perform(get("/api/me/organizers").header("Authorization", bearer(token)))
                 .andExpect(jsonPath("$[0].slug").value("new-crew-" + unique));
+        assertThat(jdbc.sql("select website_url, photo_url, bio from organizers where slug = :slug").param("slug", "new-crew-" + unique)
+                .query((rs, row) -> List.of(rs.getString(1), rs.getString(2), rs.getString(3))).single())
+                .containsExactly("https://newcrew.example", "https://pics.example/crew.png", "Forest parties");
     }
 
     @Test

@@ -254,6 +254,16 @@ public class NewPages {
         if (artistRepository.findBySlugIn(List.of(slug)).isEmpty()) {
             artistRepository.save(new Artist(slug, request.name()));
         }
+        // The photo and words from the request, unless the page has its own already
+        if (request.imageUrl() != null || request.description() != null) {
+            jdbc.sql("""
+                            insert into artist_profiles (slug, photo_url, bio, updated_at) values (:slug, :photo, :bio, :now)
+                            on conflict (slug) do update set photo_url = coalesce(artist_profiles.photo_url, excluded.photo_url),
+                              bio = coalesce(artist_profiles.bio, excluded.bio)
+                            """)
+                    .param("slug", slug).param("photo", request.imageUrl()).param("bio", request.description())
+                    .param("now", Timestamp.from(clock.instant())).update();
+        }
         artistEditing.setOwner(slug, request.username(), adminUsername);
         return slug;
     }
@@ -268,6 +278,10 @@ public class NewPages {
                     .param("website", request.websiteUrl().length() > 300 ? null : request.websiteUrl())
                     .param("slug", slug).update();
         }
+        jdbc.sql("""
+                        update organizers set photo_url = coalesce(photo_url, :photo), bio = coalesce(bio, :bio) where slug = :slug
+                        """)
+                .param("photo", request.imageUrl()).param("bio", request.description()).param("slug", slug).update();
         organizerEditing.setOwner(slug, request.username(), adminUsername);
         return slug;
     }
