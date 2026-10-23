@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static com.psytrance.psytrance_tracker_backend.util.Texts.blankToNull;
+
 /**
  * Labels and festivals an admin adds to the map from the admin panel, so a new one needs no change to labels.json or
  * festivals.json and no deploy. The frontend puts them into the map data before the galaxy is drawn
@@ -220,10 +222,6 @@ public class MapExtras {
     private Festival festival(ResultSet rs, int row) throws SQLException {
         return new Festival(rs.getString("id"), rs.getString("name"), rs.getString("country"), (Integer) rs.getObject("since"),
                 rs.getString("description"), Arrays.asList(rs.getString("genres").split(",")), rs.getInt("x"), rs.getInt("y"));
-    }
-
-    private static String blankToNull(String value) {
-        return value == null || value.isBlank() ? null : value.strip();
     }
 
 }

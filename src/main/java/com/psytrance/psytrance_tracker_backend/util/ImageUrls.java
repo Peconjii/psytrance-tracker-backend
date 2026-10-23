@@ -6,7 +6,7 @@ package com.psytrance.psytrance_tracker_backend.util;
  */
 public final class ImageUrls {
 
-    public static final String PATTERN = "\\s*|https://\\S+|http://localhost(:\\d+)?/api/images/\\d+";
+    public static final String PATTERN = Links.HTTPS_OR_BLANK + "|http://localhost(:\\d+)?/api/images/\\d+";
     public static final String MESSAGE = "must be an https:// address or an uploaded picture";
 
     private ImageUrls() {

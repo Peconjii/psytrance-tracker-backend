@@ -1,5 +1,6 @@
 package com.psytrance.psytrance_tracker_backend.dto;
 
+import com.psytrance.psytrance_tracker_backend.util.Links;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -18,18 +19,13 @@ public final class ArtistListsRequest {
     /** Most festivals a profile lists */
     public static final int MAX_FESTIVALS = 20;
 
-    // An https address without spaces; blank is allowed only where the field is optional
-    private static final String HTTPS = "https://\\S+";
-    private static final String OPTIONAL_HTTPS = "\\s*|https://\\S+";
-    private static final String HTTPS_MESSAGE = "must be an https:// address";
-
     private ArtistListsRequest() {
     }
 
     /** A track: its title and a link to listen (YouTube, SoundCloud, Bandcamp...) */
     public record Track(
             @NotBlank @Size(max = 200) String title,
-            @NotBlank @Size(max = 300) @Pattern(regexp = HTTPS, message = HTTPS_MESSAGE) String url) {
+            @NotBlank @Size(max = 300) @Pattern(regexp = Links.HTTPS, message = Links.HTTPS_MESSAGE) String url) {
     }
 
     /** {@code PUT /api/artists/{slug}/tracks}: the whole list, in order */
@@ -40,7 +36,7 @@ public final class ArtistListsRequest {
     public record Festival(
             @NotBlank @Size(max = 200) String name,
             @Min(1965) @Max(2100) Integer year,
-            @Size(max = 300) @Pattern(regexp = OPTIONAL_HTTPS, message = HTTPS_MESSAGE) String url) {
+            @Size(max = 300) @Pattern(regexp = Links.HTTPS_OR_BLANK, message = Links.HTTPS_MESSAGE) String url) {
     }
 
     /** {@code PUT /api/artists/{slug}/festivals}: the whole list, in order */

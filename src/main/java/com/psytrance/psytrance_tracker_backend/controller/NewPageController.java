@@ -1,5 +1,6 @@
 package com.psytrance.psytrance_tracker_backend.controller;
 
+import com.psytrance.psytrance_tracker_backend.util.Links;
 import com.psytrance.psytrance_tracker_backend.util.ImageUrls;
 import com.psytrance.psytrance_tracker_backend.config.Admins;
 import com.psytrance.psytrance_tracker_backend.service.NewPages;
@@ -41,8 +42,8 @@ public class NewPageController {
 
     /** kind: ARTIST, ORGANIZER, LABEL or FESTIVAL */
     public record PageRequest(@NotBlank String kind, @NotBlank @Size(max = 200) String name, @Size(max = 100) String country,
-                              @Size(max = 500) @Pattern(regexp = "\\s*|https://\\S+", message = "must be an https:// address") String websiteUrl,
-                              @Size(max = 500) @Pattern(regexp = "\\s*|https://\\S+", message = "must be an https:// address") String proofUrl,
+                              @Size(max = 500) @Pattern(regexp = Links.HTTPS_OR_BLANK, message = Links.HTTPS_MESSAGE) String websiteUrl,
+                              @Size(max = 500) @Pattern(regexp = Links.HTTPS_OR_BLANK, message = Links.HTTPS_MESSAGE) String proofUrl,
                               @Size(max = 300) String genres, @Size(max = 1000) String message, String website,
                               Integer since, @Size(max = 1000) String description,
                               @Size(max = 500) @Pattern(regexp = ImageUrls.PATTERN, message = ImageUrls.MESSAGE) String imageUrl,

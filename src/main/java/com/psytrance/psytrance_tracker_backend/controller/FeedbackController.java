@@ -12,7 +12,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -25,6 +24,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.Map;
+
+import static com.psytrance.psytrance_tracker_backend.util.Logins.usernameOrNull;
 
 /** The feedback form (anyone, see SecurityConfig) and the admin list of what was sent. */
 @RestController
@@ -72,12 +73,5 @@ public class FeedbackController {
     }
 
     public record Reply(@NotBlank @Size(max = 3000) String text) {
-    }
-
-    // The form works for guests too; logged-in senders are remembered with their message
-    private static String usernameOrNull(Authentication authentication) {
-        return authentication == null || authentication instanceof AnonymousAuthenticationToken
-                ? null
-                : authentication.getName();
     }
 }

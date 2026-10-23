@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static com.psytrance.psytrance_tracker_backend.util.Texts.blankToNull;
+
 /**
  * The feedback form. Anyone can send, so it is guarded against spam without a captcha: a hidden
  * field only bots fill in, and a limit of a few messages per hour from one address.
@@ -115,9 +117,5 @@ public class FeedbackService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Feedback not found"));
         feedback.setStatus(status);
         return dto(feedback, feedback.getUserId() == null ? null : userRepository.findById(feedback.getUserId()).orElse(null));
-    }
-
-    private static String blankToNull(String value) {
-        return value == null || value.isBlank() ? null : value.strip();
     }
 }

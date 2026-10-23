@@ -3,7 +3,6 @@ package com.psytrance.psytrance_tracker_backend.controller;
 import com.psytrance.psytrance_tracker_backend.dto.GoingStatus;
 import com.psytrance.psytrance_tracker_backend.service.AttendanceService;
 import jakarta.validation.constraints.Size;
-import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,6 +14,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.Map;
+
+import static com.psytrance.psytrance_tracker_backend.util.Logins.usernameOrNull;
 
 /** "I'm going" on events. Reading counts is public; marking needs login (see SecurityConfig). */
 @RestController
@@ -50,12 +51,5 @@ public class GoingController {
     @DeleteMapping("/{id}/going")
     public GoingStatus unmarkGoing(@PathVariable long id, Authentication authentication) {
         return attendanceService.unmarkGoing(authentication.getName(), id);
-    }
-
-    // Guests can read counts too; they just never show as "going"
-    private static String usernameOrNull(Authentication authentication) {
-        return authentication == null || authentication instanceof AnonymousAuthenticationToken
-                ? null
-                : authentication.getName();
     }
 }

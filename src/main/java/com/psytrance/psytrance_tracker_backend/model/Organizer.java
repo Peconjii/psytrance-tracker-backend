@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 
 import java.time.Instant;
 
+import static com.psytrance.psytrance_tracker_backend.util.Texts.blankToNull;
+
 /** An organizer of events (a crew, a promoter), known by the name Goabase gives for its events */
 @Entity
 @Table(name = "organizers")
@@ -68,10 +70,6 @@ public class Organizer {
         this.bio = blankToNull(bio);
         this.instagramUrl = blankToNull(instagramUrl);
         this.websiteUrl = blankToNull(websiteUrl);
-    }
-
-    private static String blankToNull(String value) {
-        return value == null || value.isBlank() ? null : value.strip();
     }
 
     public String getPhotoUrl() {

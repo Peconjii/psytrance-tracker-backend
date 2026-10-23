@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 
 import java.time.Instant;
 
+import static com.psytrance.psytrance_tracker_backend.util.Texts.blankToNull;
+
 /** An artist's photo, bio, links and booking address, shown on their page. Written by admins for now. */
 @Entity
 @Table(name = "artist_profiles")
@@ -63,10 +65,6 @@ public class ArtistProfile {
         this.websiteUrl = blankToNull(websiteUrl);
         this.bookingEmail = blankToNull(bookingEmail);
         this.updatedAt = updatedAt;
-    }
-
-    private static String blankToNull(String value) {
-        return value == null || value.isBlank() ? null : value.strip();
     }
 
     public String getSlug() {

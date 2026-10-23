@@ -24,6 +24,8 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 
+import static com.psytrance.psytrance_tracker_backend.util.Texts.blankToNull;
+
 /**
  * "Not on the map yet?": an account with a confirmed email asks for a page the site doesn't have. An admin decides.
  * Approving an artist or organizer makes the page with the asker as its owner; a label or festival is a constellation
@@ -333,9 +335,5 @@ public class NewPages {
 
     private long count(String sql, String slug) {
         return jdbc.sql(sql).param("slug", slug).query(Long.class).single();
-    }
-
-    private static String blankToNull(String value) {
-        return value == null || value.isBlank() ? null : value.strip();
     }
 }

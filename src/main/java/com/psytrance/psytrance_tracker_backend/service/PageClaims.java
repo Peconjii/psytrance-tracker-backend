@@ -20,6 +20,8 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 
+import static com.psytrance.psytrance_tracker_backend.util.Texts.blankToNull;
+
 /**
  * "Claim this page": an account with a confirmed email asks to own an artist's, organizer's, label's or festival's
  * page. When the email is on the domain of the page's official website (or is the artist's booking email), it is
@@ -265,9 +267,5 @@ public class PageClaims {
 
     private String text(String sql, String key) {
         return jdbc.sql(sql).param("key", key).query(String.class).optional().orElse(null);
-    }
-
-    private static String blankToNull(String value) {
-        return value == null || value.isBlank() ? null : value.strip();
     }
 }

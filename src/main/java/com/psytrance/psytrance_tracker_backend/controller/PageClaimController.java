@@ -1,5 +1,6 @@
 package com.psytrance.psytrance_tracker_backend.controller;
 
+import com.psytrance.psytrance_tracker_backend.util.Links;
 import com.psytrance.psytrance_tracker_backend.config.Admins;
 import com.psytrance.psytrance_tracker_backend.service.PageClaims;
 import com.psytrance.psytrance_tracker_backend.service.FormLimits;
@@ -40,7 +41,7 @@ public class PageClaimController {
 
     /** kind: ARTIST, ORGANIZER, LABEL or FESTIVAL; proofUrl: a link that shows it is them (official site, Instagram) */
     public record ClaimRequest(@NotBlank String kind, @NotBlank @Size(max = 200) String target,
-                               @Size(max = 500) @Pattern(regexp = "\\s*|https://\\S+", message = "must be an https:// address") String proofUrl,
+                               @Size(max = 500) @Pattern(regexp = Links.HTTPS_OR_BLANK, message = Links.HTTPS_MESSAGE) String proofUrl,
                                @Size(max = 1000) String message, String website) {
     }
 

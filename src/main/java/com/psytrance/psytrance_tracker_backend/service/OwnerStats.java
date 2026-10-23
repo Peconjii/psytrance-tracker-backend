@@ -85,6 +85,7 @@ public class OwnerStats {
     }
 
     public ArtistNumbers artist(String slug, String username) {
+        requireLogin(username);
         Artist artist = artistRepository.findBySlug(ArtistNames.slug(slug))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No artist called " + slug));
         requireOwner(artistEditing.canEdit(artist.getSlug(), username), username);
@@ -110,6 +111,7 @@ public class OwnerStats {
     }
 
     public LabelNumbers label(String label, String username) {
+        requireLogin(username);
         List<String> crew = mapLabels.artists(label)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No label called " + label));
         requireOwner(labelPages.canEdit(label, username), username);
@@ -125,6 +127,7 @@ public class OwnerStats {
     }
 
     public FestivalNumbers festival(String id, String username) {
+        requireLogin(username);
         String name = mapFestivals.name(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No festival called " + id));
         requireOwner(festivalPages.canEdit(id, username), username);
@@ -170,10 +173,15 @@ public class OwnerStats {
                 events.stream().mapToLong(EventNumbers::reach).sum());
     }
 
-    private static void requireOwner(boolean owner, String username) {
+    // Before looking the page up, so a guest always hears "log in" (never whether a page exists)
+    private static void requireLogin(String username) {
         if (username == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Log in first");
         }
+    }
+
+    private static void requireOwner(boolean owner, String username) {
+        requireLogin(username);
         if (!owner) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the owner and admins see these numbers");
         }

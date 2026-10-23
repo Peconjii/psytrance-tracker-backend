@@ -23,6 +23,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.psytrance.psytrance_tracker_backend.util.Texts.blankToNull;
+
 /**
  * Labels of the map as pages their owners write. An admin links the account of someone from the label; the owner
  * then writes the description and links directly, and asks to put artists on the crew or take them off, which an
@@ -268,9 +270,5 @@ public class LabelPages {
 
     private void log(String username, String kind, String target, String before, String after) {
         changeRepository.save(new AdminChange(username, kind, target, before, after, clock.instant()));
-    }
-
-    private static String blankToNull(String value) {
-        return value == null || value.isBlank() ? null : value.strip();
     }
 }

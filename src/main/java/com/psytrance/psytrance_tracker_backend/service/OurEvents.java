@@ -30,6 +30,8 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.psytrance.psytrance_tracker_backend.util.Texts.blankToNull;
+
 /**
  * Events added on our site, next to the ones from Goabase. Only accounts with a confirmed email may add one. It waits
  * for an admin, except when an admin adds it or the owner of the organizer's page (an admin linked them) adds an
@@ -306,9 +308,5 @@ public class OurEvents {
             }
         }
         return wanted;
-    }
-
-    private static String blankToNull(String value) {
-        return value == null || value.isBlank() ? null : value.strip();
     }
 }

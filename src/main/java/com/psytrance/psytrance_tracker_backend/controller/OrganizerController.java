@@ -8,7 +8,6 @@ import com.psytrance.psytrance_tracker_backend.service.OrganizerEditing;
 import com.psytrance.psytrance_tracker_backend.service.Organizers;
 import com.psytrance.psytrance_tracker_backend.service.FreshPages;
 import jakarta.validation.Valid;
-import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,6 +19,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+
+import static com.psytrance.psytrance_tracker_backend.util.Logins.usernameOrNull;
 
 /** Organizers of events (the ships' captains): public */
 @RestController
@@ -59,13 +60,13 @@ public class OrganizerController {
 
     @GetMapping("/{slug}/edit")
     public OrganizerEditDto getEdit(@PathVariable String slug, Authentication authentication) {
-        return organizerEditing.edit(slug, username(authentication));
+        return organizerEditing.edit(slug, usernameOrNull(authentication));
     }
 
     @PutMapping("/{slug}/profile")
     public OrganizerDto.Profile setProfile(@PathVariable String slug, @Valid @RequestBody OrganizerProfileRequest profile,
                                            Authentication authentication) {
-        return organizerEditing.saveProfile(slug, profile, username(authentication));
+        return organizerEditing.saveProfile(slug, profile, usernameOrNull(authentication));
     }
 
     /** The timetable of one of the organizer's own events: it gives the event its live fleet on the map */
@@ -73,16 +74,12 @@ public class OrganizerController {
     public TimetableDto setTimetable(@PathVariable String slug, @PathVariable long eventId,
                                      @Valid @RequestBody AdminEventController.TimetableChange change,
                                      Authentication authentication) {
-        return organizerEditing.setTimetable(slug, eventId, change.sets(), username(authentication));
+        return organizerEditing.setTimetable(slug, eventId, change.sets(), usernameOrNull(authentication));
     }
 
     /** Back to the set times written in the line-up */
     @DeleteMapping("/{slug}/events/{eventId}/timetable")
     public TimetableDto handBackTimetable(@PathVariable String slug, @PathVariable long eventId, Authentication authentication) {
-        return organizerEditing.handBackTimetable(slug, eventId, username(authentication));
-    }
-
-    private static String username(Authentication authentication) {
-        return authentication == null || authentication instanceof AnonymousAuthenticationToken ? null : authentication.getName();
+        return organizerEditing.handBackTimetable(slug, eventId, usernameOrNull(authentication));
     }
 }

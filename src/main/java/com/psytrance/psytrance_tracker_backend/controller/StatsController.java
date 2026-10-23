@@ -3,7 +3,6 @@ package com.psytrance.psytrance_tracker_backend.controller;
 import com.psytrance.psytrance_tracker_backend.service.FestivalStats;
 import com.psytrance.psytrance_tracker_backend.service.OwnerStats;
 import com.psytrance.psytrance_tracker_backend.service.Stats;
-import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -11,6 +10,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+
+import static com.psytrance.psytrance_tracker_backend.util.Logins.usernameOrNull;
 
 /** Numbers for the artist, label and festival pages: gigs by country, genre and year, followers and their growth. Public. */
 @RestController
@@ -59,16 +60,12 @@ public class StatsController {
     /** Example: {@code GET /api/artists/ajja/owner-stats}: per gig going, saved, reviews and the followers it reached */
     @GetMapping("/api/artists/{slug}/owner-stats")
     public OwnerStats.ArtistNumbers artistOwner(@PathVariable String slug, Authentication authentication) {
-        return ownerStats.artist(slug, username(authentication));
+        return ownerStats.artist(slug, usernameOrNull(authentication));
     }
 
     /** Example: {@code GET /api/organizers/cosmic-circus/owner-stats}: per event going, saved, reviews and line-up reach */
     @GetMapping("/api/organizers/{slug}/owner-stats")
     public OwnerStats.OrganizerNumbers organizerOwner(@PathVariable String slug, Authentication authentication) {
-        return ownerStats.organizer(slug, username(authentication));
-    }
-
-    private static String username(Authentication authentication) {
-        return authentication == null || authentication instanceof AnonymousAuthenticationToken ? null : authentication.getName();
+        return ownerStats.organizer(slug, usernameOrNull(authentication));
     }
 }

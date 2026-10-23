@@ -13,7 +13,6 @@ import com.psytrance.psytrance_tracker_backend.service.ArtistService;
 import com.psytrance.psytrance_tracker_backend.service.FreshPages;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -27,6 +26,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.Map;
+
+import static com.psytrance.psytrance_tracker_backend.util.Logins.usernameOrNull;
 
 @RestController
 @RequestMapping("/api/artists")
@@ -66,33 +67,33 @@ public class ArtistController {
     /** Everything the profile editor shows */
     @GetMapping("/{slug}/edit")
     public ArtistEditDto getEdit(@PathVariable String slug, Authentication authentication) {
-        return artistEditing.edit(slug, username(authentication));
+        return artistEditing.edit(slug, usernameOrNull(authentication));
     }
 
     /** Photo, bio, links and booking: the whole profile, blank fields clear them */
     @PutMapping("/{slug}/profile")
     public ArtistProfileDto setProfile(@PathVariable String slug, @Valid @RequestBody ArtistProfileRequest profile,
                                        Authentication authentication) {
-        return artistEditing.saveProfile(slug, profile, username(authentication));
+        return artistEditing.saveProfile(slug, profile, usernameOrNull(authentication));
     }
 
     @PutMapping("/{slug}/tracks")
     public List<ArtistListsRequest.Track> setTracks(@PathVariable String slug, @Valid @RequestBody ArtistListsRequest.Tracks tracks,
                                                     Authentication authentication) {
-        return artistEditing.saveTracks(slug, tracks, username(authentication));
+        return artistEditing.saveTracks(slug, tracks, usernameOrNull(authentication));
     }
 
     @PutMapping("/{slug}/festivals")
     public List<ArtistListsRequest.Festival> setFestivals(@PathVariable String slug,
                                                           @Valid @RequestBody ArtistListsRequest.Festivals festivals,
                                                           Authentication authentication) {
-        return artistEditing.saveFestivals(slug, festivals, username(authentication));
+        return artistEditing.saveFestivals(slug, festivals, usernameOrNull(authentication));
     }
 
     /** {@code PUT /api/artists/ajja/role {"role": "DJ"}}: DJ, PRODUCER or LIVE; null hands it back to the guess */
     @PutMapping("/{slug}/role")
     public Map<String, String> setRole(@PathVariable String slug, @RequestBody RoleChange change, Authentication authentication) {
-        String role = artistEditing.setRole(slug, change.role(), username(authentication));
+        String role = artistEditing.setRole(slug, change.role(), usernameOrNull(authentication));
         return role == null ? Map.of() : Map.of("role", role);
     }
 
@@ -104,10 +105,6 @@ public class ArtistController {
     @ResponseStatus(HttpStatus.CREATED)
     public ArtistRequestDto request(@PathVariable String slug, @Valid @RequestBody ArtistChangeRequest change,
                                     Authentication authentication) {
-        return artistEditing.request(slug, change, username(authentication));
-    }
-
-    private static String username(Authentication authentication) {
-        return authentication == null || authentication instanceof AnonymousAuthenticationToken ? null : authentication.getName();
+        return artistEditing.request(slug, change, usernameOrNull(authentication));
     }
 }
