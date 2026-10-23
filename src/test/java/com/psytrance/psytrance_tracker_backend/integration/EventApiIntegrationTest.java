@@ -4,6 +4,7 @@ import com.psytrance.psytrance_tracker_backend.client.GoabaseParty;
 import com.psytrance.psytrance_tracker_backend.client.GoabasePartyDetails;
 import com.psytrance.psytrance_tracker_backend.client.YouTubeClient.YouTubeVideo;
 import com.psytrance.psytrance_tracker_backend.exception.GoabaseUnavailableException;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -19,6 +20,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 class EventApiIntegrationTest extends IntegrationTest {
+
+    // These tests count the events in the list: only the Goabase ones each test sets up
+    @BeforeEach
+    void onlyGoabaseEvents() {
+        hideEventsOtherTestsAdded();
+    }
 
     @Test
     void eventsArePublicAndPaged() throws Exception {

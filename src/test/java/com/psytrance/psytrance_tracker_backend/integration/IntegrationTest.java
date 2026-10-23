@@ -11,6 +11,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.postgresql.PostgreSQLContainer;
@@ -108,5 +109,16 @@ abstract class IntegrationTest {
 
     protected static String bearer(String token) {
         return "Bearer " + token;
+    }
+
+    @Autowired
+    private JdbcClient jdbc;
+
+    /**
+     * Takes the events other test classes added and approved (with their line-ups) off the lists, for tests that count
+     * what the lists show. All test classes share one database, and the order they run in differs between machines.
+     */
+    protected void hideEventsOtherTestsAdded() {
+        jdbc.sql("update our_events set status = 'REJECTED' where status = 'APPROVED'").update();
     }
 }
