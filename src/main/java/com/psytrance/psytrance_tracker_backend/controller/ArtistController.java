@@ -10,6 +10,7 @@ import com.psytrance.psytrance_tracker_backend.dto.ArtistProfileRequest;
 import com.psytrance.psytrance_tracker_backend.dto.ArtistRequestDto;
 import com.psytrance.psytrance_tracker_backend.service.ArtistEditing;
 import com.psytrance.psytrance_tracker_backend.service.ArtistService;
+import com.psytrance.psytrance_tracker_backend.service.FreshPages;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
@@ -33,16 +34,24 @@ public class ArtistController {
 
     private final ArtistService artistService;
     private final ArtistEditing artistEditing;
+    private final FreshPages freshPages;
 
-    public ArtistController(ArtistService artistService, ArtistEditing artistEditing) {
+    public ArtistController(ArtistService artistService, ArtistEditing artistEditing, FreshPages freshPages) {
         this.artistService = artistService;
         this.artistEditing = artistEditing;
+        this.freshPages = freshPages;
     }
 
     /** Example: {@code GET /api/artists?search=astrix}. Without a search: the artists with the most upcoming events. */
     @GetMapping
     public List<ArtistListItem> getArtists(@RequestParam(required = false) String search) {
         return artistService.findArtists(search);
+    }
+
+    /** Artists with their own page and no upcoming event yet, newest first: {@code GET /api/artists/new-pages?search=lep} */
+    @GetMapping("/new-pages")
+    public List<FreshPages.Page> getNewPages(@RequestParam(required = false) String search) {
+        return freshPages.artists(search);
     }
 
     /** Example: {@code GET /api/artists/ace-ventura} */

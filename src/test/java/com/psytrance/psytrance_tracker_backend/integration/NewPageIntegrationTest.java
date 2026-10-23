@@ -60,6 +60,10 @@ class NewPageIntegrationTest extends IntegrationTest {
         assertThat(jdbc.sql("select photo_url, bio from artist_profiles where slug = :slug").param("slug", "brand-new-act-" + unique)
                 .query((rs, row) -> List.of(rs.getString(1), rs.getString(2))).single())
                 .containsExactly("https://pics.example/act.jpg", "Night sounds");
+        // No gigs yet, so the artists list doesn't have it, but the new pages under it do
+        mockMvc.perform(get("/api/artists/new-pages").param("search", "Brand New Act " + unique))
+                .andExpect(jsonPath("$[0].slug").value("brand-new-act-" + unique))
+                .andExpect(jsonPath("$[0].photoUrl").value("https://pics.example/act.jpg"));
 
         // Now it's on the site: asking again points to the page to claim
         mockMvc.perform(post("/api/page-requests").header("Authorization", bearer(verifiedUser(uniqueLetters() + "@example.com")))
@@ -85,6 +89,8 @@ class NewPageIntegrationTest extends IntegrationTest {
         assertThat(jdbc.sql("select website_url, photo_url, bio from organizers where slug = :slug").param("slug", "new-crew-" + unique)
                 .query((rs, row) -> List.of(rs.getString(1), rs.getString(2), rs.getString(3))).single())
                 .containsExactly("https://newcrew.example", "https://pics.example/crew.png", "Forest parties");
+        mockMvc.perform(get("/api/organizers/new-pages").param("search", "new crew " + unique))
+                .andExpect(jsonPath("$[0].slug").value("new-crew-" + unique));
     }
 
     @Test

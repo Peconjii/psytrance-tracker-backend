@@ -6,6 +6,7 @@ import com.psytrance.psytrance_tracker_backend.dto.OrganizerProfileRequest;
 import com.psytrance.psytrance_tracker_backend.dto.TimetableDto;
 import com.psytrance.psytrance_tracker_backend.service.OrganizerEditing;
 import com.psytrance.psytrance_tracker_backend.service.Organizers;
+import com.psytrance.psytrance_tracker_backend.service.FreshPages;
 import jakarta.validation.Valid;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -27,16 +28,24 @@ public class OrganizerController {
 
     private final Organizers organizers;
     private final OrganizerEditing organizerEditing;
+    private final FreshPages freshPages;
 
-    public OrganizerController(Organizers organizers, OrganizerEditing organizerEditing) {
+    public OrganizerController(Organizers organizers, OrganizerEditing organizerEditing, FreshPages freshPages) {
         this.organizers = organizers;
         this.organizerEditing = organizerEditing;
+        this.freshPages = freshPages;
     }
 
     /** Example: {@code GET /api/organizers?search=cosmic}. Organizers with upcoming events, busiest first. */
     @GetMapping
     public List<OrganizerDto.Summary> getOrganizers(@RequestParam(required = false) String search) {
         return organizers.find(search);
+    }
+
+    /** Organizers with their own page and no upcoming event yet, newest first */
+    @GetMapping("/new-pages")
+    public List<FreshPages.Page> getNewPages(@RequestParam(required = false) String search) {
+        return freshPages.organizers(search);
     }
 
     /** Example: {@code GET /api/organizers/cosmic-circus}: upcoming and past events */
