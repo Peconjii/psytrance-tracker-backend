@@ -10,6 +10,8 @@ import java.time.Clock;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /** Admin → Users: the accounts, newest first, with how much each uses the site. Read straight with SQL counts. */
 @Service
@@ -20,11 +22,13 @@ public class AdminUsers {
 
     private final JdbcClient jdbc;
     private final Admins admins;
+    private final MapFestivals mapFestivals;
     private final Clock clock;
 
-    public AdminUsers(JdbcClient jdbc, Admins admins, Clock clock) {
+    public AdminUsers(JdbcClient jdbc, Admins admins, MapFestivals mapFestivals, Clock clock) {
         this.jdbc = jdbc;
         this.admins = admins;
+        this.mapFestivals = mapFestivals;
         this.clock = clock;
     }
 
@@ -61,14 +65,48 @@ public class AdminUsers {
                             created == null ? null : created.toInstant(), rs.getBoolean("email_verified"),
                             admins.isConfigured(username) ? Admins.ADMIN : rs.getString("role"), admins.isConfigured(username),
                             rs.getLong("follows"), rs.getLong("label_follows"),
-                            rs.getLong("favorites"), rs.getLong("going"), rs.getLong("reviews"), rs.getLong("events_added"));
+                            rs.getLong("favorites"), rs.getLong("going"), rs.getLong("reviews"), rs.getLong("events_added"),
+                            List.of());
                 })
                 .list();
+        Map<Long, List<AdminUsersDto.Page>> pages = pagesOf(users.stream().map(AdminUsersDto.User::id).toList());
+        users = users.stream().map(u -> u.withPages(pages.getOrDefault(u.id(), List.of()))).toList();
         long total = jdbc.sql("select count(*) from app_user").query(Long.class).single();
         long verified = jdbc.sql("select count(*) from app_user where email_verified").query(Long.class).single();
         long newThisWeek = jdbc.sql("select count(*) from app_user where created_at > :since")
                 .param("since", Timestamp.from(clock.instant().minus(Duration.ofDays(7))))
                 .query(Long.class).single();
         return new AdminUsersDto(total, verified, newThisWeek, users);
+    }
+
+    // The pages each account owns; a festival's name comes from the map
+    private Map<Long, List<AdminUsersDto.Page>> pagesOf(List<Long> userIds) {
+        if (userIds.isEmpty()) {
+            return Map.of();
+        }
+        record Owned(long userId, AdminUsersDto.Page page) {
+        }
+        return jdbc.sql("""
+                        select o.user_id, 'ARTIST' as kind, o.artist_slug as key, coalesce(p.display_name, a.name) as name, o.trusted
+                        from artist_owners o join artists a on a.slug = o.artist_slug
+                        left join artist_profiles p on p.slug = a.slug where o.user_id in (:ids)
+                        union all
+                        select o.user_id, 'ORGANIZER', o.organizer_slug, g.name, o.trusted
+                        from organizer_owners o join organizers g on g.slug = o.organizer_slug where o.user_id in (:ids)
+                        union all
+                        select o.user_id, 'LABEL', o.label_name, o.label_name, o.trusted from label_owners o where o.user_id in (:ids)
+                        union all
+                        select o.user_id, 'FESTIVAL', o.festival_id, o.festival_id, o.trusted from festival_owners o where o.user_id in (:ids)
+                        order by 3
+                        """)
+                .param("ids", userIds)
+                .query((rs, row) -> {
+                    String kind = rs.getString("kind");
+                    String key = rs.getString("key");
+                    String name = "FESTIVAL".equals(kind) ? mapFestivals.name(key).orElse(key) : rs.getString("name");
+                    return new Owned(rs.getLong("user_id"), new AdminUsersDto.Page(kind, key, name, rs.getBoolean("trusted")));
+                })
+                .list().stream()
+                .collect(Collectors.groupingBy(Owned::userId, Collectors.mapping(Owned::page, Collectors.toList())));
     }
 }

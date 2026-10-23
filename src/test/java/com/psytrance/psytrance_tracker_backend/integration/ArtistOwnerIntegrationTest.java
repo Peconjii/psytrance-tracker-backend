@@ -240,6 +240,11 @@ class ArtistOwnerIntegrationTest extends IntegrationTest {
         mockMvc.perform(post("/api/artists/{slug}/requests", artistSlug).header("Authorization", bearer(otherToken))
                         .contentType(MediaType.APPLICATION_JSON).content("{\"kind\": \"NAME\", \"name\": \"Owner Test Again\"}"))
                 .andExpect(jsonPath("$.status").value("PENDING"));
+        // Admin → Users shows the account with its page
+        mockMvc.perform(get("/api/admin/users").param("search", other).header("Authorization", bearer(adminToken)))
+                .andExpect(jsonPath("$.users[0].pages[0].kind").value("ARTIST"))
+                .andExpect(jsonPath("$.users[0].pages[0].key").value(artistSlug))
+                .andExpect(jsonPath("$.users[0].pages[0].trusted").value(false));
         // Only admins trust
         mockMvc.perform(put("/api/admin/page-trust").header("Authorization", bearer(otherToken))
                         .contentType(MediaType.APPLICATION_JSON).content(trustBody.formatted(artistSlug, true)))
