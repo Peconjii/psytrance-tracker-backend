@@ -135,8 +135,21 @@ class GoogleSignInIntegrationTest extends IntegrationTest {
     }
 
     @Test
+    void theFrontendGetsTheClientIdForItsButtonWithoutLoggingIn() throws Exception {
+        when(googleIdTokens.clientId()).thenReturn("test-client.apps.googleusercontent.com");
+
+        mockMvc.perform(get("/api/auth/google"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.clientId").value("test-client.apps.googleusercontent.com"));
+    }
+
+    @Test
     void withoutAClientIdGoogleSignInIsOff() throws Exception {
         when(googleIdTokens.isEnabled()).thenReturn(false);
+
+        mockMvc.perform(get("/api/auth/google"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.clientId").value(""));
 
         mockMvc.perform(post("/api/auth/google")
                         .contentType(MediaType.APPLICATION_JSON)

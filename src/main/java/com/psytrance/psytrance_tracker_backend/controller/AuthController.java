@@ -35,6 +35,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Duration;
 import java.util.Map;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -98,6 +99,12 @@ public class AuthController {
 
     /** {@code credential}: the ID token from the Google button; {@code username}: only when making a new account */
     public record GoogleSignInRequest(@NotBlank String credential, @Size(min = 3, max = 50) String username) {
+    }
+
+    /** The client id for the frontend's Google button; empty while Google sign-in is off (no button then) */
+    @GetMapping("/google")
+    public Map<String, String> googleSettings() {
+        return Map.of("clientId", Objects.requireNonNullElse(googleIdTokens.clientId(), ""));
     }
 
     /**

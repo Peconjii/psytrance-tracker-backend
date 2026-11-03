@@ -67,6 +67,11 @@ public class GoogleIdTokens {
         return clientId != null && !clientId.isBlank();
     }
 
+    /** Not a secret: the Google button in the browser needs it, and Google only accepts it on the site's own address */
+    public String clientId() {
+        return isEnabled() ? clientId : "";
+    }
+
     /** The Google account the token is for, or empty for a token that isn't valid (or Google sign-in being off) */
     public Optional<GoogleAccount> verify(String idToken) {
         if (!isEnabled()) {
