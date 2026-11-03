@@ -19,7 +19,8 @@ class MailConfigTest {
 
     @Test
     void brevoWinsOverTheOldSmtpSettings() {
-        context.withPropertyValues("app.mail.brevo-api-key=test-key", "spring.mail.host=smtp.gmail.com")
+        context.withPropertyValues("app.mail.brevo-api-key=test-key", "spring.mail.host=smtp.gmail.com",
+                        "app.mail.from=Map of Psy <psyatlasapp@gmail.com>")
                 .run(app -> assertThat(app).getBean(JavaMailSender.class).isInstanceOf(BrevoMailSender.class));
     }
 
