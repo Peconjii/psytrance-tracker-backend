@@ -2,6 +2,7 @@ package com.psytrance.psytrance_tracker_backend.integration;
 
 import com.jayway.jsonpath.JsonPath;
 import com.psytrance.psytrance_tracker_backend.client.GoabaseClient;
+import com.psytrance.psytrance_tracker_backend.client.GoogleIdTokens;
 import com.psytrance.psytrance_tracker_backend.client.YouTubeClient;
 import com.psytrance.psytrance_tracker_backend.service.DecisionMailer;
 import com.psytrance.psytrance_tracker_backend.service.DigestMailer;
@@ -54,6 +55,10 @@ abstract class IntegrationTest {
 
     @MockitoBean
     protected YouTubeClient youTubeClient;
+
+    // Faked so tests can sign in with Google without a real Google token; off unless a test turns it on
+    @MockitoBean
+    protected GoogleIdTokens googleIdTokens;
 
     // Faked so tests can read the verification link instead of finding it in the log
     @MockitoBean

@@ -27,7 +27,7 @@ class LoginRequiredIntegrationTest extends IntegrationTest {
 
     // A guest logs in, makes an account, gets a new password, confirms the email and sends feedback
     private static final Set<String> OPEN_TO_GUESTS = Set.of("/api/auth/login", "/api/auth/register",
-            "/api/auth/forgot-password", "/api/auth/reset-password", "/api/auth/verify-email", "/api/feedback");
+            "/api/auth/forgot-password", "/api/auth/reset-password", "/api/auth/verify-email", "/api/auth/google", "/api/feedback");
 
     @Autowired
     @Qualifier("requestMappingHandlerMapping")

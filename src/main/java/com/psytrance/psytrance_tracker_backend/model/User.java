@@ -27,6 +27,9 @@ public class User {
     // When the account was made; null for accounts from before the site kept the date
     @Column(name = "created_at")
     private Instant createdAt;
+    // The Google account this account signs in with ("Sign in with Google"); null for password-only accounts
+    @Column(name = "google_id", unique = true)
+    private String googleId;
 
     public String getUsername() {
         return username;
@@ -90,5 +93,13 @@ public class User {
 
     public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getGoogleId() {
+        return googleId;
+    }
+
+    public void setGoogleId(String googleId) {
+        this.googleId = googleId;
     }
 }

@@ -1,5 +1,10 @@
 package com.psytrance.psytrance_tracker_backend.controller;
 
+import com.psytrance.psytrance_tracker_backend.client.GoogleIdTokens;
+import com.psytrance.psytrance_tracker_backend.client.GoogleIdTokens.GoogleAccount;
+import com.psytrance.psytrance_tracker_backend.service.GoogleSignIn;
+import jakarta.validation.constraints.Size;
+
 import com.psytrance.psytrance_tracker_backend.dto.ForgotPasswordRequest;
 import com.psytrance.psytrance_tracker_backend.dto.LoginRequest;
 import com.psytrance.psytrance_tracker_backend.dto.RegisterRequest;
@@ -43,10 +48,15 @@ public class AuthController {
     private final EmailVerification emailVerification;
     private final FormLimits formLimits;
     private final int registerPerHour;
+    private final GoogleIdTokens googleIdTokens;
+    private final GoogleSignIn googleSignIn;
 
     public AuthController(UserService userService, JwtUtil jwtUtil, PasswordResetService passwordResetService, Admins admins,
                           LoginAttempts loginAttempts, EmailVerification emailVerification, FormLimits formLimits,
-                          @Value("${app.limits.register-per-hour:5}") int registerPerHour) {
+                          @Value("${app.limits.register-per-hour:5}") int registerPerHour, GoogleIdTokens googleIdTokens,
+                          GoogleSignIn googleSignIn) {
+        this.googleIdTokens = googleIdTokens;
+        this.googleSignIn = googleSignIn;
         this.formLimits = formLimits;
         this.registerPerHour = registerPerHour;
         this.userService = userService;
@@ -84,6 +94,32 @@ public class AuthController {
                     loginAttempts.failed(request.username());
                     return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Invalid username or password"));
                 });
+    }
+
+    /** {@code credential}: the ID token from the Google button; {@code username}: only when making a new account */
+    public record GoogleSignInRequest(@NotBlank String credential, @Size(min = 3, max = 50) String username) {
+    }
+
+    /**
+     * "Sign in with Google". Answers with a token like /login, or, for a Google account with no account here yet, with
+     * {@code needsUsername} and a suggestion: the page then asks for a username and sends the same credential again.
+     */
+    @PostMapping("/google")
+    public Map<String, Object> google(@Valid @RequestBody GoogleSignInRequest request, HttpServletRequest httpRequest) {
+        if (!googleIdTokens.isEnabled()) {
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Sign in with Google is not set up.");
+        }
+        GoogleAccount google = googleIdTokens.verify(request.credential())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Google sign-in didn't work. Try again."));
+        if (request.username() != null) {
+            // Counted like the register form, since this can make an account
+            formLimits.count("register", ClientAddress.of(httpRequest), registerPerHour, Duration.ofHours(1),
+                    "Many accounts were made from your address in the last hour. Try again later.");
+        }
+        return googleSignIn.accountFor(google, request.username())
+                .<Map<String, Object>>map(user -> Map.of("token", jwtUtil.generateToken(user.getUsername())))
+                .orElseGet(() -> Map.of("needsUsername", true, "suggestedUsername", googleSignIn.suggestUsername(google),
+                        "email", google.email()));
     }
 
     /** SecurityConfig only lets requests with a valid token reach this endpoint. */
