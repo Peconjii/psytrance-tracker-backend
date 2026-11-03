@@ -33,7 +33,6 @@ class MapIntegrationTest extends IntegrationTest {
 
     @BeforeEach
     void eventsOnGoabase() {
-        hideEventsOtherTestsAdded();
         forestParty = NEXT_EVENT_ID.getAndIncrement();
         keywordParty = NEXT_EVENT_ID.getAndIncrement();
         unknownParty = NEXT_EVENT_ID.getAndIncrement();

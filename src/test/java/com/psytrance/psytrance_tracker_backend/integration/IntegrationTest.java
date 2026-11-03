@@ -6,6 +6,7 @@ import com.psytrance.psytrance_tracker_backend.client.YouTubeClient;
 import com.psytrance.psytrance_tracker_backend.service.DecisionMailer;
 import com.psytrance.psytrance_tracker_backend.service.DigestMailer;
 import com.psytrance.psytrance_tracker_backend.service.VerificationMailer;
+import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
@@ -115,10 +116,12 @@ abstract class IntegrationTest {
     private JdbcClient jdbc;
 
     /**
-     * Takes the events other test classes added and approved (with their line-ups) off the lists, for tests that count
-     * what the lists show. All test classes share one database, and the order they run in differs between machines.
+     * Before every test: takes the events earlier tests added and approved (with their line-ups) off the lists, so a
+     * test that counts what a list shows only sees its own. All test classes share one database, so without this a
+     * count depends on which tests ran before, and that order differed between Windows and the CI (Linux).
      */
-    protected void hideEventsOtherTestsAdded() {
+    @BeforeEach
+    void hideEventsOtherTestsAdded() {
         jdbc.sql("update our_events set status = 'REJECTED' where status = 'APPROVED'").update();
     }
 }

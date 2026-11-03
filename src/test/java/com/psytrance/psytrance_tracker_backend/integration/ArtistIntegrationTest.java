@@ -36,7 +36,6 @@ class ArtistIntegrationTest extends IntegrationTest {
 
     @BeforeEach
     void twoEventsOnGoabase() {
-        hideEventsOtherTestsAdded();
         soon = NEXT_EVENT_ID.getAndIncrement();
         later = NEXT_EVENT_ID.getAndIncrement();
         when(goabaseClient.fetchAllParties()).thenReturn(List.of(party(soon, "Soon Festival", 5), party(later, "Later Festival", 20)));

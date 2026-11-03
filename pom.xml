@@ -104,6 +104,15 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 			</plugin>
+			<plugin>
+				<!-- The same test order on every machine: the classes share one database, and a different order on the
+				     CI (Linux) than on Windows once made tests fail only there -->
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<runOrder>alphabetical</runOrder>
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
 
