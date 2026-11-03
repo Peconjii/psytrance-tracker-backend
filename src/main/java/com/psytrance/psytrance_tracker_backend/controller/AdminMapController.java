@@ -1,6 +1,7 @@
 package com.psytrance.psytrance_tracker_backend.controller;
 
 import com.psytrance.psytrance_tracker_backend.config.Admins;
+import com.psytrance.psytrance_tracker_backend.service.GalaxyContent;
 import com.psytrance.psytrance_tracker_backend.service.MapExtras;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -8,6 +9,9 @@ import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -24,10 +28,26 @@ public class AdminMapController {
 
     private final MapExtras mapExtras;
     private final Admins admins;
+    private final GalaxyContent galaxyContent;
 
-    public AdminMapController(MapExtras mapExtras, Admins admins) {
+    public AdminMapController(MapExtras mapExtras, Admins admins, GalaxyContent galaxyContent) {
+        this.galaxyContent = galaxyContent;
         this.mapExtras = mapExtras;
         this.admins = admins;
+    }
+
+    /** A genre's texts and key tracks for Admin -> Galaxy. Editors too: fixing the music facts is their work. */
+    @GetMapping("/content/{genreId}")
+    public GalaxyContent.Content getContent(@PathVariable String genreId, Authentication authentication) {
+        admins.requireEditor(authentication);
+        return galaxyContent.get(genreId);
+    }
+
+    /** {@code PUT /api/admin/map/content/goa}: the genre's whole content; logged, and can be undone in the history */
+    @PutMapping("/content/{genreId}")
+    public GalaxyContent.Content saveContent(@PathVariable String genreId, @RequestBody GalaxyContent.Content content,
+                                             Authentication authentication) {
+        return galaxyContent.save(genreId, content, admins.requireEditor(authentication));
     }
 
     /** genres: map genre ids, 1 to 6: they decide where it sits */

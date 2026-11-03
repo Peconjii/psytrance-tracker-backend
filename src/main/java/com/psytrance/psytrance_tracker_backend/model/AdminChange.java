@@ -51,6 +51,8 @@ public class AdminChange {
     public static final String EVENT_FEATURED = "EVENT_FEATURED";
     /** A label's page was written (no undo) */
     public static final String LABEL_PROFILE = "LABEL_PROFILE";
+    /** A genre's texts and key tracks on the galaxy were changed (Admin -> Galaxy); can be undone */
+    public static final String GENRE_CONTENT = "GENRE_CONTENT";
     /** An account was linked to a label as its owner, or unlinked; before/after are the usernames (no undo) */
     public static final String LABEL_OWNER = "LABEL_OWNER";
     /** An artist was put on a label's crew or taken off it (approved request); after is "+ name" or "- name" (no undo) */
@@ -83,10 +85,10 @@ public class AdminChange {
     @Column(name = "target", nullable = false, length = 200)
     private String target;
 
-    @Column(name = "before_value", length = 2000)
+    @Column(name = "before_value", columnDefinition = "text")
     private String beforeValue;
 
-    @Column(name = "after_value", length = 2000)
+    @Column(name = "after_value", columnDefinition = "text")
     private String afterValue;
 
     @Column(name = "created_at", nullable = false)

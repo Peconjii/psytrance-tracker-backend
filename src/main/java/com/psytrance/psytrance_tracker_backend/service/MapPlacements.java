@@ -45,6 +45,7 @@ public class MapPlacements {
     private final MapGenres mapGenres;
     private final EventGenreAdmin eventGenreAdmin;
     private final ArtistCleanup artistCleanup;
+    private final GalaxyContent galaxyContent;
     private final Clock clock;
 
     public MapPlacements(MapArtistGenreRepository placementRepository,
@@ -55,6 +56,7 @@ public class MapPlacements {
                          MapGenres mapGenres,
                          EventGenreAdmin eventGenreAdmin,
                          ArtistCleanup artistCleanup,
+                         GalaxyContent galaxyContent,
                          Clock clock) {
         this.placementRepository = placementRepository;
         this.changeRepository = changeRepository;
@@ -64,6 +66,7 @@ public class MapPlacements {
         this.mapGenres = mapGenres;
         this.eventGenreAdmin = eventGenreAdmin;
         this.artistCleanup = artistCleanup;
+        this.galaxyContent = galaxyContent;
         this.clock = clock;
     }
 
@@ -181,6 +184,13 @@ public class MapPlacements {
     public AdminChangeDto undo(long changeId, String adminUsername) {
         AdminChange change = changeRepository.findById(changeId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Change not found"));
+        if (AdminChange.GENRE_CONTENT.equals(change.getKind())) {
+            if (changeRepository.existsByUndoOf(changeId)) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "This change was undone already");
+            }
+            galaxyContent.undo(change, adminUsername);
+            return AdminChangeDto.from(change, changeRepository.findFirstByUndoOf(changeId).map(AdminChange::getId).orElse(null));
+        }
         boolean event = AdminChange.EVENT_GENRES.equals(change.getKind());
         boolean hidden = AdminChange.ARTIST_HIDDEN.equals(change.getKind());
         if (!event && !hidden && !AdminChange.ARTIST_GENRES.equals(change.getKind())) {

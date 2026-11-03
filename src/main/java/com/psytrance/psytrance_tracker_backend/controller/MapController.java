@@ -5,6 +5,7 @@ import com.psytrance.psytrance_tracker_backend.dto.MapEventDto;
 import com.psytrance.psytrance_tracker_backend.dto.MapPeriod;
 import com.psytrance.psytrance_tracker_backend.dto.TimetableDto;
 import com.psytrance.psytrance_tracker_backend.service.EventTimetables;
+import com.psytrance.psytrance_tracker_backend.service.GalaxyContent;
 import com.psytrance.psytrance_tracker_backend.service.MapExtras;
 import com.psytrance.psytrance_tracker_backend.service.MapPlacements;
 import com.psytrance.psytrance_tracker_backend.service.MapService;
@@ -26,9 +27,11 @@ public class MapController {
     private final MapPlacements mapPlacements;
     private final EventTimetables eventTimetables;
     private final MapExtras mapExtras;
+    private final GalaxyContent galaxyContent;
 
     public MapController(MapService mapService, MapPlacements mapPlacements, EventTimetables eventTimetables,
-                         MapExtras mapExtras) {
+                         MapExtras mapExtras, GalaxyContent galaxyContent) {
+        this.galaxyContent = galaxyContent;
         this.mapService = mapService;
         this.eventTimetables = eventTimetables;
         this.mapPlacements = mapPlacements;
@@ -39,6 +42,12 @@ public class MapController {
     @GetMapping("/placements")
     public Map<String, List<String>> getPlacements() {
         return mapPlacements.placements();
+    }
+
+    /** Each genre's texts and key tracks, as admins and editors fixed them in Admin -> Galaxy */
+    @GetMapping("/content")
+    public Map<String, GalaxyContent.Content> getContent() {
+        return galaxyContent.all();
     }
 
     /** The labels and festivals admins added to the map, next to the ones in the bundled map files */
