@@ -7,7 +7,8 @@ stars of the genres it plays. It pulls events from the public [Goabase](https://
 their line-ups to work out who plays where and which **map genres** each party has, reads **timetables** from
 the line-ups, and lets users register, save events, say they're going, write reviews, **follow artists** and
 get emails. Artists, organizers, labels and festivals can own their pages. Admins and editors correct the
-data in an **admin panel** with a change history and undo.
+data in an **admin panel** with a change history and undo, including the galaxy itself: each genre's texts,
+key tracks (with the second of the drop, for the quiz) and what has been verified.
 
 **Frontend (React):** [Peconjii/psytrance-tracker](https://github.com/Peconjii/psytrance-tracker)
 (screenshots are in its README)
@@ -22,8 +23,9 @@ data in an **admin panel** with a change history and undo.
 
 - **Java 17**, **Spring Boot 4** — Web MVC, Security, Data JPA, Validation, Mail
 - **PostgreSQL** with **Hibernate / JPA** and **Flyway** migrations
-- **JWT** authentication (JJWT) with **BCrypt** password hashing
-- Spring **RestClient** for the Goabase and YouTube Data API integrations
+- **JWT** authentication (JJWT) with **BCrypt** password hashing, and **Sign in with Google** (Google ID tokens
+  checked with Spring Security's JOSE support)
+- Spring **RestClient** for the Goabase, YouTube Data API and **Brevo** (email) integrations
 - **JUnit 5**, **Mockito**, **AssertJ**, **Testcontainers**, **MockMvc**
 - **GitHub Actions** CI
 - **Maven**
@@ -40,13 +42,15 @@ flowchart LR
         S --> R[JPA repositories]
         S --> G[GoabaseClient]
         S --> Y[YouTubeClient]
+        S --> B[BrevoMailSender]
         F[JwtFilter] -.checks token.-> C
         J[BackgroundJobs<br/>reminders + new-gig emails hourly,<br/>artist index every few minutes] --> S
     end
 
-    R --> DB[(PostgreSQL<br/>users, favorites, reviews, going,<br/>artists, event genres, timetables,<br/>map placements, follows,<br/>feedback, admin changes)]
+    R --> DB[(PostgreSQL<br/>users, favorites, reviews, going,<br/>artists, event genres, timetables,<br/>map placements, galaxy content,<br/>follows, pages and owners, images,<br/>feedback, admin changes)]
     G -->|full list, at most every 10 min| GA[Goabase API]
     Y -->|festival aftermovies, about once a month each| YT[YouTube Data API]
+    B -->|HTTPS| BR[Brevo email API]
 ```
 
 Requests go through the usual layers: **controller** (HTTP, validation) → **service** (business logic) →
@@ -96,10 +100,25 @@ Requests go through the usual layers: **controller** (HTTP, validation) → **se
 - **Map placements in the database.** Which artist orbits which genre started as `genres.json` and now lives in
   `map_artist_genres` (seeded from the JSON on first start), so admins can change it and it applies at once:
   to the map, and to the genres of that artist's events, whose line-ups are marked to be read again.
-- **Admin panel without roles in the database.** Admins are the usernames in `ADMIN_USERNAMES`, compared exactly.
-  `/api/admin/**` is closed in `SecurityConfig` and every endpoint checks again; a test finds every admin
-  endpoint and checks that guests get 401 and users 403. Every change is logged in `admin_changes` (who,
-  before, after) and can be undone as a new change, refused when the same thing was changed again since.
+- **The galaxy's texts in the database.** Each genre's description, how it sounds, tempo and key tracks also
+  started in `genres.json`; they now live in `map_genre_content` (seeded once), so a wrong fact is fixed in
+  Admin → Galaxy without a deploy. Every track can be marked verified and carry the second of its drop, which the
+  quiz starts just before. A save is logged with the whole content before and after, so it can be undone.
+- **Two roles: admin and editor.** The usernames in `ADMIN_USERNAMES` are always admins; admins give other
+  accounts the admin or editor role in the panel (an editor handles the content only). `/api/admin/**` is closed
+  in `SecurityConfig` and every endpoint checks the role again; a test finds every admin endpoint and checks
+  that guests get 401 and users 403. Every change is logged in `admin_changes` (who, before, after) and can be
+  undone as a new change, refused when the same thing was changed again since.
+- **Page owners and trust.** An artist, organizer, label or festival can own its page. A trusted owner's
+  changes go live at once; the others wait for an admin. Trust is given per page, not per account.
+- **Email over HTTPS.** The free host blocks outgoing SMTP ports, so with `BREVO_API_KEY` set every email goes
+  through Brevo's HTTP API instead (`BrevoMailSender`, the same `JavaMailSender` the mailers use). The password
+  reset email is sent in the background, so the form answers at once and its timing doesn't show whether an
+  account exists.
+- **Sign in with Google.** The browser's Google ID token is checked against Google's public keys, this site's
+  client id and a confirmed email. It logs into the account already linked to that Google account, or the
+  oldest account with the same **confirmed** email (never one whose email nobody confirmed, since anyone could
+  have typed it), or a new account with a username the person picks.
 - **Following artists.** Follows and the gigs a follower already knows about are stored, so the hourly job
   emails only gigs that are new, each once, and the gigs known when following starts are not mailed.
 - **Abuse limits.** 10 wrong passwords for one username lock it for 15 minutes; one address gets at most 3
@@ -129,6 +148,9 @@ Requests go through the usual layers: **controller** (HTTP, validation) → **se
 | `GET` | `/api/auth/me` | ✔ | Current user |
 | `POST` | `/api/auth/forgot-password` | – | Email a one-time reset link (`email`); same answer whether or not the account exists |
 | `POST` | `/api/auth/reset-password` | – | Set a new password with the link's token (`token`, `newPassword`) |
+| `POST` | `/api/auth/verify-email` | – | Confirm an email with the token from the emailed link |
+| `GET` | `/api/auth/google` | – | The Google client id for the frontend's button (empty while Google sign-in is off) |
+| `POST` | `/api/auth/google` | – | Sign in with a Google ID token (`credential`); a new Google account first answers `needsUsername`, then sends a `username` |
 | `GET` | `/api/events` | – | Paged, filtered event list (see below) |
 | `GET` | `/api/events/map` | – | All events that have coordinates, for the map |
 | `GET` | `/api/events/{id}` | – | One event |
@@ -147,6 +169,8 @@ Requests go through the usual layers: **controller** (HTTP, validation) → **se
 | `GET` | `/api/map/genres?ids=1,2,3` | – | Map genres of up to 100 events, for the event tickets |
 | `GET` | `/api/map/timetables?period=` | – | The period's timetables, for the live fleets |
 | `GET` | `/api/map/placements` | – | Which artists orbit which genre: `{ genreId: [names] }` |
+| `GET` | `/api/map/content` | – | Each genre's texts and key tracks (`description`, `bass`, `kick`, `atmosphere`, `bpmMin`, `bpmMax`, `verified`, `tracks` with `drop`) |
+| `POST` / `GET` | `/api/images[/{id}]` | ✔ / – | Upload a picture for a page (logo, photo); read it |
 | `GET` | `/api/me/follows` | ✔ | Artists you follow |
 | `PUT` / `DELETE` | `/api/me/follows/{slug}` | ✔ | Follow / unfollow an artist |
 | `GET` | `/api/me/follows/gigs` | ✔ | Upcoming events where artists you follow play |
@@ -158,6 +182,10 @@ Requests go through the usual layers: **controller** (HTTP, validation) → **se
 | `POST` | `/api/admin/artists/hidden`, `/merge` | admin | Hide a word that isn't an artist; merge two spellings of one artist |
 | `GET` / `PUT` | `/api/admin/events/{id}/genres` | admin | An event's genres; set them by hand (`[]` hands back to the line-up) |
 | `PUT` / `DELETE` | `/api/admin/events/{id}/timetable` | admin | Set a timetable by hand; back to the line-up |
+| `GET` / `PUT` | `/api/admin/map/content/{genreId}` | editor | A genre's texts and key tracks for Admin → Galaxy; save the whole content |
+| `GET` / `PUT` | `/api/admin/users[/{username}/role]` | admin | Accounts with their pages; give the admin or editor role |
+| `PUT` | `/api/admin/page-trust` | admin | Trust a page's owner (their changes go live at once) |
+| `GET` / `POST` | `/api/admin/claims`, `/api/admin/page-requests` | admin | "Claim this page" and "Not on the map yet?" requests |
 | `GET` | `/api/admin/changes` | admin | Change history, newest first |
 | `POST` | `/api/admin/changes/{id}/undo` | admin | Undo a change |
 | `GET` | `/api/favorites/{userId}` | ✔ own | User's favorites |
@@ -228,7 +256,13 @@ The database password and JWT secret in `docker-compose.yml` are throwaway value
 
 ## Running locally without Docker
 
-**You need:** JDK 17+ and a PostgreSQL database (local, or hosted such as Supabase).
+**You need:** JDK 17+ and a PostgreSQL database, hosted (such as Neon) or local. A local one in Docker:
+
+```bash
+docker run -d --name psy-atlas-db -p 5433:5432 -e POSTGRES_DB=psytrance -e POSTGRES_USER=psytrance -e POSTGRES_PASSWORD=psytrance postgres:17
+```
+
+(then `DB_URL=jdbc:postgresql://localhost:5433/psytrance`, user and password `psytrance`).
 
 The app reads its configuration from environment variables. Nothing secret is stored in the repository.
 
@@ -250,26 +284,24 @@ export JWT_SECRET=$(openssl rand -base64 48)
 
 In IntelliJ, set the same variables under *Run → Edit Configurations → Environment variables*.
 
-**Email (optional).** Password reset and reminder emails are sent over SMTP when these are set:
+**Email (optional).** Without any of this, the emails (confirmation and reset links, reminders) are written to
+the application log, which is enough for local development.
 
-| Variable | Example (Gmail) |
+| Variable | What it does |
 |---|---|
-| `SPRING_MAIL_HOST` | `smtp.gmail.com` |
-| `SPRING_MAIL_PORT` | `587` |
-| `SPRING_MAIL_USERNAME` | `you@gmail.com` |
-| `SPRING_MAIL_PASSWORD` | a Gmail [app password](https://myaccount.google.com/apppasswords), not your normal password |
-| `MAIL_FROM` | `you@gmail.com` |
-| `FRONTEND_URL` | `http://localhost:5173` (default), used to build the reset link and allowed by CORS |
+| `BREVO_API_KEY` | Send every email through [Brevo](https://www.brevo.com)'s HTTP API (works on hosts that block SMTP, like Render) |
+| `MAIL_FROM` | The sender, e.g. `Map of Psy <you@gmail.com>`; with Brevo it must be a sender verified there |
+| `SPRING_MAIL_HOST`, `SPRING_MAIL_PORT`, `SPRING_MAIL_USERNAME`, `SPRING_MAIL_PASSWORD` | Or plain SMTP instead of Brevo (e.g. Gmail with an [app password](https://myaccount.google.com/apppasswords)) |
+| `FRONTEND_URL` | `http://localhost:5173` (default), used to build the links in emails and allowed by CORS |
+| `BACKEND_URL` | This server's own address, for the links of uploaded pictures (default `http://localhost:8080`) |
 
 **Other settings**
 
 | Variable | What it does |
 |---|---|
-| `ADMIN_USERNAMES` | Comma-separated usernames that may use the admin panel, compared exactly (`admin,psyatlas`) |
+| `ADMIN_USERNAMES` | Comma-separated usernames that are always admins, compared exactly (`admin,psyatlas`) |
+| `GOOGLE_CLIENT_ID` | The OAuth client id from Google Cloud Console; turns "Continue with Google" on (the frontend gets it from the API) |
 | `APP_ARTISTS_INTERVAL` | How often the artist index reads a batch of 25 line-ups (default `PT3M`; `PT30M` saves free database hours) |
-
-Without `SPRING_MAIL_HOST`, the emails (reset links, reminders) are written to the application log instead,
-which is enough for local development.
 
 **YouTube aftermovies (optional).** Set `YOUTUBE_API_KEY` to a YouTube Data API v3 key (Google Cloud Console →
 *APIs & Services* → enable *YouTube Data API v3* → *Credentials* → *Create API key*). Without it, festival
@@ -289,6 +321,10 @@ Docker must be running: the integration tests start a throwaway PostgreSQL conta
 [Testcontainers](https://testcontainers.com). No other setup or environment variables are needed.
 GitHub Actions runs the same tests on every push.
 
+All integration test classes share one database, so they run in the same (alphabetical) order on every machine,
+and before every test the events earlier tests approved are taken off the lists. A test that counts what a list
+shows then sees only its own data, on Windows and on the CI's Linux alike.
+
 **Unit tests** check one class on its own. Its dependencies are mocked, and time is controlled with a fake `Clock`.
 
 - `EventServiceTest`: paging, sorting, search, timeline filters and the cache (one fetch while fresh, refresh
@@ -302,6 +338,8 @@ GitHub Actions runs the same tests on every push.
 - `EventGenresTest`, `MapGenresTest`: genres from map artists, stage headers and keywords; merged spellings
 - `TimetableParserTest`: set times in many styles, after midnight, stages and dates, HTML entities, "Live" acts
 - `LineUpParserTest`, `ArtistNamesTest`: artist names from real line-ups; spellings of one artist share a slug
+- `GoogleIdTokensTest`: only a Google token for this site, unexpired, with a confirmed email, counts
+- `BrevoMailSenderTest`, `MailConfigTest`: what goes to Brevo, and Brevo winning over the SMTP settings
 
 **Integration tests** start the whole application with real security and a real PostgreSQL, and call the API
 through MockMvc. Only Goabase is faked.
@@ -324,6 +362,10 @@ through MockMvc. Only Goabase is faked.
   `ArtistCleanupIntegrationTest`: the admin panel, its history and undo
 - `FeedbackIntegrationTest`: guests can send, only admins read, rate limit, hidden bot field, links to this site only
 - `FollowIntegrationTest`: follow and unfollow, the gigs for the map, only new gigs emailed, each once
+- `GalaxyContentIntegrationTest`: texts and tracks start from the map file, editors fix them, undo (and never
+  over a newer fix), tracks without a video, wrong links refused, only admins and editors
+- `GoogleSignInIntegrationTest`: a new Google account picks a username, an account with the same confirmed email
+  is linked, an unconfirmed one is never taken over
 
 ## Roadmap
 
@@ -344,6 +386,10 @@ through MockMvc. Only Goabase is faked.
 - [x] Page owners: "Claim this page" (email domain or an admin), "Not on the map yet?" requests
 - [x] Roles from the admin panel: admins and editors (content only)
 - [x] Stage cards in the event form, read like any line-up (a stage's genre in brackets)
+- [x] Uploaded pictures for pages, and trust per page
+- [x] Email over Brevo's HTTP API, password reset in the background
+- [x] Sign in with Google
+- [x] The galaxy's texts and key tracks in the database, edited in the admin panel, with verified tracks and drops
 - [ ] Deployment to AWS
 
 ## Credits
