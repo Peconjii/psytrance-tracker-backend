@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.MailException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
@@ -15,6 +16,8 @@ import java.time.Duration;
 /**
  * Emails password reset links. Spring only creates a {@link JavaMailSender} when
  * {@code spring.mail.host} is set; without it (local development) the link is logged instead.
+ * Sent in the background: the "forgot password" form answers at once, whether the mail server is slow or not,
+ * and as fast for an unknown address as for a known one (so the answer time doesn't tell who has an account).
  */
 @Component
 public class PasswordResetMailer {
@@ -29,6 +32,7 @@ public class PasswordResetMailer {
         this.from = from;
     }
 
+    @Async
     public void sendResetLink(User user, String link, Duration validFor) {
         JavaMailSender sender = mailSender.getIfAvailable();
         if (sender == null) {
@@ -39,11 +43,11 @@ public class PasswordResetMailer {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(from);
         message.setTo(user.getEmail());
-        message.setSubject("Reset your PsyTrance Event Tracker password");
+        message.setSubject("Reset your Map of Psy password");
         message.setText("""
                 Hi %s,
 
-                Someone (hopefully you) asked to reset the password for your PsyTrance Event Tracker account.
+                Someone (hopefully you) asked to reset the password for your Map of Psy account.
 
                 Open this link to choose a new password. It works once and expires in %d minutes:
                 %s
