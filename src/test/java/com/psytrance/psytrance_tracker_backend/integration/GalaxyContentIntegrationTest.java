@@ -115,6 +115,20 @@ class GalaxyContentIntegrationTest extends IntegrationTest {
     }
 
     @Test
+    void aTrackWithoutAVideoCanBeSaved() throws Exception {
+        // Some tracks in the map file have no video (the map links a YouTube search); their genre must still save
+        String before = content();
+        save("""
+                {"description": "x", "tracks": [{"artist": "Age of Love", "title": "The Age of Love", "youtube": null},
+                                                {"artist": "A", "title": "B", "youtube": "", "drop": 100}]}
+                """);
+        mockMvc.perform(get("/api/map/content"))
+                .andExpect(jsonPath("$.%s.tracks[0].youtube".formatted(GENRE)).doesNotExist())
+                .andExpect(jsonPath("$.%s.tracks[1].drop".formatted(GENRE)).value(100));
+        save(before);
+    }
+
+    @Test
     void wrongTracksAndGenresAreRefused() throws Exception {
         mockMvc.perform(put("/api/admin/map/content/{id}", GENRE).header("Authorization", bearer(adminToken))
                         .contentType(MediaType.APPLICATION_JSON)

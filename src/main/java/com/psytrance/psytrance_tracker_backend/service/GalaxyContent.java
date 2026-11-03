@@ -184,13 +184,14 @@ public class GalaxyContent {
         }
         List<Track> tracks = new ArrayList<>();
         for (Track t : c.tracks() == null ? List.<Track>of() : c.tracks()) {
-            if (blank(t.artist()) || blank(t.title()) || blank(t.youtube())) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Every track needs an artist, a title and a YouTube link");
+            // A track without a video is fine (the map links a YouTube search for it), one with a wrong link is not
+            if (blank(t.artist()) || blank(t.title())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Every track needs an artist and a title");
             }
             if (t.drop() != null && t.drop() < 0) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The drop can't be before the track starts");
             }
-            tracks.add(new Track(t.artist().strip(), t.title().strip(), t.year(), youtubeId(t.youtube()),
+            tracks.add(new Track(t.artist().strip(), t.title().strip(), t.year(), blank(t.youtube()) ? null : youtubeId(t.youtube()),
                     Boolean.TRUE.equals(t.famous()), Boolean.TRUE.equals(t.verified()), t.drop()));
         }
         return new Content(c.description().strip(), text(c.bass()), text(c.kick()), text(c.atmosphere()), c.year(),
