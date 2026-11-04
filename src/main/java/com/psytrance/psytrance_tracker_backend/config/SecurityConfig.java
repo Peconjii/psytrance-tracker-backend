@@ -69,8 +69,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/images/**").permitAll()
                         // The keep-awake ping of an outside cron job (see HealthController)
                         .requestMatchers(HttpMethod.GET, "/api/health").permitAll()
-                        // Uptime monitors (UptimeRobot) ask with HEAD
-                        .requestMatchers(HttpMethod.HEAD, "/api/health").permitAll()
+                        // Uptime monitors (UptimeRobot), search engines and link previews sometimes ask with HEAD first
+                        .requestMatchers(HttpMethod.HEAD, "/api/health", "/api/sitemap.xml", "/api/share/**").permitAll()
                         // Guests can send feedback; reading it is for admins (checked in FeedbackController)
                         .requestMatchers(HttpMethod.POST, "/api/feedback").permitAll()
                         // Spring renders errors like "no such endpoint" at /error; if that needed a token,
