@@ -23,6 +23,10 @@ public class MapArtistGenre {
     @Column(name = "genre_id", nullable = false, length = 30)
     private String genreId;
 
+    // The artist's main genre: the one star they orbit on the galaxy (exactly one row per artist has it)
+    @Column(nullable = false)
+    private boolean main;
+
     protected MapArtistGenre() {
     }
 
@@ -41,5 +45,13 @@ public class MapArtistGenre {
 
     public String getGenreId() {
         return genreId;
+    }
+
+    public boolean isMain() {
+        return main;
+    }
+
+    public void setMain(boolean main) {
+        this.main = main;
     }
 }

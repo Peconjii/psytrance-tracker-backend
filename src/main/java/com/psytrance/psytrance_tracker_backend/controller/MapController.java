@@ -44,6 +44,12 @@ public class MapController {
         return mapPlacements.placements();
     }
 
+    /** {@code GET /api/map/main-genres}: {@code artist -> genre id}, the one star each artist orbits */
+    @GetMapping("/main-genres")
+    public Map<String, String> mainGenres() {
+        return mapPlacements.mainGenres();
+    }
+
     /** Each genre's texts and key tracks, as admins and editors fixed them in Admin -> Galaxy */
     @GetMapping("/content")
     public Map<String, GalaxyContent.Content> getContent() {

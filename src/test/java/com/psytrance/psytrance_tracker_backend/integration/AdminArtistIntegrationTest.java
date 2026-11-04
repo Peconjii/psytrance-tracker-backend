@@ -96,6 +96,26 @@ class AdminArtistIntegrationTest extends IntegrationTest {
                 .andExpect(status().isUnauthorized());
     }
 
+    @Test
+    void theFirstGenreIsTheOneStarAnArtistOrbits() throws Exception {
+        String name = "Main Genre Test " + java.util.UUID.randomUUID().toString().substring(0, 6);
+        setGenres(name, "[\"forest\", \"dark\"]").andExpect(status().isOk());
+        mockMvc.perform(get("/api/map/main-genres"))
+                .andExpect(jsonPath("$['%s']".formatted(name)).value("forest"));
+        // Both genres still count
+        mockMvc.perform(get("/api/map/placements"))
+                .andExpect(jsonPath("$.dark[?(@ == '%s')]".formatted(name)).exists())
+                .andExpect(jsonPath("$.forest[?(@ == '%s')]".formatted(name)).exists());
+
+        // Only the order changes: the main genre moves, and that is a change of its own in the history
+        setGenres(name, "[\"dark\", \"forest\"]").andExpect(status().isOk());
+        mockMvc.perform(get("/api/map/main-genres"))
+                .andExpect(jsonPath("$['%s']".formatted(name)).value("dark"));
+        assertThat(changeRepository.findTop200ByOrderByCreatedAtDescIdDesc().get(0).getAfterValue()).isEqualTo("dark, forest");
+
+        setGenres(name, "[]").andExpect(status().isOk());
+    }
+
     private ResultActions setGenres(String name, String genres) throws Exception {
         return mockMvc.perform(put("/api/admin/artists/genres").header("Authorization", bearer(adminToken))
                 .contentType(MediaType.APPLICATION_JSON)

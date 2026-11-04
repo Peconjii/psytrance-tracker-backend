@@ -23,6 +23,9 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -75,9 +78,12 @@ public class MapPlacements {
     void load() {
         if (placementRepository.count() == 0) {
             List<MapArtistGenre> seed = new ArrayList<>();
+            Set<String> withMain = new HashSet<>();
             for (MapGenres.Genre genre : mapGenres.all()) {
                 for (String artist : new LinkedHashSet<>(genre.artists())) {
-                    seed.add(new MapArtistGenre(artist, genre.id()));
+                    MapArtistGenre row = new MapArtistGenre(artist, genre.id());
+                    row.setMain(withMain.add(artist));
+                    seed.add(row);
                 }
             }
             placementRepository.saveAll(seed);
@@ -94,6 +100,23 @@ public class MapPlacements {
         return byGenre;
     }
 
+    /** {@code artist name -> main genre}: the one star each artist orbits on the galaxy */
+    public Map<String, String> mainGenres() {
+        Map<String, String> main = new LinkedHashMap<>();
+        for (MapArtistGenre row : placementRepository.findAllByOrderByIdAsc()) {
+            if (row.isMain()) main.put(row.getArtistName(), row.getGenreId());
+        }
+        return main;
+    }
+
+    // An artist's rows with the main genre first, as the panel and the history show them
+    private List<MapArtistGenre> rowsOf(String slug) {
+        return placementRepository.findAllByOrderByIdAsc().stream()
+                .filter(row -> ArtistNames.slug(row.getArtistName()).equals(slug))
+                .sorted(Comparator.comparing((MapArtistGenre row) -> !row.isMain()))
+                .toList();
+    }
+
     /**
      * Artists for the admin panel: those on the map and those found in line-ups whose name contains the
      * search (ignoring case, accents and symbols), with the genres each one is placed in.
@@ -101,7 +124,8 @@ public class MapPlacements {
     public List<AdminArtistDto> search(String search) {
         String part = ArtistNames.slug(search);
         Map<String, AdminArtistDto> bySlug = new LinkedHashMap<>();
-        for (MapArtistGenre row : placementRepository.findAllByOrderByIdAsc()) {
+        for (MapArtistGenre row : placementRepository.findAllByOrderByIdAsc().stream()
+                .sorted(Comparator.comparing((MapArtistGenre r) -> !r.isMain())).toList()) {
             String slug = ArtistNames.slug(row.getArtistName());
             if (slug.contains(part)) {
                 bySlug.computeIfAbsent(slug, s -> new AdminArtistDto(row.getArtistName(), s, new ArrayList<>(), true))
@@ -118,7 +142,8 @@ public class MapPlacements {
     }
 
     /**
-     * Places an artist in exactly these genres (none takes them off the map). The name of an artist already on
+     * Places an artist in exactly these genres (none takes them off the map); the first is their main genre, the
+     * one star they orbit. The name of an artist already on
      * the map stays as the map writes it. Returns the artist as the panel shows it.
      */
     @Transactional
@@ -138,9 +163,7 @@ public class MapPlacements {
             }
         }
 
-        List<MapArtistGenre> current = placementRepository.findAllByOrderByIdAsc().stream()
-                .filter(row -> ArtistNames.slug(row.getArtistName()).equals(slug))
-                .toList();
+        List<MapArtistGenre> current = rowsOf(slug);
         String mapName = current.isEmpty() ? name.strip() : current.get(0).getArtistName();
         List<String> before = current.stream().map(MapArtistGenre::getGenreId).toList();
 
@@ -153,8 +176,22 @@ public class MapPlacements {
                 .map(genreId -> new MapArtistGenre(mapName, genreId))
                 .toList();
         placementRepository.saveAll(added);
+        // The first wanted genre is the main one
+        boolean mainChanged = false;
+        if (!wanted.isEmpty()) {
+            List<MapArtistGenre> rows = new ArrayList<>(current.stream().filter(row -> wanted.contains(row.getGenreId())).toList());
+            rows.addAll(added);
+            for (MapArtistGenre row : rows) {
+                boolean main = row.getGenreId().equals(wanted.get(0));
+                if (row.isMain() != main) {
+                    row.setMain(main);
+                    mainChanged = true;
+                }
+            }
+            placementRepository.saveAll(rows);
+        }
 
-        if (!removed.isEmpty() || !added.isEmpty()) {
+        if (!removed.isEmpty() || !added.isEmpty() || (mainChanged && !before.isEmpty() && !before.get(0).equals(wanted.get(0)))) {
             changeRepository.save(new AdminChange(adminUsername, AdminChange.ARTIST_GENRES, mapName,
                     String.join(", ", before), String.join(", ", wanted), clock.instant(), undoOf));
             mapGenres.usePlacements(placements());
@@ -222,9 +259,7 @@ public class MapPlacements {
 
     // The genres an artist is placed in now, as the history writes them: "forest, twilight"
     private String artistGenres(String name) {
-        String slug = ArtistNames.slug(name);
-        return placementRepository.findAllByOrderByIdAsc().stream()
-                .filter(row -> ArtistNames.slug(row.getArtistName()).equals(slug))
+        return rowsOf(ArtistNames.slug(name)).stream()
                 .map(MapArtistGenre::getGenreId)
                 .collect(Collectors.joining(", "));
     }
