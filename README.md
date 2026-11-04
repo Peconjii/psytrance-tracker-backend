@@ -293,6 +293,7 @@ the application log, which is enough for local development.
 | `MAIL_FROM` | The sender, e.g. `Map of Psy <you@gmail.com>`; with Brevo it must be a sender verified there |
 | `SPRING_MAIL_HOST`, `SPRING_MAIL_PORT`, `SPRING_MAIL_USERNAME`, `SPRING_MAIL_PASSWORD` | Or plain SMTP instead of Brevo (e.g. Gmail with an [app password](https://myaccount.google.com/apppasswords)) |
 | `FRONTEND_URL` | `http://localhost:5173` (default), used to build the links in emails and allowed by CORS |
+| `EXTRA_ORIGINS` | empty (default); other addresses of the same frontend allowed by CORS, comma separated (e.g. `https://www.mapofpsy.com,https://psyatlas-one.vercel.app`) |
 | `BACKEND_URL` | This server's own address, for the links of uploaded pictures (default `http://localhost:8080`) |
 
 **Other settings**
@@ -308,7 +309,7 @@ the application log, which is enough for local development.
 pages just have no aftermovie.
 
 The API starts on `http://localhost:8080`. On first start, Flyway creates the tables from the SQL migrations.
-CORS allows the frontend dev server at `http://localhost:5173` and the address in `FRONTEND_URL`.
+CORS allows the frontend dev server at `http://localhost:5173`, the address in `FRONTEND_URL` and those in `EXTRA_ORIGINS`.
 If the `PORT` variable is set (as on Render), the API listens on that port instead.
 
 ## Tests

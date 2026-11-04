@@ -34,12 +34,16 @@ public class SecurityConfig {
     private final JwtFilter jwtFilter;
     private final Admins admins;
     private final String frontendUrl;
+    private final List<String> extraOrigins;
 
-    public SecurityConfig(JwtFilter jwtFilter, Admins admins, @Value("${app.frontend-url}") String frontendUrl) {
+    public SecurityConfig(JwtFilter jwtFilter, Admins admins, @Value("${app.frontend-url}") String frontendUrl,
+                          @Value("${app.extra-origins:}") List<String> extraOrigins) {
         this.jwtFilter = jwtFilter;
         this.admins = admins;
         // A trailing slash would never match the browser's Origin header
         this.frontendUrl = frontendUrl.replaceAll("/+$", "");
+        this.extraOrigins = extraOrigins.stream().map(String::trim).filter(o -> !o.isEmpty())
+                .map(o -> o.replaceAll("/+$", "")).toList();
     }
 
     @Bean
@@ -89,10 +93,12 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // The deployed frontend (FRONTEND_URL) plus the local dev server. distinct() matters: locally
-        // FRONTEND_URL defaults to http://localhost:5173, and Set.of would throw on that duplicate
-        configuration.setAllowedOrigins(
-                Stream.of(frontendUrl, "http://localhost:5173", "http://127.0.0.1:5173").distinct().toList());
+        // The deployed frontend (FRONTEND_URL), other addresses of the same site (EXTRA_ORIGINS, comma separated:
+        // www and the old vercel.app address while links to it live on) and the local dev server.
+        // distinct() matters: locally FRONTEND_URL defaults to http://localhost:5173
+        configuration.setAllowedOrigins(Stream.concat(
+                Stream.of(frontendUrl, "http://localhost:5173", "http://127.0.0.1:5173"), extraOrigins.stream())
+                .distinct().toList());
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With"));
         configuration.setAllowCredentials(true);
