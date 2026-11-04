@@ -13,7 +13,7 @@ key tracks (with the second of the drop, for the quiz) and what has been verifie
 **Frontend (React):** [Peconjii/psytrance-tracker](https://github.com/Peconjii/psytrance-tracker)
 (screenshots are in its README)
 
-**Live: [psyatlas-one.vercel.app](https://psyatlas-one.vercel.app)** · API:
+**Live: [mapofpsy.com](https://mapofpsy.com)** · API:
 [psytrance-tracker-backend.onrender.com/api/events](https://psytrance-tracker-backend.onrender.com/api/events)
 
 > Hosted on free tiers (Vercel, Render, Neon). The backend sleeps when nobody uses it, so the first load can take 1–2 minutes.
