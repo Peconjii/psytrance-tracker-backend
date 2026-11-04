@@ -3,8 +3,10 @@ package com.psytrance.psytrance_tracker_backend.controller;
 import com.psytrance.psytrance_tracker_backend.config.Admins;
 import com.psytrance.psytrance_tracker_backend.dto.AdminUsersDto;
 import com.psytrance.psytrance_tracker_backend.service.AdminUsers;
+import com.psytrance.psytrance_tracker_backend.service.UserDeletion;
 import com.psytrance.psytrance_tracker_backend.service.UserRoles;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -24,11 +26,13 @@ public class AdminUserController {
     private final AdminUsers adminUsers;
     private final UserRoles userRoles;
     private final Admins admins;
+    private final UserDeletion userDeletion;
 
-    public AdminUserController(AdminUsers adminUsers, UserRoles userRoles, Admins admins) {
+    public AdminUserController(AdminUsers adminUsers, UserRoles userRoles, Admins admins, UserDeletion userDeletion) {
         this.adminUsers = adminUsers;
         this.userRoles = userRoles;
         this.admins = admins;
+        this.userDeletion = userDeletion;
     }
 
     /** Example: {@code GET /api/admin/users?search=gmail}: name or email contains it; {@code ?team=true}: admins and editors */
@@ -50,5 +54,12 @@ public class AdminUserController {
         result.put("username", username);
         result.put("role", role);
         return result;
+    }
+
+    /** {@code DELETE /api/admin/users/someone}: removes the account (see UserDeletion for what stays) */
+    @DeleteMapping("/{username}")
+    public Map<String, String> delete(@PathVariable String username, Authentication authentication) {
+        userDeletion.delete(username, admins.requireAdmin(authentication));
+        return Map.of("deleted", username);
     }
 }

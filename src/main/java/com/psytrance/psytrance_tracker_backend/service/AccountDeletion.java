@@ -52,7 +52,12 @@ public class AccountDeletion {
         if (password == null || !passwordEncoder.matches(password, user.getPassword())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "That's not your password");
         }
-        long id = user.getId();
+        erase(user.getId());
+    }
+
+    /** Removes the account with everything that is the person's; also used by an admin (see UserDeletion) */
+    @Transactional
+    public void erase(long id) {
 
         // The events they added, with what the site kept about them
         List<Long> events = jdbc.sql("select id from our_events where submitted_by = :user").param("user", id)
