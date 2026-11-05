@@ -1,6 +1,6 @@
 package com.psytrance.psytrance_tracker_backend.controller;
 
-import com.psytrance.psytrance_tracker_backend.service.Sitemap;
+import com.psytrance.psytrance_tracker_backend.service.site.Sitemap;
 import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;

@@ -1,8 +1,8 @@
 package com.psytrance.psytrance_tracker_backend.controller;
 
 import com.psytrance.psytrance_tracker_backend.config.Admins;
-import com.psytrance.psytrance_tracker_backend.service.FestivalEditions;
-import com.psytrance.psytrance_tracker_backend.service.PageTrust;
+import com.psytrance.psytrance_tracker_backend.service.pages.FestivalEditions;
+import com.psytrance.psytrance_tracker_backend.service.pages.PageTrust;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

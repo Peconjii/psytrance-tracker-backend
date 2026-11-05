@@ -1,6 +1,6 @@
 package com.psytrance.psytrance_tracker_backend.controller;
 
-import com.psytrance.psytrance_tracker_backend.service.ArtistFollows;
+import com.psytrance.psytrance_tracker_backend.service.artists.ArtistFollows;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;

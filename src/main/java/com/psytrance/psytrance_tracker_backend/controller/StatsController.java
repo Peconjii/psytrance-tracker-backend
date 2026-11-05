@@ -1,8 +1,8 @@
 package com.psytrance.psytrance_tracker_backend.controller;
 
-import com.psytrance.psytrance_tracker_backend.service.FestivalStats;
-import com.psytrance.psytrance_tracker_backend.service.OwnerStats;
-import com.psytrance.psytrance_tracker_backend.service.Stats;
+import com.psytrance.psytrance_tracker_backend.service.pages.FestivalStats;
+import com.psytrance.psytrance_tracker_backend.service.pages.OwnerStats;
+import com.psytrance.psytrance_tracker_backend.service.site.Stats;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;

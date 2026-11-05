@@ -24,7 +24,7 @@ class MapExtrasIntegrationTest extends IntegrationTest {
     private UserRepository userRepository;
 
     @Autowired
-    private com.psytrance.psytrance_tracker_backend.service.ArtistService artistService;
+    private com.psytrance.psytrance_tracker_backend.service.artists.ArtistService artistService;
 
     private String adminToken;
 

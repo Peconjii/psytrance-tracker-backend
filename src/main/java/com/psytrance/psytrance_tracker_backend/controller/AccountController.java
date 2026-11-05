@@ -1,6 +1,6 @@
 package com.psytrance.psytrance_tracker_backend.controller;
 
-import com.psytrance.psytrance_tracker_backend.service.AccountDeletion;
+import com.psytrance.psytrance_tracker_backend.service.account.AccountDeletion;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.http.HttpStatus;

@@ -1,10 +1,10 @@
 package com.psytrance.psytrance_tracker_backend.config;
 
-import com.psytrance.psytrance_tracker_backend.service.ArtistFollows;
-import com.psytrance.psytrance_tracker_backend.service.ArtistIndexer;
-import com.psytrance.psytrance_tracker_backend.service.Images;
-import com.psytrance.psytrance_tracker_backend.service.ReminderService;
-import com.psytrance.psytrance_tracker_backend.service.WeeklyDigest;
+import com.psytrance.psytrance_tracker_backend.service.artists.ArtistFollows;
+import com.psytrance.psytrance_tracker_backend.service.artists.ArtistIndexer;
+import com.psytrance.psytrance_tracker_backend.service.site.Images;
+import com.psytrance.psytrance_tracker_backend.service.mail.ReminderService;
+import com.psytrance.psytrance_tracker_backend.service.mail.WeeklyDigest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;

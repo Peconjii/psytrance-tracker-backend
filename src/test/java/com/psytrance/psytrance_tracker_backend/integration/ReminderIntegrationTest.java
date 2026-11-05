@@ -1,7 +1,7 @@
 package com.psytrance.psytrance_tracker_backend.integration;
 
 import com.psytrance.psytrance_tracker_backend.client.GoabaseParty;
-import com.psytrance.psytrance_tracker_backend.service.ReminderService;
+import com.psytrance.psytrance_tracker_backend.service.mail.ReminderService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;

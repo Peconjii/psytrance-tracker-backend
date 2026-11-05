@@ -1,10 +1,10 @@
 package com.psytrance.psytrance_tracker_backend.controller;
 
 import com.psytrance.psytrance_tracker_backend.config.Admins;
-import com.psytrance.psytrance_tracker_backend.service.ArtistIndexer;
-import com.psytrance.psytrance_tracker_backend.service.EventFeaturing;
-import com.psytrance.psytrance_tracker_backend.service.EventHiding;
-import com.psytrance.psytrance_tracker_backend.service.FestivalEditions;
+import com.psytrance.psytrance_tracker_backend.service.artists.ArtistIndexer;
+import com.psytrance.psytrance_tracker_backend.service.events.EventFeaturing;
+import com.psytrance.psytrance_tracker_backend.service.events.EventHiding;
+import com.psytrance.psytrance_tracker_backend.service.pages.FestivalEditions;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

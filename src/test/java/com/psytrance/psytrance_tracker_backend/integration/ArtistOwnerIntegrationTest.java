@@ -2,8 +2,8 @@ package com.psytrance.psytrance_tracker_backend.integration;
 
 import com.jayway.jsonpath.JsonPath;
 import com.psytrance.psytrance_tracker_backend.client.GoabaseParty;
-import com.psytrance.psytrance_tracker_backend.service.ArtistService;
-import com.psytrance.psytrance_tracker_backend.service.MapPlacements;
+import com.psytrance.psytrance_tracker_backend.service.artists.ArtistService;
+import com.psytrance.psytrance_tracker_backend.service.map.MapPlacements;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

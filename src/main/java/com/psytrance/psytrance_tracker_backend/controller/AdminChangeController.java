@@ -2,7 +2,7 @@ package com.psytrance.psytrance_tracker_backend.controller;
 
 import com.psytrance.psytrance_tracker_backend.config.Admins;
 import com.psytrance.psytrance_tracker_backend.dto.AdminChangeDto;
-import com.psytrance.psytrance_tracker_backend.service.MapPlacements;
+import com.psytrance.psytrance_tracker_backend.service.map.MapPlacements;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;

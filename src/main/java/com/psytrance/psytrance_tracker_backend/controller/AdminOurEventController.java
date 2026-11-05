@@ -2,7 +2,7 @@ package com.psytrance.psytrance_tracker_backend.controller;
 
 import com.psytrance.psytrance_tracker_backend.config.Admins;
 import com.psytrance.psytrance_tracker_backend.dto.OurEventDto;
-import com.psytrance.psytrance_tracker_backend.service.OurEvents;
+import com.psytrance.psytrance_tracker_backend.service.events.OurEvents;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Size;
 import org.springframework.security.core.Authentication;

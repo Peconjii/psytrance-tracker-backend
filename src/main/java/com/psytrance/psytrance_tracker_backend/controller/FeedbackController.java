@@ -4,7 +4,7 @@ import com.psytrance.psytrance_tracker_backend.config.Admins;
 import com.psytrance.psytrance_tracker_backend.dto.FeedbackDto;
 import com.psytrance.psytrance_tracker_backend.dto.FeedbackRequest;
 import com.psytrance.psytrance_tracker_backend.model.Feedback;
-import com.psytrance.psytrance_tracker_backend.service.FeedbackService;
+import com.psytrance.psytrance_tracker_backend.service.site.FeedbackService;
 import com.psytrance.psytrance_tracker_backend.util.ClientAddress;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;

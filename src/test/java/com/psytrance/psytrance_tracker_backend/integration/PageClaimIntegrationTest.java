@@ -1,8 +1,8 @@
 package com.psytrance.psytrance_tracker_backend.integration;
 
 import com.psytrance.psytrance_tracker_backend.repository.UserRepository;
-import com.psytrance.psytrance_tracker_backend.service.ArtistService;
-import com.psytrance.psytrance_tracker_backend.service.Organizers;
+import com.psytrance.psytrance_tracker_backend.service.artists.ArtistService;
+import com.psytrance.psytrance_tracker_backend.service.pages.Organizers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

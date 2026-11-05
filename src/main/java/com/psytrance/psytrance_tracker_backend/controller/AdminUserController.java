@@ -2,9 +2,9 @@ package com.psytrance.psytrance_tracker_backend.controller;
 
 import com.psytrance.psytrance_tracker_backend.config.Admins;
 import com.psytrance.psytrance_tracker_backend.dto.AdminUsersDto;
-import com.psytrance.psytrance_tracker_backend.service.AdminUsers;
-import com.psytrance.psytrance_tracker_backend.service.UserDeletion;
-import com.psytrance.psytrance_tracker_backend.service.UserRoles;
+import com.psytrance.psytrance_tracker_backend.service.account.AdminUsers;
+import com.psytrance.psytrance_tracker_backend.service.account.UserDeletion;
+import com.psytrance.psytrance_tracker_backend.service.account.UserRoles;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;

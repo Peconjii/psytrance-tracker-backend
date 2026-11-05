@@ -2,9 +2,9 @@ package com.psytrance.psytrance_tracker_backend.controller;
 
 import com.psytrance.psytrance_tracker_backend.util.Links;
 import com.psytrance.psytrance_tracker_backend.util.ImageUrls;
-import com.psytrance.psytrance_tracker_backend.service.FestivalPages;
-import com.psytrance.psytrance_tracker_backend.service.LabelPages;
-import com.psytrance.psytrance_tracker_backend.service.OwnerStats;
+import com.psytrance.psytrance_tracker_backend.service.pages.FestivalPages;
+import com.psytrance.psytrance_tracker_backend.service.pages.LabelPages;
+import com.psytrance.psytrance_tracker_backend.service.pages.OwnerStats;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;

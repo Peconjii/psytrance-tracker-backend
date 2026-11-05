@@ -2,8 +2,8 @@ package com.psytrance.psytrance_tracker_backend.controller;
 
 import com.psytrance.psytrance_tracker_backend.util.Links;
 import com.psytrance.psytrance_tracker_backend.config.Admins;
-import com.psytrance.psytrance_tracker_backend.service.PageClaims;
-import com.psytrance.psytrance_tracker_backend.service.FormLimits;
+import com.psytrance.psytrance_tracker_backend.service.pages.PageClaims;
+import com.psytrance.psytrance_tracker_backend.service.site.FormLimits;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;

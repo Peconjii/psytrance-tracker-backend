@@ -1,6 +1,6 @@
 package com.psytrance.psytrance_tracker_backend.controller;
 
-import com.psytrance.psytrance_tracker_backend.service.SiteSearch;
+import com.psytrance.psytrance_tracker_backend.service.site.SiteSearch;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;

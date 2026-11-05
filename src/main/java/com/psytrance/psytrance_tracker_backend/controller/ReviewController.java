@@ -2,7 +2,7 @@ package com.psytrance.psytrance_tracker_backend.controller;
 
 import com.psytrance.psytrance_tracker_backend.dto.ReviewRequest;
 import com.psytrance.psytrance_tracker_backend.dto.ReviewResponse;
-import com.psytrance.psytrance_tracker_backend.service.ReviewService;
+import com.psytrance.psytrance_tracker_backend.service.events.ReviewService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;

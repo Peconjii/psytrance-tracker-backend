@@ -3,7 +3,7 @@ package com.psytrance.psytrance_tracker_backend.integration;
 import com.jayway.jsonpath.JsonPath;
 import com.psytrance.psytrance_tracker_backend.client.GoabaseParty;
 import com.psytrance.psytrance_tracker_backend.client.GoabasePartyDetails;
-import com.psytrance.psytrance_tracker_backend.service.ArtistIndexer;
+import com.psytrance.psytrance_tracker_backend.service.artists.ArtistIndexer;
 import com.psytrance.psytrance_tracker_backend.repository.LineupScanRepository;
 import com.psytrance.psytrance_tracker_backend.model.LineupScan;
 import org.junit.jupiter.api.BeforeEach;

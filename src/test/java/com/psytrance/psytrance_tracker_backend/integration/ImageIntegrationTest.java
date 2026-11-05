@@ -1,7 +1,7 @@
 package com.psytrance.psytrance_tracker_backend.integration;
 
 import com.jayway.jsonpath.JsonPath;
-import com.psytrance.psytrance_tracker_backend.service.Images;
+import com.psytrance.psytrance_tracker_backend.service.site.Images;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -2,7 +2,7 @@ package com.psytrance.psytrance_tracker_backend.controller;
 
 import com.psytrance.psytrance_tracker_backend.client.GoogleIdTokens;
 import com.psytrance.psytrance_tracker_backend.client.GoogleIdTokens.GoogleAccount;
-import com.psytrance.psytrance_tracker_backend.service.GoogleSignIn;
+import com.psytrance.psytrance_tracker_backend.service.account.GoogleSignIn;
 import jakarta.validation.constraints.Size;
 
 import com.psytrance.psytrance_tracker_backend.dto.ForgotPasswordRequest;
@@ -12,11 +12,11 @@ import com.psytrance.psytrance_tracker_backend.dto.ResetPasswordRequest;
 import com.psytrance.psytrance_tracker_backend.config.Admins;
 import com.psytrance.psytrance_tracker_backend.dto.UserResponse;
 import com.psytrance.psytrance_tracker_backend.model.User;
-import com.psytrance.psytrance_tracker_backend.service.EmailVerification;
-import com.psytrance.psytrance_tracker_backend.service.FormLimits;
-import com.psytrance.psytrance_tracker_backend.service.LoginAttempts;
-import com.psytrance.psytrance_tracker_backend.service.PasswordResetService;
-import com.psytrance.psytrance_tracker_backend.service.UserService;
+import com.psytrance.psytrance_tracker_backend.service.account.EmailVerification;
+import com.psytrance.psytrance_tracker_backend.service.site.FormLimits;
+import com.psytrance.psytrance_tracker_backend.service.account.LoginAttempts;
+import com.psytrance.psytrance_tracker_backend.service.account.PasswordResetService;
+import com.psytrance.psytrance_tracker_backend.service.account.UserService;
 import com.psytrance.psytrance_tracker_backend.util.ClientAddress;
 import com.psytrance.psytrance_tracker_backend.util.JwtUtil;
 import jakarta.servlet.http.HttpServletRequest;

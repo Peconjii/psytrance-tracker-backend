@@ -1,6 +1,6 @@
 package com.psytrance.psytrance_tracker_backend.controller;
 
-import com.psytrance.psytrance_tracker_backend.service.SharePreview;
+import com.psytrance.psytrance_tracker_backend.service.site.SharePreview;
 import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;

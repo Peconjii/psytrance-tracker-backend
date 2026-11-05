@@ -1,7 +1,7 @@
 package com.psytrance.psytrance_tracker_backend.controller;
 
 import com.psytrance.psytrance_tracker_backend.dto.GoingStatus;
-import com.psytrance.psytrance_tracker_backend.service.AttendanceService;
+import com.psytrance.psytrance_tracker_backend.service.events.AttendanceService;
 import jakarta.validation.constraints.Size;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;

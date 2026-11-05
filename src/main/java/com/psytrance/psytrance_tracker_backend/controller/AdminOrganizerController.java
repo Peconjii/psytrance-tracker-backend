@@ -1,7 +1,7 @@
 package com.psytrance.psytrance_tracker_backend.controller;
 
 import com.psytrance.psytrance_tracker_backend.config.Admins;
-import com.psytrance.psytrance_tracker_backend.service.OrganizerEditing;
+import com.psytrance.psytrance_tracker_backend.service.pages.OrganizerEditing;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

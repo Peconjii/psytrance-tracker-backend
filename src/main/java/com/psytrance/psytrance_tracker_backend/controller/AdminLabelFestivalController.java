@@ -1,8 +1,8 @@
 package com.psytrance.psytrance_tracker_backend.controller;
 
 import com.psytrance.psytrance_tracker_backend.config.Admins;
-import com.psytrance.psytrance_tracker_backend.service.FestivalPages;
-import com.psytrance.psytrance_tracker_backend.service.LabelPages;
+import com.psytrance.psytrance_tracker_backend.service.pages.FestivalPages;
+import com.psytrance.psytrance_tracker_backend.service.pages.LabelPages;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.http.HttpStatus;

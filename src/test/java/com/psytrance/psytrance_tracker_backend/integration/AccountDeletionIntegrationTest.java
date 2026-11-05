@@ -3,7 +3,7 @@ package com.psytrance.psytrance_tracker_backend.integration;
 import com.psytrance.psytrance_tracker_backend.dto.EventDto;
 import com.psytrance.psytrance_tracker_backend.model.OurEvent;
 import com.psytrance.psytrance_tracker_backend.repository.UserRepository;
-import com.psytrance.psytrance_tracker_backend.service.ArtistService;
+import com.psytrance.psytrance_tracker_backend.service.artists.ArtistService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
