@@ -51,6 +51,7 @@ public class Sitemap {
         paths.add("/map");
         paths.add("/artists");
         paths.add("/organizers");
+        paths.add("/about");
 
         // Artists: the map's (they always have a page) and the ones with gigs coming up
         Set<String> artists = new TreeSet<>();
