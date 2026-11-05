@@ -1,5 +1,7 @@
 package com.psytrance.psytrance_tracker_backend.service;
 
+import static com.psytrance.psytrance_tracker_backend.util.Texts.escape;
+
 import com.psytrance.psytrance_tracker_backend.dto.EventDto;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.simple.JdbcClient;
@@ -185,7 +187,4 @@ public class SharePreview {
         return URLEncoder.encode(value, StandardCharsets.UTF_8).replace("+", "%20");
     }
 
-    private static String escape(String value) {
-        return value.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");
-    }
 }

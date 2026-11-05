@@ -8,6 +8,11 @@ public final class Texts {
         return value == null || value.isBlank() ? null : value.strip();
     }
 
+    /** Text safe inside HTML or XML: & < > and " as entities (put it between tags or in "quoted" attributes) */
+    public static String escape(String value) {
+        return value.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");
+    }
+
     private Texts() {
     }
 }

@@ -1,6 +1,7 @@
 package com.psytrance.psytrance_tracker_backend.service;
 
 import com.psytrance.psytrance_tracker_backend.util.ArtistNames;
+import com.psytrance.psytrance_tracker_backend.util.Texts;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
@@ -100,6 +101,7 @@ public class Sitemap {
     }
 
     private static String escape(String url) {
-        return url.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;").replace("'", "&apos;");
+        // The sitemap rules ask for ' as an entity too
+        return Texts.escape(url).replace("'", "&apos;");
     }
 }
