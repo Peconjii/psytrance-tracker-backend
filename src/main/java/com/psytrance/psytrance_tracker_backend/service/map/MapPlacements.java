@@ -144,6 +144,11 @@ public class MapPlacements {
                 .toList();
     }
 
+    /** The artist's genres, main one first; empty when they are not on the map */
+    public List<String> genresOf(String name) {
+        return rowsOf(ArtistNames.slug(name)).stream().map(MapArtistGenre::getGenreId).toList();
+    }
+
     /**
      * Places an artist in exactly these genres (none takes them off the map); the first is their main genre, the
      * one star they orbit. The name of an artist already on

@@ -162,6 +162,62 @@ class FeedbackIntegrationTest extends IntegrationTest {
                 .andExpect(status().isTooManyRequests());
     }
 
+    @Test
+    void aTrackSuggestionIsAddedToTheGenreWithOneClick() throws Exception {
+        String title = "Echoes " + UUID.randomUUID();
+        send("""
+                {"kind": "CORRECTION", "aboutType": "ARTIST", "aboutRef": "Pink Floyd", "pageUrl": "/?genre=psyrock",
+                 "message": "Track suggestion for Pink Floyd: \\"%s\\" (1971)\\nLink: https://www.youtube.com/watch?v=53N99Nim6WE&list=RD"}
+                """.formatted(title))
+                .andExpect(status().isCreated());
+        String list = mockMvc.perform(get("/api/admin/feedback").header("Authorization", bearer(adminToken)))
+                .andReturn().getResponse().getContentAsString();
+        List<Integer> ids = JsonPath.read(list, "$[?(@.accept.title == '" + title + "')].id");
+        List<List<String>> genres = JsonPath.read(list, "$[?(@.accept.title == '" + title + "')].accept.genres");
+        assertThat(genres.get(0)).first().isEqualTo("psyrock");
+
+        mockMvc.perform(post("/api/admin/feedback/{id}/accept", ids.get(0)).header("Authorization", bearer(adminToken))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"genreId\": \"psyrock\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("DONE"));
+        String content = mockMvc.perform(get("/api/map/content")).andReturn().getResponse().getContentAsString();
+        List<String> youtube = JsonPath.read(content, "$.psyrock.tracks[?(@.title == '" + title + "')].youtube");
+        assertThat(youtube).containsExactly("53N99Nim6WE");
+
+        // A second click doesn't add it twice
+        mockMvc.perform(post("/api/admin/feedback/{id}/accept", ids.get(0)).header("Authorization", bearer(adminToken)))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    void anArtistSuggestionPutsTheArtistOnTheStar() throws Exception {
+        String name = "Test Band " + UUID.randomUUID().toString().substring(0, 8);
+        send("""
+                {"kind": "CORRECTION", "aboutType": "GENRE", "aboutRef": "Psychedelic rock",
+                 "message": "Artist suggestion for Psychedelic rock: \\"%s\\""}
+                """.formatted(name))
+                .andExpect(status().isCreated());
+        String list = mockMvc.perform(get("/api/admin/feedback").header("Authorization", bearer(adminToken)))
+                .andReturn().getResponse().getContentAsString();
+        List<Integer> ids = JsonPath.read(list, "$[?(@.accept.artist == '" + name + "')].id");
+
+        mockMvc.perform(post("/api/admin/feedback/{id}/accept", ids.get(0)).header("Authorization", bearer(adminToken)))
+                .andExpect(status().isOk());
+        String after = mockMvc.perform(get("/api/admin/feedback").header("Authorization", bearer(adminToken)))
+                .andReturn().getResponse().getContentAsString();
+        List<List<String>> genres = JsonPath.read(after, "$[?(@.accept.artist == '" + name + "')].accept.genres");
+        assertThat(genres.get(0)).isEmpty();   // already there: nothing left to add
+    }
+
+    @Test
+    void upkeepListsAreForAdminsOnly() throws Exception {
+        mockMvc.perform(get("/api/admin/upkeep/duplicate-artists")).andExpect(status().is4xxClientError());
+        mockMvc.perform(get("/api/admin/upkeep/duplicate-artists").header("Authorization", bearer(adminToken)))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/api/admin/upkeep/dead-tracks").header("Authorization", bearer(adminToken)))
+                .andExpect(status().isOk());
+    }
+
     private ResultActions send(String json) throws Exception {
         return mockMvc.perform(post("/api/feedback").header("X-Forwarded-For", clientAddress)
                 .contentType(MediaType.APPLICATION_JSON).content(json));

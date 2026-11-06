@@ -3,6 +3,7 @@ package com.psytrance.psytrance_tracker_backend.config;
 import com.psytrance.psytrance_tracker_backend.service.artists.ArtistFollows;
 import com.psytrance.psytrance_tracker_backend.service.artists.ArtistIndexer;
 import com.psytrance.psytrance_tracker_backend.service.site.Images;
+import com.psytrance.psytrance_tracker_backend.service.site.Upkeep;
 import com.psytrance.psytrance_tracker_backend.service.mail.ReminderService;
 import com.psytrance.psytrance_tracker_backend.service.mail.WeeklyDigest;
 import org.slf4j.Logger;
@@ -29,9 +30,11 @@ public class BackgroundJobs {
     private final ArtistFollows artistFollows;
     private final WeeklyDigest weeklyDigest;
     private final Images images;
+    private final Upkeep upkeep;
 
     public BackgroundJobs(ReminderService reminderService, ArtistIndexer artistIndexer, ArtistFollows artistFollows,
-                          WeeklyDigest weeklyDigest, Images images) {
+                          WeeklyDigest weeklyDigest, Images images, Upkeep upkeep) {
+        this.upkeep = upkeep;
         this.weeklyDigest = weeklyDigest;
         this.images = images;
         this.reminderService = reminderService;
@@ -76,6 +79,12 @@ public class BackgroundJobs {
             }
         } catch (RuntimeException e) {
             log.warn("Unused picture job failed", e);
+        }
+        // Key track videos that no longer play, once a day on the same timer (Admin -> Upkeep)
+        try {
+            upkeep.checkIfDue();
+        } catch (RuntimeException e) {
+            log.warn("Key track check failed", e);
         }
     }
 

@@ -72,6 +72,16 @@ public class FeedbackController {
         return feedbackService.reply(id, reply.text(), admins.requireAdmin(authentication));
     }
 
+    /** Example: {@code POST /api/admin/feedback/7/accept {"genreId": "psyrock"}}: adds the suggested track or artist */
+    @PostMapping("/api/admin/feedback/{id}/accept")
+    public FeedbackDto accept(@PathVariable long id, @RequestBody(required = false) AcceptIn in, Authentication authentication) {
+        String admin = admins.requireAdmin(authentication);
+        return feedbackService.accept(id, in == null ? null : in.genreId(), admin);
+    }
+
+    public record AcceptIn(String genreId) {
+    }
+
     public record Reply(@NotBlank @Size(max = 3000) String text) {
     }
 }

@@ -22,12 +22,21 @@ public record FeedbackDto(
         String replyTo,
         String replyText,
         Instant repliedAt,
-        String repliedBy
+        String repliedBy,
+        Accept accept
 ) {
 
-    public static FeedbackDto from(Feedback feedback, String username, String replyTo) {
+    /**
+     * A track or artist suggestion the inbox can add with one click (FeedbackSuggestions); null for other feedback.
+     * {@code genres}: where it can go, the likeliest first; empty when nowhere yet (then it is fixed by hand).
+     */
+    public record Accept(String type, String artist, String title, Integer year, String youtube, java.util.List<String> genres) {
+    }
+
+    public static FeedbackDto from(Feedback feedback, String username, String replyTo, Accept accept) {
         return new FeedbackDto(feedback.getId(), feedback.getKind(), feedback.getAboutType(), feedback.getAboutRef(),
                 feedback.getPageUrl(), feedback.getMessage(), feedback.getEmail(), username, feedback.getStatus(),
-                feedback.getCreatedAt(), replyTo, feedback.getReplyText(), feedback.getRepliedAt(), feedback.getRepliedBy());
+                feedback.getCreatedAt(), replyTo, feedback.getReplyText(), feedback.getRepliedAt(), feedback.getRepliedBy(),
+                accept);
     }
 }
