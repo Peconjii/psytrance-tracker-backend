@@ -53,6 +53,8 @@ public class AdminChange {
     public static final String LABEL_PROFILE = "LABEL_PROFILE";
     /** A genre's texts and key tracks on the galaxy were changed (Admin -> Galaxy); can be undone */
     public static final String GENRE_CONTENT = "GENRE_CONTENT";
+    /** A label's or festival's map details (StationDetails); target "LABEL:name" or "FESTIVAL:id", values JSON */
+    public static final String STATION_DETAILS = "STATION_DETAILS";
     /** An account was linked to a label as its owner, or unlinked; before/after are the usernames (no undo) */
     public static final String LABEL_OWNER = "LABEL_OWNER";
     /** An artist was put on a label's crew or taken off it (approved request); after is "+ name" or "- name" (no undo) */

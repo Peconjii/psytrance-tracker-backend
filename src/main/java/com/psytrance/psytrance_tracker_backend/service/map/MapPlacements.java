@@ -52,6 +52,7 @@ public class MapPlacements {
     private final EventGenreAdmin eventGenreAdmin;
     private final ArtistCleanup artistCleanup;
     private final GalaxyContent galaxyContent;
+    private final StationDetails stationDetails;
     private final Clock clock;
 
     public MapPlacements(MapArtistGenreRepository placementRepository,
@@ -63,7 +64,8 @@ public class MapPlacements {
                          EventGenreAdmin eventGenreAdmin,
                          ArtistCleanup artistCleanup,
                          GalaxyContent galaxyContent,
-                         Clock clock) {
+                         Clock clock, StationDetails stationDetails) {
+        this.stationDetails = stationDetails;
         this.placementRepository = placementRepository;
         this.changeRepository = changeRepository;
         this.artistRepository = artistRepository;
@@ -229,6 +231,13 @@ public class MapPlacements {
     public AdminChangeDto undo(long changeId, String adminUsername) {
         AdminChange change = changeRepository.findById(changeId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Change not found"));
+        if (AdminChange.STATION_DETAILS.equals(change.getKind())) {
+            if (changeRepository.existsByUndoOf(changeId)) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "This change was undone already");
+            }
+            stationDetails.undo(change, adminUsername);
+            return AdminChangeDto.from(change, changeRepository.findFirstByUndoOf(changeId).map(AdminChange::getId).orElse(null));
+        }
         if (AdminChange.GENRE_CONTENT.equals(change.getKind())) {
             if (changeRepository.existsByUndoOf(changeId)) {
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "This change was undone already");

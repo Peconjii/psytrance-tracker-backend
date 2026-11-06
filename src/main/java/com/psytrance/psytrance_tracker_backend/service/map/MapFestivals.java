@@ -23,12 +23,21 @@ public class MapFestivals {
     private static final String RESOURCE = "map/festivals.json";
 
     private final Map<String, String> nameById;
+    // Former names (a festival renamed on the map), so artist pages that still write them find the festival
+    private final Map<String, String> idByAlias;
 
     public MapFestivals(JsonMapper jsonMapper) {
         try (InputStream in = new ClassPathResource(RESOURCE).getInputStream()) {
             List<Festival> festivals = jsonMapper.readValue(in,
                     jsonMapper.getTypeFactory().constructCollectionType(List.class, Festival.class));
             this.nameById = festivals.stream().collect(Collectors.toUnmodifiableMap(Festival::id, Festival::name));
+            Map<String, String> aliases = new HashMap<>();
+            for (Festival festival : festivals) {
+                for (String alias : festival.aliases() == null ? List.<String>of() : festival.aliases()) {
+                    aliases.put(ArtistNames.slug(alias), festival.id());
+                }
+            }
+            this.idByAlias = Map.copyOf(aliases);
         } catch (IOException e) {
             throw new UncheckedIOException("Could not read " + RESOURCE, e);
         }
@@ -36,27 +45,36 @@ public class MapFestivals {
 
     // Festivals admins added to the map (table map_festivals, see MapExtras): id -> name
     private volatile Map<String, String> added = Map.of();
+    // Festivals renamed from the panel (StationDetails): id -> new name; the old name still finds them
+    private volatile Map<String, String> renamed = Map.of();
 
     public Optional<String> name(String id) {
         if (id == null) {
             return Optional.empty();
         }
-        return Optional.ofNullable(nameById.getOrDefault(id, added.get(id)));
+        return Optional.ofNullable(renamed.getOrDefault(id, nameById.getOrDefault(id, added.get(id))));
     }
 
     /** The id of the festival with this name, ignoring case, spaces and punctuation */
     public Optional<String> idOf(String name) {
         String wanted = ArtistNames.slug(name);
-        return Stream.concat(nameById.entrySet().stream(), added.entrySet().stream())
+        return Stream.concat(renamed.entrySet().stream(), Stream.concat(nameById.entrySet().stream(), added.entrySet().stream()))
                 .filter(e -> ArtistNames.slug(e.getValue()).equals(wanted))
-                .map(Map.Entry::getKey).findFirst();
+                .map(Map.Entry::getKey).findFirst()
+                .or(() -> Optional.ofNullable(idByAlias.get(wanted)));
     }
 
     /** Every festival of the map, the added ones too: id -> name */
     public Map<String, String> all() {
         Map<String, String> all = new HashMap<>(nameById);
         all.putAll(added);
+        all.putAll(renamed);
         return all;
+    }
+
+    /** Uses these new names ({@code id -> name}) of festivals renamed from the panel */
+    public void useRenames(Map<String, String> renames) {
+        this.renamed = Map.copyOf(renames);
     }
 
     /** Uses these festivals admins added to the map ({@code id -> name}) instead of the ones used so far */
@@ -65,6 +83,6 @@ public class MapFestivals {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    record Festival(String id, String name) {
+    record Festival(String id, String name, List<String> aliases) {
     }
 }
