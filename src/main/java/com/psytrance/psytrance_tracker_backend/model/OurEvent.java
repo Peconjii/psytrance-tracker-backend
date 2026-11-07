@@ -229,6 +229,11 @@ public class OurEvent {
         return lineUp;
     }
 
+    /** The line-up written again from a timetable an admin set (EventTimetables), so the two always agree */
+    public void setLineUp(String lineUp) {
+        this.lineUp = lineUp;
+    }
+
     public String getLocationText() {
         return locationText;
     }

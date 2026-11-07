@@ -5,6 +5,8 @@ import com.psytrance.psytrance_tracker_backend.service.map.MapGenres;
 
 import com.psytrance.psytrance_tracker_backend.dto.TimetableDto;
 import com.psytrance.psytrance_tracker_backend.model.AdminChange;
+import com.psytrance.psytrance_tracker_backend.model.OurEvent;
+import com.psytrance.psytrance_tracker_backend.repository.OurEventRepository;
 import com.psytrance.psytrance_tracker_backend.model.TimetableSlot;
 import com.psytrance.psytrance_tracker_backend.repository.AdminChangeRepository;
 import com.psytrance.psytrance_tracker_backend.repository.LineupScanRepository;
@@ -17,6 +19,11 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Clock;
+import java.time.LocalDateTime;
+import java.time.format.TextStyle;
+import java.util.Comparator;
+import java.util.Locale;
+import java.util.regex.Pattern;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -43,10 +50,12 @@ public class EventTimetables {
     private final Parties parties;
     private final MapGenres mapGenres;
     private final Clock clock;
+    private final OurEventRepository ourEventRepository;
 
     public EventTimetables(TimetableSlotRepository slotRepository, LineupScanRepository lineupScanRepository,
                            AdminChangeRepository changeRepository, EventService eventService,
-                           Parties parties, MapGenres mapGenres, Clock clock) {
+                           Parties parties, MapGenres mapGenres, Clock clock, OurEventRepository ourEventRepository) {
+        this.ourEventRepository = ourEventRepository;
         this.slotRepository = slotRepository;
         this.lineupScanRepository = lineupScanRepository;
         this.changeRepository = changeRepository;
@@ -141,7 +150,62 @@ public class EventTimetables {
         replace(eventId, sets, notes, before.utcOffsetMinutes() != null ? before.utcOffsetMinutes() : venueOffset(eventId),
                 TimetableSlot.MANUAL);
         log(eventId, before, sets.size() + " sets, set by hand", adminUsername);
+        writeLineUp(eventId, sets);
         return get(eventId);
+    }
+
+    /**
+     * An event added on the site keeps its line-up (the stage cards of its form, "Line-up · crew" on its page) in step
+     * with the timetable an admin set: the line-up is written again from the sets, in the stage cards' format
+     * (see stageText.js): "Main Stage (Forest):" then "Sat 23:00-02:00 Artist (live)". A Goabase event's line-up is
+     * Goabase's and stays.
+     */
+    private void writeLineUp(long eventId, List<TimetableDto.Set> sets) {
+        if (eventId < OurEvent.ID_BASE || sets.isEmpty()) {
+            return;
+        }
+        ourEventRepository.findById(eventId - OurEvent.ID_BASE).ifPresent(event -> {
+            event.setLineUp(lineUpOf(sets, event.getLineUp()));
+            ourEventRepository.save(event);
+            eventService.refreshSoon(eventId);
+        });
+    }
+
+    static String lineUpOf(List<TimetableDto.Set> sets, String before) {
+        Map<String, List<TimetableDto.Set>> byStage = new LinkedHashMap<>();
+        for (TimetableDto.Set set : sets) {
+            byStage.computeIfAbsent(set.stage() == null ? "" : set.stage().strip(), s -> new ArrayList<>()).add(set);
+        }
+        boolean headers = byStage.size() > 1 || byStage.keySet().stream().anyMatch(s -> !s.isEmpty());
+        List<String> blocks = new ArrayList<>();
+        for (Map.Entry<String, List<TimetableDto.Set>> stage : byStage.entrySet()) {
+            List<String> lines = new ArrayList<>();
+            if (headers) {
+                lines.add((stage.getKey().isEmpty() ? "Stage" : stage.getKey().replace(":", " ")) + ":");
+            }
+            stage.getValue().stream().sorted(Comparator.comparing(TimetableDto.Set::startsAt)).forEach(set -> {
+                String artist = set.artist().strip().replaceAll("[\\r\\n:]", " ");
+                // A set written as live before stays live
+                boolean live = artist.toLowerCase(Locale.ROOT).endsWith("(live)") || wasLive(before, artist);
+                String name = live && !artist.toLowerCase(Locale.ROOT).endsWith("(live)") ? artist + " (live)" : artist;
+                lines.add(day(set.startsAt()) + " " + time(set.startsAt())
+                        + (set.endsAt() == null ? "" : "-" + time(set.endsAt())) + " " + name);
+            });
+            blocks.add(String.join("\n", lines));
+        }
+        return String.join("\n\n", blocks);
+    }
+
+    private static boolean wasLive(String before, String artist) {
+        return before != null && Pattern.compile("(?im)" + Pattern.quote(artist) + "\\s*\\(live\\)\\s*$").matcher(before).find();
+    }
+
+    private static String day(LocalDateTime at) {
+        return at.getDayOfWeek().getDisplayName(TextStyle.SHORT, Locale.ENGLISH);
+    }
+
+    private static String time(LocalDateTime at) {
+        return String.format("%02d:%02d", at.getHour(), at.getMinute());
     }
 
     /** Back to the timetable in the line-up: read again within a few minutes */

@@ -66,6 +66,8 @@ public class OurEvents {
     private final DecisionMailer decisionMailer;
     private final Clock clock;
     private final PageTrust pageTrust;
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.psytrance.psytrance_tracker_backend.repository.TimetableSlotRepository timetableSlotRepository;
     private final FestivalPages festivalPages;
 
     public OurEvents(OurEventRepository repository, UserRepository userRepository, EventService eventService,
@@ -135,6 +137,7 @@ public class OurEvents {
         requireFestivalGenre(request);
         List<String> genresBefore = event.genreIds();
         String nameBefore = event.getName();
+        String lineUpBefore = event.getLineUp();
         fill(event, request);
         repository.saveAndFlush(event);
         if (OurEvent.APPROVED.equals(event.getStatus())) {
@@ -143,7 +146,11 @@ public class OurEvents {
                 // None goes back to the genres the line-up gives
                 eventGenreAdmin.setGenres(event.eventId(), event.genreIds(), username);
             }
-            // The line-up and set times may have changed: read first in the next run
+            // The line-up and set times may have changed: read first in the next run. A timetable an admin set by hand
+            // gives way to the new line-up, so the two stay in step (the other way, see EventTimetables.writeLineUp)
+            if (!java.util.Objects.equals(lineUpBefore, event.getLineUp())) {
+                timetableSlotRepository.deleteByEventId(event.eventId());
+            }
             lineupScanRepository.rereadSoon(List.of(event.eventId()));
             changeRepository.save(new AdminChange(username, AdminChange.OUR_EVENT_EDITED,
                     event.getName() + " (#" + event.eventId() + ")", nameBefore, event.getName(), clock.instant()));
