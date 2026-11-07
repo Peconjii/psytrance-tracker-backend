@@ -115,17 +115,30 @@ public class MapGenres {
     // A map genre's exact name in brackets at the end: "Main Stage (Morning full-on)", how our event form writes it
     private static final Pattern NAMED_IN_BRACKETS = Pattern.compile("\\(([^()]+)\\)\\s*$");
 
-    /** The genre whose map name is in brackets at the end of the text ("Chai Shop (Psybient)"), if any */
+    /**
+     * The first genre whose map name is in brackets at the end of the text ("Chai Shop (Psybient / Psychill)"), if any.
+     * A stage of our event form can have up to four: "Main Stage (Forest, Goa trance)" gives forest.
+     */
     public Optional<String> genreInBrackets(String text) {
+        return genresInBrackets(text).stream().findFirst();
+    }
+
+    /** Every genre whose map name is in the brackets at the end of the text, comma separated, in their order */
+    public List<String> genresInBrackets(String text) {
         if (text == null) {
-            return Optional.empty();
+            return List.of();
         }
         Matcher m = NAMED_IN_BRACKETS.matcher(text);
         if (!m.find()) {
-            return Optional.empty();
+            return List.of();
         }
-        String name = m.group(1).strip();
-        return genres.stream().filter(genre -> genre.name().equalsIgnoreCase(name)).map(Genre::id).findFirst();
+        List<String> found = new ArrayList<>();
+        for (String part : m.group(1).split(",")) {
+            String name = part.strip();
+            genres.stream().filter(genre -> genre.name().equalsIgnoreCase(name)).map(Genre::id).findFirst()
+                    .filter(id -> !found.contains(id)).ifPresent(found::add);
+        }
+        return found;
     }
 
     /** Spellings admins merged into another artist ({@code alias slug -> artist slug}), instead of the ones used so far. */

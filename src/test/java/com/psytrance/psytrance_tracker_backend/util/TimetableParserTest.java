@@ -164,4 +164,20 @@ class TimetableParserTest {
         assertThat(LineUpParser.parse(lineUp).stream().map(com.psytrance.psytrance_tracker_backend.dto.LineUpLine::artist).filter(java.util.Objects::nonNull))
                 .containsExactly("Ajja", "Tristan", "Opening Act", "Kaya Project", "Some Friend");
     }
+
+    @Test
+    void aStageOfOurFormWithSeveralGenresIsOneStage() {
+        String lineUp = """
+                Main Stage (Forest, Goa trance):
+                Fri 23:00-01:00 Ajja
+
+                Chill (Psy-dub, Psybient / Psychill):
+                Sat 14:00 Kaya Project
+                """;
+        assertThat(parse(lineUp)).containsExactly(
+                new Slot("Main Stage (Forest, Goa trance)", "Ajja", at(23, 23, 0), at(24, 1, 0)),
+                new Slot("Chill (Psy-dub, Psybient / Psychill)", "Kaya Project", at(24, 14, 0), null));
+        assertThat(LineUpParser.parse(lineUp).stream().map(com.psytrance.psytrance_tracker_backend.dto.LineUpLine::artist).filter(java.util.Objects::nonNull))
+                .containsExactly("Ajja", "Kaya Project");
+    }
 }

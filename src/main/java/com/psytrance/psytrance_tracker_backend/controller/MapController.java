@@ -63,6 +63,12 @@ public class MapController {
     }
 
     /** Example: {@code GET /api/map/events?period=MONTH}. Events with their Map of Psy genres, soonest first. */
+    /** Every upcoming festival with a genre (kind Festival, three days or more), however far ahead */
+    @GetMapping("/festivals")
+    public List<MapEventDto> getFestivals() {
+        return mapService.findFestivals();
+    }
+
     @GetMapping("/events")
     public List<MapEventDto> getEvents(@RequestParam(defaultValue = "WEEK") MapPeriod period) {
         return mapService.findEvents(period);

@@ -42,6 +42,12 @@ public class OurEventController {
         return OurEvents.TYPES;
     }
 
+    /** Whether this account may add a festival (the other kinds need only a confirmed email) */
+    @GetMapping("/can-add-festival")
+    public java.util.Map<String, Boolean> canAddFestival(Authentication authentication) {
+        return java.util.Map.of("canAddFestival", ourEvents.canAddFestival(authentication.getName()));
+    }
+
     @GetMapping("/mine")
     public List<OurEventDto> mine(Authentication authentication) {
         return ourEvents.mine(authentication.getName());

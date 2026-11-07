@@ -77,6 +77,16 @@ public class OrganizerController {
         return organizerEditing.setTimetable(slug, eventId, change.sets(), usernameOrNull(authentication));
     }
 
+    public record EventGenres(@jakarta.validation.constraints.NotNull @jakarta.validation.constraints.Size(max = 4) List<String> genres) {
+    }
+
+    /** Example: {@code PUT /api/organizers/x/events/7/genres {"genres": ["forest", "goa"]}}: where the event's ship flies */
+    @PutMapping("/{slug}/events/{eventId}/genres")
+    public List<String> setEventGenres(@PathVariable String slug, @PathVariable long eventId,
+                                       @Valid @RequestBody EventGenres change, Authentication authentication) {
+        return organizerEditing.setEventGenres(slug, eventId, change.genres(), usernameOrNull(authentication));
+    }
+
     /** Back to the set times written in the line-up */
     @DeleteMapping("/{slug}/events/{eventId}/timetable")
     public TimetableDto handBackTimetable(@PathVariable String slug, @PathVariable long eventId, Authentication authentication) {

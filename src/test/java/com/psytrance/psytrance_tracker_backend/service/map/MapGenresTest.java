@@ -61,6 +61,10 @@ class MapGenresTest {
         assertThat(mapGenres.genreInBrackets("Garden (south african scene)")).contains("sapsy");
         assertThat(mapGenres.genreInBrackets("Main Stage (by night)")).isEmpty();
         assertThat(mapGenres.genreInBrackets("Forest Stage")).isEmpty();
+        // A stage of our event form with several genres: the first one for its sets, all of them in order
+        assertThat(mapGenres.genreInBrackets("Main Stage (Forest, Goa trance)")).contains("forest");
+        assertThat(mapGenres.genresInBrackets("Main Stage (Forest, Goa trance, Forest)")).containsExactly("forest", "goa");
+        assertThat(mapGenres.genresInBrackets("Main Stage (by night)")).isEmpty();
     }
 
     @Test

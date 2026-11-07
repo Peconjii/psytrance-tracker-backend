@@ -180,6 +180,46 @@ class OurEventIntegrationTest extends IntegrationTest {
     }
 
     // An account whose email is confirmed (the link itself is tested in EmailVerificationIntegrationTest)
+    @Test
+    void onlyOrganizersFestivalsAndAdminsAddAFestival() throws Exception {
+        String token = verifiedUser();
+        mockMvc.perform(get("/api/our-events/can-add-festival").header("Authorization", bearer(token)))
+                .andExpect(jsonPath("$.canAddFestival").value(false));
+        mockMvc.perform(post("/api/our-events").header("Authorization", bearer(token)).contentType(MediaType.APPLICATION_JSON)
+                        .content(event("Big One").replace("\"Open Air\"", "\"Festival\"")))
+                .andExpect(status().isForbidden());
+        // A party they can add, as before
+        mockMvc.perform(post("/api/our-events").header("Authorization", bearer(token)).contentType(MediaType.APPLICATION_JSON)
+                        .content(event("Small One")))
+                .andExpect(status().isCreated());
+        mockMvc.perform(get("/api/our-events/can-add-festival").header("Authorization", bearer(adminToken)))
+                .andExpect(jsonPath("$.canAddFestival").value(true));
+    }
+
+    @Test
+    void aFestivalStaysOnTheMapWhateverThePeriodAndNeedsAGenre() throws Exception {
+        // Three days, two months ahead: outside the week and the month, but on the map as a festival
+        java.time.LocalDate start = java.time.LocalDate.now().plusDays(60);
+        String festival = """
+                {"name": "Long Forest Gathering %s", "eventType": "Festival", "startsAt": "%sT18:00:00", "endsAt": "%sT12:00:00",
+                 "timeZone": "Europe/Lisbon", "country": "Portugal", "town": "Sintra", "lat": 38.8, "lon": -9.4,
+                 "lineUp": "Ground Crew %s", "organizerName": "Test Crew %s", "genres": %s}
+                """;
+        mockMvc.perform(post("/api/our-events").header("Authorization", bearer(adminToken)).contentType(MediaType.APPLICATION_JSON)
+                        .content(festival.formatted(unique, start, start.plusDays(2), unique, unique, "[]")))
+                .andExpect(status().isBadRequest());
+        String body = mockMvc.perform(post("/api/our-events").header("Authorization", bearer(adminToken)).contentType(MediaType.APPLICATION_JSON)
+                        .content(festival.formatted(unique, start, start.plusDays(2), unique, unique, "[\"forest\"]")))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        long eventId = ((Number) com.jayway.jsonpath.JsonPath.read(body, "$.eventId")).longValue();
+
+        mockMvc.perform(get("/api/map/festivals"))
+                .andExpect(jsonPath("$[?(@.id == " + eventId + ")].festival").value(hasItem(true)));
+        mockMvc.perform(get("/api/map/events").param("period", "MONTH"))
+                .andExpect(jsonPath("$[*].id").value(not(hasItem((int) eventId))));
+    }
+
     private String verifiedUser() throws Exception {
         String username = uniqueUsername();
         register(username, PASSWORD);

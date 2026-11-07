@@ -33,12 +33,14 @@ public class MapService {
     private final LineupScanRepository lineupScanRepository;
     private final FeaturedEventRepository featuredEventRepository;
     private final Clock clock;
+    private final FestivalStations festivalStations;
 
     public MapService(EventService eventService,
                       EventGenreRepository eventGenreRepository,
                       LineupScanRepository lineupScanRepository,
                       FeaturedEventRepository featuredEventRepository,
-                      Clock clock) {
+                      Clock clock, FestivalStations festivalStations) {
+        this.festivalStations = festivalStations;
         this.eventService = eventService;
         this.eventGenreRepository = eventGenreRepository;
         this.lineupScanRepository = lineupScanRepository;
@@ -48,7 +50,20 @@ public class MapService {
 
     /** Events running at some point from today until the end of the period, soonest first. */
     public List<MapEventDto> findEvents(MapPeriod period) {
-        List<EventDto> events = eventsIn(period);
+        return dtos(eventsIn(period));
+    }
+
+    /**
+     * Every upcoming festival with a known genre, however far ahead (until it is over): festivals are few, so they
+     * stay on the map whatever period the ship console shows. One without a genre waits in the harbour like any event.
+     */
+    public List<MapEventDto> findFestivals() {
+        return dtos(eventService.findUpcoming().stream().filter(FestivalStations::isFestival).toList()).stream()
+                .filter(e -> !e.genres().isEmpty())
+                .toList();
+    }
+
+    private List<MapEventDto> dtos(List<EventDto> events) {
         if (events.isEmpty()) {
             return List.of();
         }
@@ -60,9 +75,10 @@ public class MapService {
         Set<Long> read = lineupScanRepository.findAllById(ids).stream()
                 .map(LineupScan::getEventId)
                 .collect(Collectors.toSet());
+        Map<Long, String> stations = festivalStations.stationsOf(events);
         return events.stream()
                 .map(event -> MapEventDto.from(event, read.contains(event.id()), genres.getOrDefault(event.id(), List.of()),
-                        featured.get(event.id())))
+                        featured.get(event.id()), FestivalStations.isFestival(event), stations.get(event.id())))
                 .toList();
     }
 

@@ -1,6 +1,7 @@
 package com.psytrance.psytrance_tracker_backend.service.pages;
 
 import com.psytrance.psytrance_tracker_backend.service.events.EventService;
+import com.psytrance.psytrance_tracker_backend.service.events.EventGenreAdmin;
 import com.psytrance.psytrance_tracker_backend.service.events.EventTimetables;
 
 import com.psytrance.psytrance_tracker_backend.config.Admins;
@@ -41,6 +42,7 @@ public class OrganizerEditing {
     private final OrganizerOwnerRepository ownerRepository;
     private final EventSummaryRepository summaryRepository;
     private final UserRepository userRepository;
+    private final EventGenreAdmin eventGenreAdmin;
     private final AdminChangeRepository changeRepository;
     private final EventService eventService;
     private final EventTimetables eventTimetables;
@@ -51,7 +53,8 @@ public class OrganizerEditing {
     public OrganizerEditing(OrganizerRepository organizerRepository, OrganizerOwnerRepository ownerRepository,
                             EventSummaryRepository summaryRepository, UserRepository userRepository,
                             AdminChangeRepository changeRepository, EventService eventService,
-                            EventTimetables eventTimetables, Admins admins, Clock clock, PageTrust pageTrust) {
+                            EventTimetables eventTimetables, Admins admins, Clock clock, PageTrust pageTrust, EventGenreAdmin eventGenreAdmin) {
+        this.eventGenreAdmin = eventGenreAdmin;
         this.organizerRepository = organizerRepository;
         this.ownerRepository = ownerRepository;
         this.summaryRepository = summaryRepository;
@@ -92,6 +95,20 @@ public class OrganizerEditing {
     public TimetableDto setTimetable(String slug, long eventId, List<TimetableDto.Set> sets, String username) {
         requireOwnEvent(slug, eventId, username);
         return eventTimetables.setManual(eventId, sets, username);
+    }
+
+    /**
+     * The genres of one of the organizer's own events, set by hand: where its ship flies ("ship by the main stage").
+     * Up to four; none hands it back to the genres read from the line-up. Logged like an admin's change.
+     */
+    @Transactional
+    public List<String> setEventGenres(String slug, long eventId, List<String> genres, String username) {
+        requireOwnEvent(slug, eventId, username);
+        if (genres.size() > 4) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "At most 4 genres decide where the ship flies");
+        }
+        eventGenreAdmin.setGenres(eventId, genres, username);
+        return genres;
     }
 
     public TimetableDto handBackTimetable(String slug, long eventId, String username) {

@@ -91,6 +91,22 @@ class OrganizerOwnerIntegrationTest extends IntegrationTest {
         mockMvc.perform(put("/api/organizers/{slug}/events/{id}/timetable", organizerSlug, otherEvent)
                         .header("Authorization", bearer(ownerToken)).contentType(MediaType.APPLICATION_JSON).content(sets))
                 .andExpect(status().isForbidden());
+
+        // "Ship by the main stage": the owner sets where their own event's ship flies, not another organizer's
+        mockMvc.perform(put("/api/organizers/{slug}/events/{id}/genres", organizerSlug, theirEvent)
+                        .header("Authorization", bearer(ownerToken)).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"genres\": [\"forest\", \"goa\"]}"))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/api/map/genres").param("ids", String.valueOf(theirEvent)))
+                .andExpect(status().isOk());
+        mockMvc.perform(put("/api/organizers/{slug}/events/{id}/genres", organizerSlug, otherEvent)
+                        .header("Authorization", bearer(ownerToken)).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"genres\": [\"forest\"]}"))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(put("/api/organizers/{slug}/events/{id}/genres", organizerSlug, theirEvent)
+                        .header("Authorization", bearer(ownerToken)).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"genres\": [\"forest\", \"goa\", \"dark\", \"twilight\", \"night\"]}"))
+                .andExpect(status().isBadRequest());
     }
 
     @Test

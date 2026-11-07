@@ -1,5 +1,7 @@
 package com.psytrance.psytrance_tracker_backend.service.events;
 
+import com.psytrance.psytrance_tracker_backend.service.pages.FestivalPages;
+
 import com.psytrance.psytrance_tracker_backend.service.mail.DecisionMailer;
 import com.psytrance.psytrance_tracker_backend.service.map.MapGenres;
 import com.psytrance.psytrance_tracker_backend.service.pages.OrganizerEditing;
@@ -64,11 +66,13 @@ public class OurEvents {
     private final DecisionMailer decisionMailer;
     private final Clock clock;
     private final PageTrust pageTrust;
+    private final FestivalPages festivalPages;
 
     public OurEvents(OurEventRepository repository, UserRepository userRepository, EventService eventService,
                      EventGenreAdmin eventGenreAdmin, MapGenres mapGenres, OrganizerEditing organizerEditing,
                      Admins admins, AdminChangeRepository changeRepository,
-                     LineupScanRepository lineupScanRepository, DecisionMailer decisionMailer, Clock clock, PageTrust pageTrust) {
+                     LineupScanRepository lineupScanRepository, DecisionMailer decisionMailer, Clock clock, PageTrust pageTrust, FestivalPages festivalPages) {
+        this.festivalPages = festivalPages;
         this.repository = repository;
         this.userRepository = userRepository;
         this.eventService = eventService;
@@ -100,6 +104,8 @@ public class OurEvents {
                     "You have " + MAX_PENDING + " events waiting for an admin already. Wait until they are checked.");
         }
 
+        requireFestivalRight(request.eventType(), null, username);
+        requireFestivalGenre(request);
         OurEvent event = new OurEvent(user, clock.instant());
         fill(event, request);
         repository.save(event);
@@ -125,6 +131,8 @@ public class OurEvents {
         if (OurEvent.REJECTED.equals(event.getStatus())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "A rejected event can't be changed; add it again");
         }
+        requireFestivalRight(request.eventType(), event.getEventType(), username);
+        requireFestivalGenre(request);
         List<String> genresBefore = event.genreIds();
         String nameBefore = event.getName();
         fill(event, request);
@@ -278,6 +286,32 @@ public class OurEvents {
         return name == null ? Set.of() : Arrays.stream(name.toLowerCase(Locale.ROOT).split("[^\\p{L}]+"))
                 .filter(word -> word.length() >= 4)
                 .collect(Collectors.toSet());
+    }
+
+    /**
+     * Anyone with a confirmed email adds a party, but a festival only an organizer or festival with a claimed page,
+     * an editor or an admin: festivals are big, and the map shouldn't fill with ones nobody runs. An event that already
+     * was a festival stays editable by its sender.
+     */
+    public boolean canAddFestival(String username) {
+        return username != null && (admins.isEditor(username) || !organizerEditing.ownedBy(username).isEmpty()
+                || !festivalPages.ownedBy(username).isEmpty());
+    }
+
+    // A festival with no genre would have no place on the map: it needs at least one
+    private static void requireFestivalGenre(OurEventRequest request) {
+        boolean festival = request.eventType() != null && "Festival".equalsIgnoreCase(request.eventType().strip());
+        if (festival && (request.genres() == null || request.genres().isEmpty())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Pick at least one genre for the festival");
+        }
+    }
+
+    private void requireFestivalRight(String type, String typeBefore, String username) {
+        boolean festival = type != null && "Festival".equalsIgnoreCase(type.strip());
+        if (festival && !"Festival".equals(typeBefore) && !canAddFestival(username)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Only organizers and festivals with a claimed page can add a festival. Claim your page first, or pick another kind.");
+        }
     }
 
     private String eventType(String type) {

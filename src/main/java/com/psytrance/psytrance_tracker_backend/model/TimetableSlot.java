@@ -28,7 +28,7 @@ public class TimetableSlot {
     @Column(name = "position", nullable = false)
     private int position;
 
-    @Column(name = "stage", length = 100)
+    @Column(name = "stage", length = 200)
     private String stage;
 
     @Column(name = "artist_name", nullable = false, length = 100)
