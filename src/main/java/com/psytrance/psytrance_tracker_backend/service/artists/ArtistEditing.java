@@ -300,6 +300,11 @@ public class ArtistEditing {
     }
 
     // The artist, for an admin or the artist's owner; guests get 401 and other users 403
+    /** The artist's name, for the artist (its owner) or an admin; guests get 401, others 403 (see ArtistDiscography) */
+    public String requireEditorName(String slug, String username) {
+        return requireEditor(slug, username).getName();
+    }
+
     private Artist requireEditor(String slug, String username) {
         if (username == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Log in first");

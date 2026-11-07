@@ -72,4 +72,23 @@ class MapGenresTest {
         List<String> ids = mapGenres.all().stream().map(MapGenres.Genre::id).toList();
         assertThat(ids).containsAll(MapGenres.aliasGenreIds());
     }
+
+    @Test
+    void anAddedGenreIsAGenreAndItsNameAndWordsAreFoundInStageHeaders() {
+        MapGenres genres = new MapGenres(JsonMapper.builder().build());
+        genres.useAddedGenres(List.of(new MapGenres.Genre("hypnotic-psy", "Hypnotic psy", "dark", List.of(), 1500, 1500)),
+                Map.of("Hypnotic psy", "hypnotic-psy", "hypno", "hypnotic-psy", "forest", "hypnotic-psy"));
+
+        assertThat(genres.isGenre("hypnotic-psy")).isTrue();
+        assertThat(genres.genresIn("HYPNOTIC PSY / FOREST stage")).containsExactly("hypnotic-psy", "forest");
+        assertThat(genres.genresIn("Hypno floor")).containsExactly("hypnotic-psy");
+        // A word a genre of the map file uses keeps pointing there
+        assertThat(genres.genresIn("Forest")).containsExactly("forest");
+        assertThat(genres.genresInBrackets("Main Stage (Hypnotic psy, Forest)")).containsExactly("hypnotic-psy", "forest");
+
+        // Taken off again
+        genres.useAddedGenres(List.of(), Map.of());
+        assertThat(genres.isGenre("hypnotic-psy")).isFalse();
+        assertThat(genres.genresIn("Hypno floor")).isEmpty();
+    }
 }

@@ -29,6 +29,8 @@ public class AdminChange {
     /** The tracks or festivals on an artist's profile were written; after lists them (no undo) */
     public static final String ARTIST_TRACKS = "ARTIST_TRACKS";
     public static final String ARTIST_FESTIVALS = "ARTIST_FESTIVALS";
+    /** An artist's country, first year and albums, written by the artist or an admin; after the albums (no undo) */
+    public static final String ARTIST_ALBUMS = "ARTIST_ALBUMS";
     /** An account was linked to an artist as its owner, or unlinked; before/after are the usernames (no undo) */
     public static final String ARTIST_OWNER = "ARTIST_OWNER";
     /** An approved request changed the name on an artist's page; before/after are the names (no undo) */

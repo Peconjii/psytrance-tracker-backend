@@ -17,7 +17,7 @@ public final class ArtistListsRequest {
     /** Most tracks a profile shows */
     public static final int MAX_TRACKS = 6;
     /** Most festivals a profile lists */
-    public static final int MAX_FESTIVALS = 20;
+    public static final int MAX_FESTIVALS = 40;
 
     private ArtistListsRequest() {
     }

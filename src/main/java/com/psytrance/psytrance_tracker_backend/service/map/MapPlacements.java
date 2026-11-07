@@ -96,6 +96,11 @@ public class MapPlacements {
         mapGenres.usePlacements(placements());
     }
 
+    /** After a genre was added or taken off the map: the artists are matched to the genres again */
+    public void refresh() {
+        mapGenres.usePlacements(placements());
+    }
+
     /** {@code genreId -> artist names}, in the order satellites orbit each star */
     public Map<String, List<String>> placements() {
         Map<String, List<String>> byGenre = new LinkedHashMap<>();

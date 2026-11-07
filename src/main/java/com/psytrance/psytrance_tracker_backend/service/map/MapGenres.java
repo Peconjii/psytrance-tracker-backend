@@ -69,7 +69,12 @@ public class MapGenres {
     // Everything that isn't a letter or digit becomes a space: "Hi-Tech" -> "hi tech", "GOA//PSY" -> "goa psy"
     private static final Pattern SEPARATORS = Pattern.compile("[^\\p{L}\\p{N}]+");
 
-    private final List<Genre> genres;
+    private final List<Genre> fileGenres;
+    // The file's genres plus the ones admins added (AddedGenres); replaced as a whole, volatile like the placements
+    private volatile List<Genre> genres;
+    // Words naming the added genres in stage headers ("hypnotic psy" -> hypnotic-psy), next to ALIASES
+    private volatile Map<String, String> addedAliases = Map.of();
+    private volatile List<String> phrasesLongestFirst = PHRASES_LONGEST_FIRST;
     // Replaced as a whole when admins move artists (see MapPlacements); volatile so the artist index's
     // background thread sees the new placements right away
     private volatile Map<String, List<String>> genreIdsByArtistSlug;
@@ -83,7 +88,8 @@ public class MapGenres {
 
     // For tests: a small hand-made map
     public MapGenres(List<Genre> genres) {
-        this.genres = List.copyOf(genres);
+        this.fileGenres = List.copyOf(genres);
+        this.genres = this.fileGenres;
         Map<String, List<String>> artistsByGenre = new HashMap<>();
         for (Genre genre : genres) {
             artistsByGenre.put(genre.id(), genre.artists());
@@ -94,6 +100,26 @@ public class MapGenres {
     /** The genres of the map as genres.json has them; their artist lists are the starting placements only. */
     public List<Genre> all() {
         return genres;
+    }
+
+    /**
+     * The genres admins added from the panel, after the file's, and the words that name them (lower case, words
+     * split by spaces). A word one of the file's genres uses already keeps pointing there.
+     */
+    public void useAddedGenres(List<Genre> added, Map<String, String> aliases) {
+        List<Genre> all = new ArrayList<>(fileGenres);
+        added.stream().filter(genre -> fileGenres.stream().noneMatch(g -> g.id().equals(genre.id()))).forEach(all::add);
+        Map<String, String> extra = new HashMap<>();
+        aliases.forEach((phrase, id) -> {
+            String clean = SEPARATORS.matcher(phrase.toLowerCase(Locale.ROOT)).replaceAll(" ").trim();
+            if (!clean.isEmpty() && !ALIASES.containsKey(clean)) extra.put(clean, id);
+        });
+        this.genres = List.copyOf(all);
+        this.addedAliases = Map.copyOf(extra);
+        List<String> phrases = new ArrayList<>(ALIASES.keySet());
+        phrases.addAll(extra.keySet());
+        phrases.sort(Comparator.comparingInt(String::length).reversed());
+        this.phrasesLongestFirst = List.copyOf(phrases);
     }
 
     /** Places artists in genres ({@code genreId -> artist names}) instead of the placements used so far. */
@@ -170,11 +196,12 @@ public class MapGenres {
         // Padded with spaces so every phrase can be searched as " phrase "
         StringBuilder rest = new StringBuilder(" " + SEPARATORS.matcher(text.toLowerCase(Locale.ROOT)).replaceAll(" ").trim() + " ");
         Map<Integer, String> found = new TreeMap<>();
-        for (String phrase : PHRASES_LONGEST_FIRST) {
+        Map<String, String> added = addedAliases;
+        for (String phrase : phrasesLongestFirst) {
             String padded = " " + phrase + " ";
             int at;
             while ((at = rest.indexOf(padded)) >= 0) {
-                found.put(at, ALIASES.get(phrase));
+                found.put(at, ALIASES.getOrDefault(phrase, added.get(phrase)));
                 // Blank it out so a shorter phrase can't match the same words again ("dark prog" then "prog")
                 rest.replace(at + 1, at + padded.length() - 1, " ".repeat(phrase.length()));
             }
