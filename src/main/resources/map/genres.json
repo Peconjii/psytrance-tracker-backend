@@ -1216,7 +1216,8 @@
         "Polyphonia",
         "Archaic",
         "Mokiru",
-        "Vox Fabri"
+        "Vox Fabri",
+        "Atriohm"
       ],
       "production": {
         "bass": "Fast, distorted rolling bass",
@@ -1286,6 +1287,11 @@
           "artist": "Xenomorph",
           "title": "Killer State",
           "youtube": "nKo2PEVMtb4"
+        },
+        {
+          "artist": "Atriohm",
+          "title": "paranormal amplifier",
+          "youtube": "yQPNIS3NkfM"
         }
       ]
     },
@@ -1596,7 +1602,6 @@
         "Dark Whisper",
         "Xikwri Neyrra",
         "Biomechanimal",
-        "Atriohm",
         "Hammerer",
         "Highko"
       ],
@@ -1648,11 +1653,6 @@
           "artist": "Hammerer",
           "title": "Gianny For Example",
           "youtube": "sMrYhDq5Bv0"
-        },
-        {
-          "artist": "Atriohm",
-          "title": "paranormal amplifier",
-          "youtube": "yQPNIS3NkfM"
         },
         {
           "artist": "Biomechanimal",
