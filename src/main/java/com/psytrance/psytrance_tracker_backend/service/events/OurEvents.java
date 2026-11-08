@@ -1,5 +1,6 @@
 package com.psytrance.psytrance_tracker_backend.service.events;
 
+import com.psytrance.psytrance_tracker_backend.client.GoabasePartyDetails;
 import com.psytrance.psytrance_tracker_backend.service.pages.FestivalPages;
 
 import com.psytrance.psytrance_tracker_backend.service.mail.DecisionMailer;
@@ -69,12 +70,17 @@ public class OurEvents {
     @org.springframework.beans.factory.annotation.Autowired
     private com.psytrance.psytrance_tracker_backend.repository.TimetableSlotRepository timetableSlotRepository;
     private final FestivalPages festivalPages;
+    private final Parties parties;
+    private final EventHiding eventHiding;
 
     public OurEvents(OurEventRepository repository, UserRepository userRepository, EventService eventService,
                      EventGenreAdmin eventGenreAdmin, MapGenres mapGenres, OrganizerEditing organizerEditing,
                      Admins admins, AdminChangeRepository changeRepository,
-                     LineupScanRepository lineupScanRepository, DecisionMailer decisionMailer, Clock clock, PageTrust pageTrust, FestivalPages festivalPages) {
+                     LineupScanRepository lineupScanRepository, DecisionMailer decisionMailer, Clock clock, PageTrust pageTrust, FestivalPages festivalPages,
+                     Parties parties, EventHiding eventHiding) {
         this.festivalPages = festivalPages;
+        this.parties = parties;
+        this.eventHiding = eventHiding;
         this.repository = repository;
         this.userRepository = userRepository;
         this.eventService = eventService;
@@ -203,9 +209,10 @@ public class OurEvents {
         if (!Set.of(OurEvent.PENDING, OurEvent.APPROVED, OurEvent.REJECTED).contains(wanted)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown status: " + status);
         }
-        List<EventDto> goabase = OurEvent.PENDING.equals(wanted)
-                ? eventService.findUpcoming().stream().filter(e -> !OurEvent.isOurs(e.id())).toList()
-                : List.of();
+        // Waiting and approved events both get their possible Goabase twins (hidden ones are off the list already)
+        List<EventDto> goabase = OurEvent.REJECTED.equals(wanted)
+                ? List.of()
+                : eventService.findUpcoming().stream().filter(e -> !OurEvent.isOurs(e.id())).toList();
         return repository.findByStatusWithSubmitter(wanted).stream()
                 .map(event -> OurEventDto.of(event, event.getSubmittedBy().getUsername(), duplicates(event, goabase)))
                 .toList();
@@ -218,6 +225,42 @@ public class OurEvents {
             approve(event, adminUsername);
             tell(event, adminUsername, true, "It is on the map now; its line-up is read within half an hour.", null);
         }
+        return OurEventDto.of(event, event.getSubmittedBy().getUsername(), List.of());
+    }
+
+    /**
+     * The same party added here and on Goabase: ours stays, the Goabase one is hidden. When ours has no line-up yet,
+     * Goabase's is copied into it first; a line-up ours already has is never touched.
+     */
+    @Transactional
+    public OurEventDto keepInsteadOf(long id, long goabaseId, String adminUsername) {
+        OurEvent event = find(id);
+        if (OurEvent.REJECTED.equals(event.getStatus())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "This event was rejected; there is nothing to keep");
+        }
+        if (OurEvent.isOurs(goabaseId)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only a Goabase event can be hidden as the duplicate");
+        }
+        if (event.getLineUp() == null || event.getLineUp().isBlank()) {
+            // Read before hiding: a hidden event isn't fetched any more
+            String theirs = parties.fetchParty(goabaseId)
+                    .map(GoabasePartyDetails::textLineUp)
+                    .map(String::strip)
+                    .filter(text -> !text.isEmpty())
+                    .orElse(null);
+            if (theirs != null) {
+                event.setLineUp(theirs.length() > 10_000 ? theirs.substring(0, 10_000) : theirs);
+                repository.saveAndFlush(event);
+                if (OurEvent.APPROVED.equals(event.getStatus())) {
+                    eventService.refreshSoon(event.eventId());
+                    lineupScanRepository.rereadSoon(List.of(event.eventId()));
+                }
+                changeRepository.save(new AdminChange(adminUsername, AdminChange.OUR_EVENT_EDITED,
+                        event.getName() + " (#" + event.eventId() + ")", "no line-up",
+                        "line-up copied from Goabase #" + goabaseId, clock.instant()));
+            }
+        }
+        eventHiding.hide(goabaseId, "Duplicate of " + event.getName() + " (#" + event.eventId() + ")", adminUsername);
         return OurEventDto.of(event, event.getSubmittedBy().getUsername(), List.of());
     }
 

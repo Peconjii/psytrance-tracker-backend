@@ -41,6 +41,12 @@ public class AdminOurEventController {
         return ourEvents.approve(id, admins.requireEditor(authentication));
     }
 
+    /** {@code POST /api/admin/our-events/12/keep-instead-of/118658}: ours stays, that Goabase duplicate is hidden */
+    @PostMapping("/{id}/keep-instead-of/{goabaseId}")
+    public OurEventDto keepInsteadOf(@PathVariable long id, @PathVariable long goabaseId, Authentication authentication) {
+        return ourEvents.keepInsteadOf(id, goabaseId, admins.requireEditor(authentication));
+    }
+
     public record Rejection(@Size(max = 500) String reason) {
     }
 

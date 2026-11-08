@@ -220,6 +220,50 @@ class OurEventIntegrationTest extends IntegrationTest {
                 .andExpect(jsonPath("$[*].id").value(not(hasItem((int) eventId))));
     }
 
+    @Test
+    void keepingOursHidesTheGoabaseTwinAndOnlyFillsAnEmptyLineUp() throws Exception {
+        when(goabaseClient.fetchParty(goabaseTwin)).thenReturn(java.util.Optional.of(new com.psytrance.psytrance_tracker_backend.client.GoabasePartyDetails(
+                goabaseTwin, "Forest Gathering " + unique, day + "T22:00:00+01:00", null, "Open Air", "Scheduled", "Portugal",
+                "Sintra", 38.8, -9.4, null, null, null, "Goabase Act " + unique, null, null, null, null, null)));
+        String token = verifiedUser();
+
+        // Ours has no line-up: Goabase's is copied in, and the twin is hidden from the lists
+        long empty = added(token, event("Forest Gathering " + unique + " Night").replace(
+                "\"lineUp\": \"Ground Crew %s\\nAnother Act %s\"".formatted(unique, unique), "\"lineUp\": \"\""));
+        mockMvc.perform(get("/api/admin/our-events").header("Authorization", bearer(adminToken)))
+                .andExpect(jsonPath("$[?(@.id == %d)].possibleDuplicates[0].id".formatted(empty)).value(hasItem((int) goabaseTwin)));
+        mockMvc.perform(post("/api/admin/our-events/{id}/keep-instead-of/{twin}", empty, goabaseTwin)
+                        .header("Authorization", bearer(adminToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.lineUp").value("Goabase Act " + unique));
+        mockMvc.perform(get("/api/events").param("search", "Forest Gathering " + unique))
+                .andExpect(jsonPath("$.content[*].id").value(not(hasItem((int) goabaseTwin))));
+
+        // Ours has a line-up of its own: it is left exactly as it was
+        long full = added(token, event("Forest Gathering " + unique + " Day"));
+        mockMvc.perform(post("/api/admin/our-events/{id}/keep-instead-of/{twin}", full, goabaseTwin)
+                        .header("Authorization", bearer(adminToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.lineUp").value("Ground Crew " + unique + "\nAnother Act " + unique));
+
+        // Only editors and admins, and only a Goabase event can be the one hidden
+        mockMvc.perform(post("/api/admin/our-events/{id}/keep-instead-of/{twin}", full, goabaseTwin)
+                        .header("Authorization", bearer(token)))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(post("/api/admin/our-events/{id}/keep-instead-of/{twin}", full, 1_000_000_000L + empty)
+                        .header("Authorization", bearer(adminToken)))
+                .andExpect(status().isBadRequest());
+    }
+
+    // An event sent by this account; its id in our-events
+    private long added(String token, String json) throws Exception {
+        String body = mockMvc.perform(post("/api/our-events").header("Authorization", bearer(token))
+                        .contentType(MediaType.APPLICATION_JSON).content(json))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        return ((Number) JsonPath.read(body, "$.id")).longValue();
+    }
+
     private String verifiedUser() throws Exception {
         String username = uniqueUsername();
         register(username, PASSWORD);
