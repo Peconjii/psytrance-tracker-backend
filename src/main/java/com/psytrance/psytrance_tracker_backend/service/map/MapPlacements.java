@@ -9,6 +9,7 @@ import com.psytrance.psytrance_tracker_backend.model.AdminChange;
 import com.psytrance.psytrance_tracker_backend.model.Artist;
 import com.psytrance.psytrance_tracker_backend.model.MapArtistGenre;
 import com.psytrance.psytrance_tracker_backend.repository.AdminChangeRepository;
+import com.psytrance.psytrance_tracker_backend.repository.ArtistAliasRepository;
 import com.psytrance.psytrance_tracker_backend.repository.ArtistEventRepository;
 import com.psytrance.psytrance_tracker_backend.repository.ArtistRepository;
 import com.psytrance.psytrance_tracker_backend.repository.LineupScanRepository;
@@ -53,6 +54,7 @@ public class MapPlacements {
     private final ArtistCleanup artistCleanup;
     private final GalaxyContent galaxyContent;
     private final StationDetails stationDetails;
+    private final ArtistAliasRepository aliasRepository;
     private final Clock clock;
 
     public MapPlacements(MapArtistGenreRepository placementRepository,
@@ -64,8 +66,9 @@ public class MapPlacements {
                          EventGenreAdmin eventGenreAdmin,
                          ArtistCleanup artistCleanup,
                          GalaxyContent galaxyContent,
-                         Clock clock, StationDetails stationDetails) {
+                         Clock clock, StationDetails stationDetails, ArtistAliasRepository aliasRepository) {
         this.stationDetails = stationDetails;
+        this.aliasRepository = aliasRepository;
         this.placementRepository = placementRepository;
         this.changeRepository = changeRepository;
         this.artistRepository = artistRepository;
@@ -94,6 +97,30 @@ public class MapPlacements {
             placementRepository.saveAll(seed);
         }
         mapGenres.usePlacements(placements());
+        giveGalaxyArtistsPages();
+    }
+
+    /**
+     * Every artist on the galaxy gets an artist page, also the ones no line-up has named yet, so they can be
+     * opened, followed, claimed and edited like the artists from the line-ups. Names that are an alias of an
+     * artist (merged in the admin) are left to that artist.
+     */
+    void giveGalaxyArtistsPages() {
+        Map<String, String> nameBySlug = new LinkedHashMap<>();
+        for (MapArtistGenre row : placementRepository.findAllByOrderByIdAsc()) {
+            String slug = ArtistNames.slug(row.getArtistName());
+            if (!slug.isBlank()) {
+                nameBySlug.putIfAbsent(slug, row.getArtistName().strip());
+            }
+        }
+        nameBySlug.keySet().removeIf(aliasRepository::existsById);
+        Set<String> known = artistRepository.findBySlugIn(nameBySlug.keySet()).stream()
+                .map(Artist::getSlug).collect(Collectors.toSet());
+        nameBySlug.forEach((slug, name) -> {
+            if (!known.contains(slug)) {
+                artistRepository.save(new Artist(slug, name));
+            }
+        });
     }
 
     /** After a genre was added or taken off the map: the artists are matched to the genres again */
@@ -210,6 +237,7 @@ public class MapPlacements {
             changeRepository.save(new AdminChange(adminUsername, AdminChange.ARTIST_GENRES, mapName,
                     String.join(", ", before), String.join(", ", wanted), clock.instant(), undoOf));
             mapGenres.usePlacements(placements());
+            giveGalaxyArtistsPages();
             rereadEventsWith(slug);
         }
         return new AdminArtistDto(mapName, slug, wanted, !wanted.isEmpty());
