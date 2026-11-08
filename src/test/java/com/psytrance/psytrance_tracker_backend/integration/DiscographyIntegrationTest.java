@@ -101,4 +101,18 @@ class DiscographyIntegrationTest extends IntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON).content(sets.replace("https://", "javascript:")))
                 .andExpect(status().isBadRequest());
     }
+
+    @Test
+    void anArtistWithASetButNoLineUpGetsAPage() throws Exception {
+        String name = "Set Only " + uniqueLetters();
+        String slug = "set-only-" + name.substring("Set Only ".length()).toLowerCase();
+        mockMvc.perform(get("/api/artists/{slug}", slug)).andExpect(status().isNotFound());
+        mockMvc.perform(put("/api/festivals/sets").param("id", "naturaiz").header("Authorization", bearer(adminToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("[{\"artist\": \"%s\", \"year\": 2025, \"url\": \"https://www.youtube.com/watch?v=dQw4w9WgXcQ\"}]".formatted(name)))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/api/artists/{slug}", slug))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value(name));
+    }
 }

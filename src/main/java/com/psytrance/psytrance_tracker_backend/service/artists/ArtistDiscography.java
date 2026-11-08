@@ -253,6 +253,7 @@ public class ArtistDiscography {
         for (FestivalSet s : clean) {
             String url = s.url() == null || s.url().isBlank() ? null : s.url().strip();
             insertSet(ArtistNames.slug(s.artist()), festival, s.year(), url);
+            givePage(s.artist().strip());
         }
         changeRepository.save(new AdminChange(username, AdminChange.ARTIST_FESTIVALS, "Festival: " + festival, null,
                 summary(clean.stream().map(s -> s.year() == null ? s.artist() : s.artist() + " " + s.year()).toList()),
@@ -261,6 +262,18 @@ public class ArtistDiscography {
     }
 
     // ---- Helpers ----
+
+    // An artist who played a set here gets an artist page, if they have none yet (and the name isn't merged into another)
+    private void givePage(String name) {
+        String slug = ArtistNames.slug(name);
+        jdbc.sql("""
+                        insert into artists (slug, name)
+                        select :slug, :name
+                        where not exists (select 1 from artists where slug = :slug)
+                          and not exists (select 1 from artist_aliases where alias_slug = :slug)
+                        """)
+                .param("slug", slug).param("name", name).update();
+    }
 
     private void insertSet(String slug, String festival, Integer year, String url) {
         Integer next = jdbc.sql("select coalesce(max(position) + 1, 0) from artist_festivals where artist_slug = ?").param(slug)
