@@ -3,13 +3,22 @@ package com.psytrance.psytrance_tracker_backend.service.map;
 import com.psytrance.psytrance_tracker_backend.model.AdminChange;
 import com.psytrance.psytrance_tracker_backend.repository.AdminChangeRepository;
 import com.psytrance.psytrance_tracker_backend.util.ArtistNames;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.context.event.EventListener;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import tools.jackson.databind.json.JsonMapper;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
+import java.util.ArrayList;
+import java.util.Map;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -41,6 +50,10 @@ public class MapExtras {
     private static final double GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
     // How much further out each next marker goes (times the square root of how many came before)
     private static final double SPIRAL_STEP = 28;
+    // Room a new marker keeps from every festival, label and star of the map (the same as the frontend's spacing test)
+    private static final int MIN_GAP = 80;
+    // How many spots further along the spiral a new marker may try before it settles for the first one
+    private static final int MAX_TRIES = 200;
 
     private final JdbcClient jdbc;
     private final MapGenres mapGenres;
@@ -48,9 +61,12 @@ public class MapExtras {
     private final MapFestivals mapFestivals;
     private final AdminChangeRepository changeRepository;
     private final Clock clock;
+    // Where the festivals and labels of festivals.json and labels.json stand: new markers keep away from them too
+    private final List<int[]> bundledSpots;
 
     public MapExtras(JdbcClient jdbc, MapGenres mapGenres, MapLabels mapLabels, MapFestivals mapFestivals,
-                     AdminChangeRepository changeRepository, Clock clock) {
+                     AdminChangeRepository changeRepository, Clock clock, JsonMapper jsonMapper) {
+        this.bundledSpots = bundledSpots(jsonMapper);
         this.jdbc = jdbc;
         this.mapGenres = mapGenres;
         this.mapLabels = mapLabels;
@@ -91,7 +107,7 @@ public class MapExtras {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "There is a label called " + clean + " on the map already");
         }
         List<String> ids = genres(genres);
-        int[] at = position(ids, count("map_labels"), LABEL_DISTANCE, 0);
+        int[] at = freeSpot(ids, count("map_labels"), LABEL_DISTANCE, 0);
         jdbc.sql("""
                         insert into map_labels (name, country, since, genres, x, y, created_by, created_at)
                         values (:name, :country, :since, :genres, :x, :y, :by, :at)
@@ -118,7 +134,7 @@ public class MapExtras {
         }
         List<String> ids = genres(genres);
         // Turned half a step from the labels, so a label and a festival of the same genres don't meet
-        int[] at = position(ids, count("map_festivals"), FESTIVAL_DISTANCE, GOLDEN_ANGLE / 2);
+        int[] at = freeSpot(ids, count("map_festivals"), FESTIVAL_DISTANCE, GOLDEN_ANGLE / 2);
         String text = blankToNull(description);
         if (text != null && text.length() > 1000) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The description is 1000 characters at most");
@@ -172,6 +188,44 @@ public class MapExtras {
     }
 
     // ---- Helpers ----
+
+    /**
+     * The first spot along the marker's spiral that keeps {@link #MIN_GAP} from every festival, label and star on the
+     * map, so markers never stand on each other. If the stars are so crowded that none is free, the first spot.
+     */
+    public int[] freeSpot(List<String> genreIds, int before, int distance, double turn) {
+        List<int[]> taken = new ArrayList<>(bundledSpots);
+        Extras added = all();
+        added.labels().forEach(l -> taken.add(new int[]{l.x(), l.y()}));
+        added.festivals().forEach(f -> taken.add(new int[]{f.x(), f.y()}));
+        mapGenres.all().stream().filter(g -> g.x() != null && g.y() != null).forEach(g -> taken.add(new int[]{g.x(), g.y()}));
+        for (int step = 0; step < MAX_TRIES; step++) {
+            int[] at = position(genreIds, before + step, distance, turn);
+            if (taken.stream().allMatch(t -> Math.hypot(t[0] - at[0], t[1] - at[1]) >= MIN_GAP)) {
+                return at;
+            }
+        }
+        return position(genreIds, before, distance, turn);
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record Spot(int x, int y) {
+    }
+
+    private static List<int[]> bundledSpots(JsonMapper jsonMapper) {
+        List<int[]> spots = new ArrayList<>();
+        try (InputStream festivals = new ClassPathResource("map/festivals.json").getInputStream();
+             InputStream labels = new ClassPathResource("map/labels.json").getInputStream()) {
+            List<Spot> fs = jsonMapper.readValue(festivals, jsonMapper.getTypeFactory().constructCollectionType(List.class, Spot.class));
+            Map<String, Spot> ls = jsonMapper.readValue(labels,
+                    jsonMapper.getTypeFactory().constructMapType(Map.class, String.class, Spot.class));
+            fs.forEach(f -> spots.add(new int[]{f.x(), f.y()}));
+            ls.values().forEach(l -> spots.add(new int[]{l.x(), l.y()}));
+        } catch (IOException e) {
+            throw new UncheckedIOException("Could not read the map's festivals and labels", e);
+        }
+        return List.copyOf(spots);
+    }
 
     // Around the middle of the genres' stars, turned by the golden angle for each marker added before
     private int[] position(List<String> genreIds, int before, int distance, double turn) {

@@ -25,9 +25,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 class LoginRequiredIntegrationTest extends IntegrationTest {
 
-    // A guest logs in, makes an account, gets a new password, confirms the email and sends feedback
+    // A guest logs in, makes an account, gets a new password, confirms the email, sends feedback and clicks an
+    // event's ticket button (counted for the admin only)
     private static final Set<String> OPEN_TO_GUESTS = Set.of("/api/auth/login", "/api/auth/register",
-            "/api/auth/forgot-password", "/api/auth/reset-password", "/api/auth/verify-email", "/api/auth/google", "/api/feedback");
+            "/api/auth/forgot-password", "/api/auth/reset-password", "/api/auth/verify-email", "/api/auth/google", "/api/feedback",
+            "/api/events/{id}/ticket-click");
 
     @Autowired
     @Qualifier("requestMappingHandlerMapping")
