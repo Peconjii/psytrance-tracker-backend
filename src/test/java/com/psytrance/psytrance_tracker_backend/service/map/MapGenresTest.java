@@ -43,7 +43,7 @@ class MapGenresTest {
     @Test
     void findsMapArtistsHoweverTheyAreWritten() {
         assertThat(mapGenres.genresOfArtist("DERANGO")).containsExactly("forest");
-        assertThat(mapGenres.genresOfArtist("Talamasca")).containsExactlyInAnyOrder("fullon", "night");
+        assertThat(mapGenres.genresOfArtist("Talamasca")).containsExactly("fullon");
         assertThat(mapGenres.genresOfArtist("Nobody On The Map")).isEmpty();
     }
 

@@ -219,7 +219,10 @@
   {
     "id": "jungle",
     "name": "Jungle Festival",
-    "aliases": ["Jungle Island"],
+    "aliases": [
+      "Jungle Island"
+    ],
+    "youtube": "Jungle Island festival",
     "country": "Serbia",
     "description": "Three-day festival run by the Novi Sad collective Jungle Island, from forest and Goa to progressive, psy-tech, psydub and chill, held in nature around Novi Sad (a Danube island, later the Fruška Gora forest).",
     "x": 2080,
@@ -244,6 +247,67 @@
       "hitech",
       "dark",
       "psycore"
+    ]
+  },
+  {
+    "id": "velocity",
+    "name": "Velocity – Valley of the Freaks",
+    "country": "Germany",
+    "description": "54 hours of nonstop hi-tech, dark psy and psycore in Germany. One long, fast run through the darkest corner of the galaxy.",
+    "x": 1990,
+    "y": 2390,
+    "genres": [
+      "hitech",
+      "dark",
+      "psycore"
+    ]
+  },
+  {
+    "id": "camakavum",
+    "name": "Camakavum Festival",
+    "country": "Germany",
+    "description": "Late-summer festival at Ziegelei Benzin in northern Germany, with hi-tech, dark psy and psycore on the main floor, plus forest, alternative and chill-out stages.",
+    "x": 1730,
+    "y": 1870,
+    "genres": [
+      "hitech",
+      "dark",
+      "psycore",
+      "forest"
+    ]
+  },
+  {
+    "id": "pachamama",
+    "name": "Pachamama Festival",
+    "country": "Brazil",
+    "description": "Dark psy festival from São Paulo, held every October at Nazaré Paulista. One of the main homes of the Brazilian dark scene.",
+    "x": 1650,
+    "y": 2060,
+    "genres": [
+      "dark"
+    ]
+  },
+  {
+    "id": "spiritgust",
+    "name": "Spiritgust Festival",
+    "country": "Thailand",
+    "description": "Four days of hi-tech on the beach in Nakhon Si Thammarat, southern Thailand, every January.",
+    "x": 2260,
+    "y": 1960,
+    "genres": [
+      "hitech"
+    ]
+  },
+  {
+    "id": "unmadavara",
+    "name": "Unmada Vara",
+    "country": "India",
+    "description": "Gathering curated by the Indian label Madmuzik, mixing psycore, dark psy and experimental music with art and performance. It has also travelled to Tokyo.",
+    "x": 1700,
+    "y": 2440,
+    "genres": [
+      "psycore",
+      "dark"
     ]
   }
 ]
