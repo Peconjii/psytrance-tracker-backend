@@ -29,8 +29,10 @@ public record FeedbackDto(
     /**
      * A track or artist suggestion the inbox can add with one click (FeedbackSuggestions); null for other feedback.
      * {@code genres}: where it can go, the likeliest first; empty when nowhere yet (then it is fixed by hand).
+     * {@code addedTo}: for a track, the genre whose key tracks already have it (added from here or by hand), else null.
      */
-    public record Accept(String type, String artist, String title, Integer year, String youtube, java.util.List<String> genres) {
+    public record Accept(String type, String artist, String title, Integer year, String youtube, java.util.List<String> genres,
+                         String addedTo) {
     }
 
     public static FeedbackDto from(Feedback feedback, String username, String replyTo, Accept accept) {

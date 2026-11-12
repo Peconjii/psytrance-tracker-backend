@@ -175,6 +175,8 @@ class FeedbackIntegrationTest extends IntegrationTest {
         List<Integer> ids = JsonPath.read(list, "$[?(@.accept.title == '" + title + "')].id");
         List<List<String>> genres = JsonPath.read(list, "$[?(@.accept.title == '" + title + "')].accept.genres");
         assertThat(genres.get(0)).first().isEqualTo("psyrock");
+        List<String> before = JsonPath.read(list, "$[?(@.accept.title == '" + title + "')].accept.addedTo");
+        assertThat(before).containsOnlyNulls();
 
         mockMvc.perform(post("/api/admin/feedback/{id}/accept", ids.get(0)).header("Authorization", bearer(adminToken))
                         .contentType(MediaType.APPLICATION_JSON).content("{\"genreId\": \"psyrock\"}"))
@@ -184,7 +186,11 @@ class FeedbackIntegrationTest extends IntegrationTest {
         List<String> youtube = JsonPath.read(content, "$.psyrock.tracks[?(@.title == '" + title + "')].youtube");
         assertThat(youtube).containsExactly("53N99Nim6WE");
 
-        // A second click doesn't add it twice
+        // The inbox now says where it went instead of offering the button again, and a second click doesn't add it twice
+        String after = mockMvc.perform(get("/api/admin/feedback").header("Authorization", bearer(adminToken)))
+                .andReturn().getResponse().getContentAsString();
+        List<String> addedTo = JsonPath.read(after, "$[?(@.accept.title == '" + title + "')].accept.addedTo");
+        assertThat(addedTo).containsExactly("psyrock");
         mockMvc.perform(post("/api/admin/feedback/{id}/accept", ids.get(0)).header("Authorization", bearer(adminToken)))
                 .andExpect(status().isConflict());
     }

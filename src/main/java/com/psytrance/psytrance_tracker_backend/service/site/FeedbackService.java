@@ -131,7 +131,7 @@ public class FeedbackService {
             List<String> genres = new ArrayList<>();
             if (s.type().equals("EVENT_GENRE")) {
                 genres.addAll(List.of(s.genreId().split(",")));
-                return new FeedbackDto.Accept(s.type(), null, s.title(), null, null, genres);
+                return new FeedbackDto.Accept(s.type(), null, s.title(), null, null, genres, null);
             }
             if (s.type().equals("TRACK")) {
                 List<String> artistGenres = placements.genresOf(s.artist());
@@ -142,8 +142,40 @@ public class FeedbackService {
             } else if (!placements.genresOf(s.artist()).contains(s.genreId())) {
                 genres.add(s.genreId());
             }
-            return new FeedbackDto.Accept(s.type(), s.artist(), s.title(), s.year(), s.youtube(), genres);
+            String addedTo = s.type().equals("TRACK") ? genreWithTrack(s.artist(), s.title(), s.youtube(), genres) : null;
+            return new FeedbackDto.Accept(s.type(), s.artist(), s.title(), s.year(), s.youtube(), genres, addedTo);
         });
+    }
+
+    /**
+     * The genre whose key tracks already have this track: the same YouTube video, or the same artist and title (also
+     * when the title was written as "Artist - Title"). The artist's genres are looked at first, then all the others,
+     * so the inbox shows "already added" instead of an Add button that can only fail.
+     */
+    private String genreWithTrack(String artist, String title, String youtube, List<String> likely) {
+        List<String> order = new ArrayList<>(likely);
+        mapGenres.all().stream().map(MapGenres.Genre::id).filter(g -> !order.contains(g)).forEach(order::add);
+        String wanted = bareTitle(artist, title);
+        // One read of every genre's content (a genre without any yet has no row, so it has no tracks either)
+        var contentByGenre = galaxyContent.all();
+        for (String genreId : order) {
+            var content = contentByGenre.get(genreId);
+            if (content == null) continue;
+            boolean there = content.tracks().stream().anyMatch(t ->
+                    (youtube != null && youtube.equals(t.youtube()))
+                            || (t.artist().equalsIgnoreCase(artist) && bareTitle(t.artist(), t.title()).equalsIgnoreCase(wanted)));
+            if (there) {
+                return genreId;
+            }
+        }
+        return null;
+    }
+
+    // "Krapul - Final Ode" written for Krapul is the title "Final Ode"
+    private static String bareTitle(String artist, String title) {
+        String clean = title == null ? "" : title.strip();
+        String prefix = artist == null ? "" : artist.strip() + " - ";
+        return clean.regionMatches(true, 0, prefix, 0, prefix.length()) ? clean.substring(prefix.length()).strip() : clean;
     }
 
     /**
@@ -171,6 +203,10 @@ public class FeedbackService {
         }
         if (accept.type().equals("TRACK")) {
             GalaxyContent.Content content = galaxyContent.get(genre);
+            if (accept.addedTo() != null) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "\"" + accept.title() + "\" is already a key track of "
+                        + mapGenres.genre(accept.addedTo()).map(MapGenres.Genre::name).orElse(accept.addedTo()));
+            }
             boolean there = content.tracks().stream().anyMatch(t -> t.artist().equalsIgnoreCase(accept.artist())
                     && t.title().equalsIgnoreCase(accept.title()));
             if (there) {
