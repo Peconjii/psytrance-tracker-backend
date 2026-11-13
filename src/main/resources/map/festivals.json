@@ -34,8 +34,8 @@
     "country": "Hungary",
     "since": 2004,
     "description": "A week-long festival in the Hungarian countryside that grew out of a 1999 solar eclipse gathering. Known for its Dome (chill and bass) and a main stage that runs from progressive to dark.",
-    "x": 1846,
-    "y": 1365,
+    "x": 1880,
+    "y": 1060,
     "genres": [
       "prog",
       "fullon",
@@ -207,8 +207,8 @@
     "name": "Free Earth Festival",
     "country": "Greece",
     "description": "Beach festival near Asprovalta, east of Thessaloniki in northern Greece, covering goa, full-on, dark and forest psytrance.",
-    "x": 1586,
-    "y": 1495,
+    "x": 1846,
+    "y": 1365,
     "genres": [
       "goa",
       "fullon",
@@ -307,6 +307,18 @@
     "y": 2440,
     "genres": [
       "psycore",
+      "dark"
+    ]
+  },
+  {
+    "id": "psyland",
+    "name": "Psyland Festival",
+    "country": "Greece",
+    "description": "Small eco-friendly festival in a forest at Platania, Vergina, in northern Greece: pure forest and dark psytrance.",
+    "x": 1690,
+    "y": 1790,
+    "genres": [
+      "forest",
       "dark"
     ]
   }
