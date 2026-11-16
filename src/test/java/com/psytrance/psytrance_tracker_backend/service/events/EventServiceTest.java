@@ -78,6 +78,21 @@ class EventServiceTest {
     }
 
     @Test
+    void leavesEndedEventsOutUnlessAskedByIds() {
+        when(goabaseClient.fetchAllParties()).thenReturn(List.of(
+                party(1, "Ended last week", "2026-09-14", null),
+                party(2, "Ends today", "2026-09-21", "2026-09-23"),
+                party(3, "Next month", "2026-10-01", null)));
+
+        List<EventDto> events = eventService.findEvents(NO_FILTERS, 0, 24).content();
+        List<EventDto> byIds = eventService.findEvents(
+                new EventSearch(null, null, null, EventTimeline.ALL, java.util.Set.of(1L), null), 0, 24).content();
+
+        assertThat(events).extracting(EventDto::nameParty).containsExactly("Ends today", "Next month");
+        assertThat(byIds).extracting(EventDto::nameParty).containsExactly("Ended last week");
+    }
+
+    @Test
     void sortsEventsByStartDate() {
         when(goabaseClient.fetchAllParties()).thenReturn(List.of(
                 party(1, "Later", "2026-12-01", null),
