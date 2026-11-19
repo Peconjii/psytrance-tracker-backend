@@ -30,6 +30,52 @@ public class User {
     // The Google account this account signs in with ("Sign in with Google"); null for password-only accounts
     @Column(name = "google_id", unique = true)
     private String googleId;
+    // Festival Buddies (opt-in, off by default): shown to other visible people going to the same event
+    @JsonIgnore
+    @Column(name = "buddy_visible")
+    private boolean buddyVisible;
+    // ISO country code like "RS"; optional
+    @JsonIgnore
+    private String country;
+    // A short line such as "Looking for a ride from Belgrade"; optional
+    @JsonIgnore
+    @Column(name = "buddy_note")
+    private String buddyNote;
+    // Instagram handle without "@"; optional, the only contact the site passes on
+    @JsonIgnore
+    private String instagram;
+
+    public boolean isBuddyVisible() {
+        return buddyVisible;
+    }
+
+    public void setBuddyVisible(boolean buddyVisible) {
+        this.buddyVisible = buddyVisible;
+    }
+
+    public String getCountry() {
+        return country;
+    }
+
+    public void setCountry(String country) {
+        this.country = country;
+    }
+
+    public String getBuddyNote() {
+        return buddyNote;
+    }
+
+    public void setBuddyNote(String buddyNote) {
+        this.buddyNote = buddyNote;
+    }
+
+    public String getInstagram() {
+        return instagram;
+    }
+
+    public void setInstagram(String instagram) {
+        this.instagram = instagram;
+    }
 
     public String getUsername() {
         return username;

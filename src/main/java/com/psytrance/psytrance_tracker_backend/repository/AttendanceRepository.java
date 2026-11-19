@@ -55,6 +55,10 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
     @Query("select a from Attendance a join fetch a.user where a.eventId in :eventIds")
     List<Attendance> findWithUserByEventIdIn(@Param("eventIds") Collection<Long> eventIds);
 
+    /** People going to the event who turned Festival Buddies on. */
+    @Query("select a.user from Attendance a where a.eventId = :eventId and a.user.buddyVisible = true")
+    List<com.psytrance.psytrance_tracker_backend.model.User> findVisibleBuddies(@Param("eventId") Long eventId);
+
     interface EventCount {
         Long getEventId();
 

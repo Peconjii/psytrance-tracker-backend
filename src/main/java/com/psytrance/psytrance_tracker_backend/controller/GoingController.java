@@ -1,6 +1,8 @@
 package com.psytrance.psytrance_tracker_backend.controller;
 
+import com.psytrance.psytrance_tracker_backend.dto.Buddies;
 import com.psytrance.psytrance_tracker_backend.dto.GoingStatus;
+import com.psytrance.psytrance_tracker_backend.service.events.BuddyService;
 import com.psytrance.psytrance_tracker_backend.service.events.AttendanceService;
 import jakarta.validation.constraints.Size;
 import org.springframework.security.core.Authentication;
@@ -23,9 +25,17 @@ import static com.psytrance.psytrance_tracker_backend.util.Logins.usernameOrNull
 public class GoingController {
 
     private final AttendanceService attendanceService;
+    private final BuddyService buddyService;
 
-    public GoingController(AttendanceService attendanceService) {
+    public GoingController(AttendanceService attendanceService, BuddyService buddyService) {
         this.attendanceService = attendanceService;
+        this.buddyService = buddyService;
+    }
+
+    /** Festival Buddies of the event. Guests get only the count; see {@link Buddies}. */
+    @GetMapping("/{id}/buddies")
+    public Buddies getBuddies(@PathVariable long id, Authentication authentication) {
+        return buddyService.of(id, usernameOrNull(authentication));
     }
 
     /**

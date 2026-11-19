@@ -1,7 +1,9 @@
 package com.psytrance.psytrance_tracker_backend.controller;
 
 import com.psytrance.psytrance_tracker_backend.dto.ArtistSummary;
+import com.psytrance.psytrance_tracker_backend.dto.BuddySettings;
 import com.psytrance.psytrance_tracker_backend.dto.GoingEvent;
+import com.psytrance.psytrance_tracker_backend.service.events.BuddyService;
 import com.psytrance.psytrance_tracker_backend.dto.OrganizerDto;
 import com.psytrance.psytrance_tracker_backend.dto.ReminderSettings;
 import com.psytrance.psytrance_tracker_backend.service.artists.ArtistEditing;
@@ -31,9 +33,12 @@ public class MeController {
     private final OrganizerEditing organizerEditing;
     private final LabelPages labelPages;
     private final FestivalPages festivalPages;
+    private final BuddyService buddyService;
 
     public MeController(AttendanceService attendanceService, UserService userService, ArtistEditing artistEditing,
-                        OrganizerEditing organizerEditing, LabelPages labelPages, FestivalPages festivalPages) {
+                        OrganizerEditing organizerEditing, LabelPages labelPages, FestivalPages festivalPages,
+                        BuddyService buddyService) {
+        this.buddyService = buddyService;
         this.attendanceService = attendanceService;
         this.userService = userService;
         this.artistEditing = artistEditing;
@@ -83,5 +88,16 @@ public class MeController {
     @PutMapping("/weekly-digest")
     public ReminderSettings setWeeklyDigest(@Valid @RequestBody ReminderSettings settings, Authentication authentication) {
         return new ReminderSettings(userService.setWeeklyDigest(authentication.getName(), settings.enabled()));
+    }
+
+    /** Festival Buddies settings (off by default). */
+    @GetMapping("/buddy")
+    public BuddySettings getBuddySettings(Authentication authentication) {
+        return buddyService.settingsOf(authentication.getName());
+    }
+
+    @PutMapping("/buddy")
+    public BuddySettings setBuddySettings(@Valid @RequestBody BuddySettings settings, Authentication authentication) {
+        return buddyService.save(authentication.getName(), settings);
     }
 }
