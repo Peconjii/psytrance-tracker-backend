@@ -43,7 +43,7 @@ class EventApiIntegrationTest extends IntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content.length()").value(1))
                 .andExpect(jsonPath("$.content[0].nameParty").value("Boom"))
-                .andExpect(jsonPath("$.content[0].dateStart").value("2026-10-01"));
+                .andExpect(jsonPath("$.content[0].dateStart").value("2099-10-01"));
     }
 
     @Test
@@ -144,7 +144,7 @@ class EventApiIntegrationTest extends IntegrationTest {
     }
 
     private static GoabaseParty party(long id, String name, String country) {
-        return new GoabaseParty(id, name, "2026-10-01T22:00:00+02:00", null, "Festival", "Scheduled",
+        return new GoabaseParty(id, name, "2099-10-01T22:00:00+02:00", null, "Festival", "Scheduled",
                 country, "Town", 45.0, 19.0, null, null);
     }
 }

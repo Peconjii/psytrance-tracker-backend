@@ -67,8 +67,10 @@ public class EventService {
     }
 
     public List<EventDto> findEventsWithCoordinates() {
+        LocalDate today = LocalDate.now(clock);
         return allEvents().stream()
                 .filter(EventDto::hasCoordinates)
+                .filter(event -> event.lastDay() == null || !event.lastDay().isBefore(today))
                 .toList();
     }
 
@@ -159,6 +161,7 @@ public class EventService {
                 && (search.eventIds() == null || search.eventIds().contains(event.id()))
                 && matchesGenre(event, search.genre())
                 && matchesTimeline(event, search, today)
+                && notOver(event, search, today)
                 && isNear(event, search.near());
     }
 
@@ -191,6 +194,12 @@ public class EventService {
                 || genre.equalsIgnoreCase("All")
                 || containsIgnoreCase(event.nameType(), genre)
                 || containsIgnoreCase(event.nameParty(), genre);
+    }
+
+    // Goabase only lists events that haven't ended, but events added on our site stay approved after they end;
+    // asking for specific ids (saved, going) still gets them, the rest of the list leaves them to Past events
+    static boolean notOver(EventDto event, EventSearch search, LocalDate today) {
+        return search.eventIds() != null || event.lastDay() == null || !event.lastDay().isBefore(today);
     }
 
     private static boolean matchesTimeline(EventDto event, EventSearch search, LocalDate today) {
