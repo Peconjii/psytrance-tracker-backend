@@ -12,8 +12,8 @@ public record CrewView(String code, String name, long eventId, String eventName,
     public record Member(String username, boolean captain, boolean me) {
     }
 
-    /** {@code bringer} is null until someone says "I'll bring it" */
-    public record Item(long id, String name, String bringer, boolean mine) {
+    /** {@code bringer} is null until someone says "I'll bring it"; {@code canDelete}: you added it, bring it or are captain */
+    public record Item(long id, String name, String bringer, boolean mine, boolean canDelete) {
     }
 
     /**

@@ -2,6 +2,8 @@ package com.psytrance.psytrance_tracker_backend.integration;
 
 import com.psytrance.psytrance_tracker_backend.client.GoabaseParty;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 
@@ -21,6 +23,9 @@ class BuddyIntegrationTest extends IntegrationTest {
     private static final AtomicLong NEXT_EVENT_ID = new AtomicLong(710_000);
 
     private final List<GoabaseParty> goabaseParties = new ArrayList<>();
+
+    @Autowired
+    private JdbcClient jdbc;
 
     @Test
     void buddiesAreOffByDefaultAndGuestsOnlySeeTheCount() throws Exception {
@@ -90,6 +95,23 @@ class BuddyIntegrationTest extends IntegrationTest {
                 .andExpect(status().isUnauthorized());
     }
 
+    @Test
+    void anUnconfirmedEmailSeesOnlyTheCount() throws Exception {
+        long eventId = eventOnGoabase("Boom");
+        String alice = newUserToken();
+        going(alice, eventId);
+        visible(alice, "{\"visible\":true,\"instagram\":\"alice.psy\"}");
+        String fresh = newUserToken(false);
+        going(fresh, eventId);
+        visible(fresh, "{\"visible\":true}");
+
+        mockMvc.perform(get("/api/events/{id}/buddies", eventId).header(HttpHeaders.AUTHORIZATION, bearer(fresh)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.canSee").value(false))
+                .andExpect(jsonPath("$.reason").value("verify-email"))
+                .andExpect(jsonPath("$.buddies").isEmpty());
+    }
+
     private void going(String token, long eventId) throws Exception {
         mockMvc.perform(put("/api/events/{id}/going", eventId).header(HttpHeaders.AUTHORIZATION, bearer(token)))
                 .andExpect(status().isOk());
@@ -110,8 +132,13 @@ class BuddyIntegrationTest extends IntegrationTest {
     }
 
     private String newUserToken() throws Exception {
+        return newUserToken(true);
+    }
+
+    private String newUserToken(boolean confirmedEmail) throws Exception {
         String username = uniqueUsername();
         register(username, "password123");
+        jdbc.sql("update app_user set email_verified = :v where username = :u").param("v", confirmedEmail).param("u", username).update();
         return login(username, "password123");
     }
 }

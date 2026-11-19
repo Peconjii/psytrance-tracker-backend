@@ -97,121 +97,144 @@ public class CrewService {
                 .query(Long.class).single();
         addMember(crewId, me.getId());
         attendanceService.markGoing(username, eventId);
-        return view(code, username);
+        return view(crew(code), me);
     }
 
     /** What the link shows: enough to decide whether to join */
     @Transactional(readOnly = true)
     public CrewView.Summary preview(String code, String username) {
         Crew crew = crew(code);
-        User me = user(username);
-        return summary(crew, isMember(crew.id(), me.getId()));
+        long me = user(username).getId();
+        return new CrewView.Summary(crew.code(), crew.name(), crew.eventId(), crew.eventName(), crew.startsOn(),
+                memberCount(crew.id()), isMember(crew.id(), me));
     }
 
     @Transactional
     public CrewView join(String code, String username) {
         Crew crew = crew(code);
         User me = user(username);
-        if (!isMember(crew.id(), me.getId())) {
-            if (memberCount(crew.id()) >= MAX_MEMBERS) {
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "This crew is full (" + MAX_MEMBERS + ")");
-            }
-            addMember(crew.id(), me.getId());
-            attendanceService.markGoing(username, crew.eventId());
+        if (isMember(crew.id(), me.getId())) {
+            return view(crew, me);
         }
-        return view(code, username);
+        if (crew.endsOn().isBefore(today())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "This event is over");
+        }
+        if (wasRemoved(crew.id(), me.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "The captain removed you from this crew");
+        }
+        // Locks the crew row, so two people joining at once can't both take the last place
+        jdbc.sql("select id from crew where id = :id for update").param("id", crew.id()).query(Long.class).single();
+        if (memberCount(crew.id()) >= MAX_MEMBERS) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "This crew is full (" + MAX_MEMBERS + ")");
+        }
+        addMember(crew.id(), me.getId());
+        attendanceService.markGoing(username, crew.eventId());
+        return view(crew, me);
     }
 
-    /** The captain removes someone, or anyone leaves (their own name). When the captain leaves, the crew is gone. */
+    /**
+     * The captain removes someone (who then can't come back with the same link), or anyone leaves (their own name).
+     * When the captain leaves, the crew is gone.
+     */
     @Transactional
     public void remove(String code, String username, String who) {
-        Crew crew = crewOfMember(code, username);
-        User me = user(username);
-        boolean self = me.getUsername().equalsIgnoreCase(who);
-        if (!self && me.getId() != crew.ownerId()) {
+        Aboard a = aboard(code, username);
+        boolean self = a.me().getUsername().equalsIgnoreCase(who);
+        if (!self && !a.captain()) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the captain can remove people");
         }
-        if (self && me.getId() == crew.ownerId()) {
-            jdbc.sql("delete from crew where id = :id").param("id", crew.id()).update();
+        if (self && a.captain()) {
+            jdbc.sql("delete from crew where id = :id").param("id", a.crew().id()).update();
             return;
         }
-        User other = userRepository.findByUsername(who)
+        long other = self ? a.me().getId() : userRepository.findByUsername(who).map(User::getId)
+                .filter(id -> isMember(a.crew().id(), id))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Not in this crew"));
-        jdbc.sql("delete from crew_member where crew_id = :c and user_id = :u").param("c", crew.id()).param("u", other.getId()).update();
+        jdbc.sql("delete from crew_member where crew_id = :c and user_id = :u").param("c", a.crew().id()).param("u", other).update();
         // What they would bring goes back to "nobody yet"
         jdbc.sql("update crew_item set bringer_id = null where crew_id = :c and bringer_id = :u")
-                .param("c", crew.id()).param("u", other.getId()).update();
+                .param("c", a.crew().id()).param("u", other).update();
+        if (!self) {
+            jdbc.sql("insert into crew_removed (crew_id, user_id) values (:c, :u) on conflict do nothing")
+                    .param("c", a.crew().id()).param("u", other).update();
+        }
     }
 
     /** A new link; the old one stops working. Captain only. */
     @Transactional
     public CrewView newLink(String code, String username) {
-        Crew crew = captainCrew(code, username);
+        Aboard a = captainAboard(code, username);
         String fresh = newCode();
-        jdbc.sql("update crew set code = :n where id = :id").param("n", fresh).param("id", crew.id()).update();
-        return view(fresh, username);
+        jdbc.sql("update crew set code = :n where id = :id").param("n", fresh).param("id", a.crew().id()).update();
+        return view(crew(fresh), a.me());
     }
 
     @Transactional
     public CrewView setCampSpot(String code, String username, String spot) {
-        Crew crew = crewOfMember(code, username);
-        jdbc.sql("update crew set camp_spot = :s where id = :id").param("s", blankToNull(spot)).param("id", crew.id()).update();
-        return view(code, username);
+        Aboard a = aboard(code, username);
+        jdbc.sql("update crew set camp_spot = :s where id = :id").param("s", blankToNull(spot)).param("id", a.crew().id()).update();
+        return view(crew(code), a.me());
     }
 
     // --- packing list ---
 
     @Transactional
     public CrewView addItem(String code, String username, String name) {
-        Crew crew = crewOfMember(code, username);
+        Aboard a = aboard(code, username);
         String clean = name.strip();
-        Integer count = jdbc.sql("select count(*) from crew_item where crew_id = :c").param("c", crew.id()).query(Integer.class).single();
+        Integer count = jdbc.sql("select count(*) from crew_item where crew_id = :c").param("c", a.crew().id()).query(Integer.class).single();
         if (count >= MAX_ITEMS) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The packing list is full");
         }
-        Integer same = jdbc.sql("select count(*) from crew_item where crew_id = :c and lower(name) = lower(:n)")
-                .param("c", crew.id()).param("n", clean).query(Integer.class).single();
-        if (same == 0) {
-            jdbc.sql("insert into crew_item (crew_id, name, added_by, created_at) values (:c, :n, :u, :now)")
-                    .param("c", crew.id()).param("n", clean).param("u", user(username).getId())
-                    .param("now", Timestamp.from(clock.instant())).update();
-        }
-        return view(code, username);
+        // The same thing twice (any case) stays one line
+        jdbc.sql("""
+                        insert into crew_item (crew_id, name, added_by, created_at)
+                        select :c, :n, :u, :now where not exists
+                            (select 1 from crew_item where crew_id = :c and lower(name) = lower(:n))""")
+                .param("c", a.crew().id()).param("n", clean).param("u", a.me().getId())
+                .param("now", Timestamp.from(clock.instant())).update();
+        return view(a);
     }
 
-    /** "I'll bring it", or take it back. Someone else's item can't be taken over. */
+    /** "I'll bring it", or take it back. Someone else's item can't be taken over, even by two clicks at once. */
     @Transactional
     public CrewView toggleBring(String code, String username, long itemId) {
-        Crew crew = crewOfMember(code, username);
-        long me = user(username).getId();
-        // A one-element list holding the bringer (null = nobody yet); empty when there is no such item
-        List<Long> found = jdbc.sql("select bringer_id from crew_item where id = :i and crew_id = :c")
-                .param("i", itemId).param("c", crew.id()).query((rs, n) -> (Long) rs.getObject(1)).list();
-        if (found.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No such item");
+        Aboard a = aboard(code, username);
+        long me = a.me().getId();
+        // One statement, so two people pressing at the same moment can't both get it
+        int changed = jdbc.sql("""
+                        update crew_item set bringer_id = case when bringer_id is null then :me end
+                        where id = :i and crew_id = :c and (bringer_id is null or bringer_id = :me)""")
+                .param("me", me).param("i", itemId).param("c", a.crew().id()).update();
+        if (changed == 0) {
+            boolean exists = jdbc.sql("select count(*) from crew_item where id = :i and crew_id = :c")
+                    .param("i", itemId).param("c", a.crew().id()).query(Integer.class).single() > 0;
+            throw exists ? new ResponseStatusException(HttpStatus.CONFLICT, "Someone already brings it")
+                    : new ResponseStatusException(HttpStatus.NOT_FOUND, "No such item");
         }
-        Long current = found.get(0);
-        if (current != null && current != me) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Someone already brings it");
-        }
-        jdbc.sql("update crew_item set bringer_id = :b where id = :i")
-                .param("b", current == null ? me : null).param("i", itemId).update();
-        return view(code, username);
+        return view(a);
     }
 
+    /** Whoever added it, whoever brings it, or the captain */
     @Transactional
     public CrewView deleteItem(String code, String username, long itemId) {
-        Crew crew = crewOfMember(code, username);
-        jdbc.sql("delete from crew_item where id = :i and crew_id = :c").param("i", itemId).param("c", crew.id()).update();
-        return view(code, username);
+        Aboard a = aboard(code, username);
+        int gone = jdbc.sql("""
+                        delete from crew_item where id = :i and crew_id = :c
+                        and (:captain or added_by = :me or bringer_id = :me)""")
+                .param("i", itemId).param("c", a.crew().id()).param("captain", a.captain()).param("me", a.me().getId()).update();
+        if (gone == 0) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only who added it, who brings it or the captain can delete it");
+        }
+        return view(a);
     }
 
     // --- must-see sets ---
 
     @Transactional
     public CrewView pick(String code, String username, String artist, LocalDateTime startsAt) {
-        Crew crew = crewOfMember(code, username);
-        boolean inTimetable = timetableSlotRepository.findByEventIdOrderByPositionAsc(crew.eventId()).stream()
+        Aboard a = aboard(code, username);
+        boolean inTimetable = timetableSlotRepository.findByEventIdOrderByPositionAsc(a.crew().eventId()).stream()
                 .anyMatch(s -> s.getArtistName().equals(artist) && s.getStartsAt().equals(startsAt));
         if (!inTimetable) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No such set in the timetable");
@@ -219,26 +242,32 @@ public class CrewService {
         jdbc.sql("""
                         insert into crew_pick (crew_id, artist_name, starts_at, added_by) values (:c, :a, :s, :u)
                         on conflict (crew_id, artist_name, starts_at) do nothing""")
-                .param("c", crew.id()).param("a", artist).param("s", Timestamp.valueOf(startsAt))
-                .param("u", user(username).getId()).update();
-        return view(code, username);
+                .param("c", a.crew().id()).param("a", artist).param("s", Timestamp.valueOf(startsAt))
+                .param("u", a.me().getId()).update();
+        return view(a);
     }
 
     @Transactional
     public CrewView unpick(String code, String username, String artist, LocalDateTime startsAt) {
-        Crew crew = crewOfMember(code, username);
+        Aboard a = aboard(code, username);
         jdbc.sql("delete from crew_pick where crew_id = :c and artist_name = :a and starts_at = :s")
-                .param("c", crew.id()).param("a", artist).param("s", Timestamp.valueOf(startsAt)).update();
-        return view(code, username);
+                .param("c", a.crew().id()).param("a", artist).param("s", Timestamp.valueOf(startsAt)).update();
+        return view(a);
     }
 
     // --- reading ---
 
     @Transactional(readOnly = true)
     public CrewView view(String code, String username) {
-        Crew crew = crewOfMember(code, username);
-        long me = user(username).getId();
+        return view(aboard(code, username));
+    }
 
+    private CrewView view(Aboard a) {
+        return view(a.crew(), a.me());
+    }
+
+    private CrewView view(Crew crew, User user) {
+        long me = user.getId();
         record Row(long id, String username) {
         }
         List<Row> people = jdbc.sql("""
@@ -252,12 +281,15 @@ public class CrewService {
                 .map(p -> new CrewView.Member(p.username(), p.id() == crew.ownerId(), p.id() == me))
                 .toList();
 
-        List<CrewView.Item> items = jdbc.sql("select id, name, bringer_id from crew_item where crew_id = :c order by created_at, id")
+        boolean captain = crew.ownerId() == me;
+        List<CrewView.Item> items = jdbc.sql("select id, name, bringer_id, added_by from crew_item where crew_id = :c order by created_at, id")
                 .param("c", crew.id())
                 .query((rs, n) -> {
                     Long bringer = (Long) rs.getObject(3);
+                    Long addedBy = (Long) rs.getObject(4);
+                    boolean mine = bringer != null && bringer == me;
                     return new CrewView.Item(rs.getLong(1), rs.getString(2), bringer == null ? null : names.get(bringer),
-                            bringer != null && bringer == me);
+                            mine, captain || mine || (addedBy != null && addedBy == me));
                 }).list();
 
         return new CrewView(crew.code(), crew.name(), crew.eventId(), crew.eventName(), crew.eventType(),
@@ -267,18 +299,27 @@ public class CrewService {
 
     @Transactional(readOnly = true)
     public List<CrewView.Summary> mine(String username) {
-        long me = user(username).getId();
-        return jdbc.sql("""
-                        select c.* from crew c join crew_member m on m.crew_id = c.id
-                        where m.user_id = :u order by c.starts_on, c.name""")
-                .param("u", me).query(this::mapCrew).list().stream()
-                .map(c -> summary(c, true)).toList();
+        return summaries(user(username).getId(), null);
     }
 
     /** The crews of one event the user is in (for the event page) */
     @Transactional(readOnly = true)
     public List<CrewView.Summary> mineForEvent(String username, long eventId) {
-        return mine(username).stream().filter(s -> s.eventId() == eventId).toList();
+        return summaries(user(username).getId(), eventId);
+    }
+
+    // One query for the list, member counts included
+    private List<CrewView.Summary> summaries(long userId, Long eventId) {
+        return jdbc.sql("""
+                        select c.code, c.name, c.event_id, c.event_name, c.starts_on,
+                               (select count(*) from crew_member x where x.crew_id = c.id) as members
+                        from crew c join crew_member m on m.crew_id = c.id
+                        where m.user_id = :u and (cast(:e as bigint) is null or c.event_id = :e)
+                        order by c.starts_on, c.name""")
+                .param("u", userId).param("e", eventId)
+                .query((rs, n) -> new CrewView.Summary(rs.getString(1), rs.getString(2), rs.getLong(3), rs.getString(4),
+                        rs.getDate(5).toLocalDate(), rs.getInt(6), true))
+                .list();
     }
 
     /** Sets of artists someone in the crew follows, plus the ones added by hand, in time order, with clashes */
@@ -362,31 +403,39 @@ public class CrewService {
 
     // --- helpers ---
 
-    private CrewView.Summary summary(Crew crew, boolean member) {
-        return new CrewView.Summary(crew.code(), crew.name(), crew.eventId(), crew.eventName(), crew.startsOn(),
-                memberCount(crew.id()), member);
-    }
-
     private Crew crew(String code) {
         return jdbc.sql("select * from crew where code = :c").param("c", code == null ? "" : code)
                 .query(this::mapCrew).optional()
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "This crew link doesn't work any more"));
     }
 
-    private Crew crewOfMember(String code, String username) {
-        Crew crew = crew(code);
-        if (!isMember(crew.id(), user(username).getId())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Join the crew first");
+    /** The crew of the link and who is asking, who must be in it */
+    private record Aboard(Crew crew, User me) {
+        boolean captain() {
+            return crew.ownerId() == me.getId();
         }
-        return crew;
     }
 
-    private Crew captainCrew(String code, String username) {
-        Crew crew = crewOfMember(code, username);
-        if (crew.ownerId() != user(username).getId()) {
+    private Aboard aboard(String code, String username) {
+        Crew crew = crew(code);
+        User me = user(username);
+        if (!isMember(crew.id(), me.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Join the crew first");
+        }
+        return new Aboard(crew, me);
+    }
+
+    private Aboard captainAboard(String code, String username) {
+        Aboard a = aboard(code, username);
+        if (!a.captain()) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the captain can do this");
         }
-        return crew;
+        return a;
+    }
+
+    private boolean wasRemoved(long crewId, long userId) {
+        return jdbc.sql("select count(*) from crew_removed where crew_id = :c and user_id = :u")
+                .param("c", crewId).param("u", userId).query(Integer.class).single() > 0;
     }
 
     private Crew mapCrew(java.sql.ResultSet rs, int n) throws java.sql.SQLException {

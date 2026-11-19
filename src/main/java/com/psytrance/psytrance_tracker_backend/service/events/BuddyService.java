@@ -17,7 +17,8 @@ import java.util.Set;
 
 /**
  * Festival Buddies: who else is going to an event. Private by default and mutual: you only see the others
- * if you are going yourself and let them see you too. Nobody's email is ever shown; Instagram is the only contact.
+ * if you are going yourself, let them see you too and confirmed your email. Nobody's email is ever shown; Instagram is
+ * the only contact.
  */
 @Service
 public class BuddyService {
@@ -46,6 +47,10 @@ public class BuddyService {
         boolean going = !attendanceRepository.findEventIdsOfUser(me.getId(), List.of(eventId)).isEmpty();
         if (!going) {
             return new Buddies(count, false, "not-going", List.of());
+        }
+        // A confirmed email makes it costly to make throwaway accounts just to collect people's Instagram names
+        if (!me.isEmailVerified()) {
+            return new Buddies(count, false, "verify-email", List.of());
         }
         if (!me.isBuddyVisible()) {
             return new Buddies(count, false, "not-visible", List.of());

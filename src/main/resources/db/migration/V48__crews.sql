@@ -25,6 +25,13 @@ create table crew_member (
 );
 create index crew_member_user_idx on crew_member (user_id);
 
+-- People the captain removed: the same link no longer lets them back in
+create table crew_removed (
+    crew_id bigint not null references crew (id) on delete cascade,
+    user_id bigint not null references app_user (id) on delete cascade,
+    primary key (crew_id, user_id)
+);
+
 -- Packing list: one row per thing; bringer is who said "I'll bring it"
 create table crew_item (
     id         bigserial primary key,

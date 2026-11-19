@@ -100,6 +100,44 @@ class CrewIntegrationTest extends IntegrationTest {
     }
 
     @Test
+    void someoneTheCaptainRemovedCantComeBackWithTheSameLink() throws Exception {
+        long eventId = event("Ozora");
+        Person captain = person();
+        Person friend = person();
+        String code = createCrew(captain, eventId, "Crew");
+        join(friend, code);
+        mockMvc.perform(delete("/api/crews/{code}/members/{u}", code, friend.name()).header(HttpHeaders.AUTHORIZATION, bearer(captain.token())))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(post("/api/crews/{code}/join", code).header(HttpHeaders.AUTHORIZATION, bearer(friend.token())))
+                .andExpect(status().isForbidden());
+        // Removing someone who isn't in the crew is a 404, not a silent success
+        mockMvc.perform(delete("/api/crews/{code}/members/{u}", code, "nobody-here").header(HttpHeaders.AUTHORIZATION, bearer(captain.token())))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void onlyWhoAddedOrBringsAThingOrTheCaptainDeletesIt() throws Exception {
+        long eventId = event("Ozora");
+        Person captain = person();
+        Person a = person();
+        Person b = person();
+        String code = createCrew(captain, eventId, "Crew");
+        join(a, code);
+        join(b, code);
+        String body = mockMvc.perform(post("/api/crews/{code}/items", code).header(HttpHeaders.AUTHORIZATION, bearer(a.token()))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"name\":\"Tent\"}"))
+                .andReturn().getResponse().getContentAsString();
+        long tent = ((Number) JsonPath.read(body, "$.items[0].id")).longValue();
+
+        mockMvc.perform(delete("/api/crews/{code}/items/{id}", code, tent).header(HttpHeaders.AUTHORIZATION, bearer(b.token())))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(delete("/api/crews/{code}/items/{id}", code, tent).header(HttpHeaders.AUTHORIZATION, bearer(captain.token())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items", hasSize(0)));
+    }
+
+    @Test
     void packingListSaysWhoBringsWhat() throws Exception {
         long eventId = event("Forest gathering");
         Person captain = person();
