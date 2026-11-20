@@ -77,20 +77,36 @@
     "y": 1171
   },
   "HOMmega Productions": {
-    "artists": [],
+    "artists": [
+      "Astrix",
+      "Infected Mushroom",
+      "Space Cat",
+      "Vertical Mode",
+      "Yahel"
+    ],
     "x": 1967,
     "y": 420,
     "country": "Israel",
     "since": 1997
   },
   "Spin Twist Records": {
-    "artists": [],
+    "artists": [
+      "Day.Din",
+      "Ghost Rider",
+      "Interactive Noise",
+      "Morten Granau",
+      "Neelix",
+      "Phaxe",
+      "Skazi"
+    ],
     "x": 2269,
     "y": 939,
     "since": 2005
   },
   "TIP World": {
-    "artists": [],
+    "artists": [
+      "1200 Micrograms"
+    ],
     "x": 1798,
     "y": 517,
     "country": "UK",
@@ -126,11 +142,8 @@
       "Astrix",
       "Atmos",
       "Avalon",
-      "Bluetech",
       "Captain Hook",
-      "Cid Inc",
       "Freedom Fighters",
-      "GMS",
       "Hilight Tribe",
       "Interactive Noise",
       "Liquid Soul",
@@ -141,8 +154,8 @@
       "Talpa",
       "Ticon",
       "Tristan",
+      "Vertical Mode",
       "Vini Vici",
-      "Yahel",
       "Zyce"
     ],
     "country": "Denmark",
@@ -280,13 +293,8 @@
   "Iono Music": {
     "artists": [
       "Atmos",
-      "Avalon",
-      "Hujaboy",
-      "Infected Mushroom",
       "Ital",
-      "Liquid Soul",
-      "Ritmo",
-      "Yahel"
+      "Ritmo"
     ],
     "country": "Germany",
     "since": 2005,

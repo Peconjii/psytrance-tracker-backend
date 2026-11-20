@@ -100,7 +100,7 @@ class StatsIntegrationTest extends IntegrationTest {
 
         mockMvc.perform(get("/api/labels/overview"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[?(@.label == 'Iboga Records')].crew").value(org.hamcrest.Matchers.contains(23)))
+                .andExpect(jsonPath("$[?(@.label == 'Iboga Records')].crew").value(org.hamcrest.Matchers.contains(20)))
                 .andExpect(jsonPath("$[?(@.label == 'Iboga Records')].upcomingGigs").value(
                         org.hamcrest.Matchers.contains(greaterThanOrEqualTo(1))));
         mockMvc.perform(get("/api/labels/stats").param("label", "Iboga Records"))
