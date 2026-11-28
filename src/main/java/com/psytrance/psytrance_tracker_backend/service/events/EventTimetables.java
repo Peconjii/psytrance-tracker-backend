@@ -1,5 +1,6 @@
 package com.psytrance.psytrance_tracker_backend.service.events;
 
+import com.psytrance.psytrance_tracker_backend.service.account.PushNotifications;
 import com.psytrance.psytrance_tracker_backend.service.map.MapGenres;
 
 
@@ -51,10 +52,13 @@ public class EventTimetables {
     private final MapGenres mapGenres;
     private final Clock clock;
     private final OurEventRepository ourEventRepository;
+    private final PushNotifications pushNotifications;
 
     public EventTimetables(TimetableSlotRepository slotRepository, LineupScanRepository lineupScanRepository,
                            AdminChangeRepository changeRepository, EventService eventService,
-                           Parties parties, MapGenres mapGenres, Clock clock, OurEventRepository ourEventRepository) {
+                           Parties parties, MapGenres mapGenres, Clock clock, OurEventRepository ourEventRepository,
+                           PushNotifications pushNotifications) {
+        this.pushNotifications = pushNotifications;
         this.ourEventRepository = ourEventRepository;
         this.slotRepository = slotRepository;
         this.lineupScanRepository = lineupScanRepository;
@@ -233,6 +237,10 @@ public class EventTimetables {
     }
 
     private void replace(long eventId, List<TimetableDto.Set> sets, List<String> notes, Integer utcOffsetMinutes, String source) {
+        // The first timetable of an event: the people going get a push notification (the Android app)
+        if (!sets.isEmpty() && slotRepository.findByEventIdOrderByPositionAsc(eventId).isEmpty()) {
+            pushNotifications.timetableOut(eventId);
+        }
         slotRepository.deleteByEventId(eventId);
         slotRepository.flush();
         List<TimetableSlot> rows = new ArrayList<>();

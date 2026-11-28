@@ -38,7 +38,45 @@ class CrewIntegrationTest extends IntegrationTest {
     @Autowired
     private CrewService crewService;
 
+    @Autowired
+    private com.psytrance.psytrance_tracker_backend.service.events.EventTimetables eventTimetables;
+
     private record Person(String name, String token) {
+    }
+
+    @Test
+    void phonesGetAPushWhenSomeoneJoinsTheCrewAndWhenTheTimetableIsOut() throws Exception {
+        when(fcmClient.isEnabled()).thenReturn(true);
+        when(fcmClient.send(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyString()))
+                .thenReturn(com.psytrance.psytrance_tracker_backend.client.FcmClient.Result.SENT);
+        long eventId = event("Push Fest");
+        Person captain = person();
+        String code = createCrew(captain, eventId, "Push ekipa");
+        String phone = "phone-" + captain.name();
+
+        mockMvc.perform(post("/api/me/push").contentType(MediaType.APPLICATION_JSON).content("{\"token\":\"x\"}"))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(post("/api/me/push").header(HttpHeaders.AUTHORIZATION, bearer(captain.token()))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"token\":\"" + phone + "\"}"))
+                .andExpect(status().isNoContent());
+
+        Person friend = person();
+        join(friend, code);
+        org.mockito.Mockito.verify(fcmClient, org.mockito.Mockito.timeout(5000))
+                .send(phone, "Push ekipa", friend.name() + " joined your crew", "/crew/" + code);
+
+        eventTimetables.setManual(eventId, List.of(new com.psytrance.psytrance_tracker_backend.dto.TimetableDto.Set(
+                null, "Astrix", null, LocalDateTime.now().plusDays(10), null)), "admin");
+        org.mockito.Mockito.verify(fcmClient, org.mockito.Mockito.timeout(5000))
+                .send(org.mockito.ArgumentMatchers.eq(phone), org.mockito.ArgumentMatchers.anyString(),
+                        org.mockito.ArgumentMatchers.contains("timetable"), org.mockito.ArgumentMatchers.eq("/events/" + eventId));
+
+        mockMvc.perform(delete("/api/me/push").header(HttpHeaders.AUTHORIZATION, bearer(captain.token()))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"token\":\"" + phone + "\"}"))
+                .andExpect(status().isNoContent());
+        org.junit.jupiter.api.Assertions.assertEquals(0, jdbc.sql("select count(*) from push_device where token = :t")
+                .param("t", phone).query(Integer.class).single());
     }
 
     @Test

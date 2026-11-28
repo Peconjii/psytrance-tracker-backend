@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.simple.JdbcClient;
+import com.psytrance.psytrance_tracker_backend.service.account.PushNotifications;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -56,9 +57,12 @@ public class CrewService {
     private final AttendanceService attendanceService;
     private final TimetableSlotRepository timetableSlotRepository;
     private final Clock clock;
+    private final PushNotifications pushNotifications;
 
     public CrewService(JdbcClient jdbc, UserRepository userRepository, EventService eventService,
-                       AttendanceService attendanceService, TimetableSlotRepository timetableSlotRepository, Clock clock) {
+                       AttendanceService attendanceService, TimetableSlotRepository timetableSlotRepository, Clock clock,
+                       PushNotifications pushNotifications) {
+        this.pushNotifications = pushNotifications;
         this.jdbc = jdbc;
         this.userRepository = userRepository;
         this.eventService = eventService;
@@ -129,6 +133,7 @@ public class CrewService {
         }
         addMember(crew.id(), me.getId());
         attendanceService.markGoing(username, crew.eventId());
+        pushNotifications.joinedCrew(crew.id(), me.getId(), me.getUsername(), crew.name(), crew.code());
         return view(crew, me);
     }
 

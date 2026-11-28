@@ -60,6 +60,9 @@ abstract class IntegrationTest {
     @MockitoBean
     protected GoogleIdTokens googleIdTokens;
 
+    @MockitoBean
+    protected com.psytrance.psytrance_tracker_backend.client.FcmClient fcmClient;
+
     // Faked so tests can read the verification link instead of finding it in the log
     @MockitoBean
     protected VerificationMailer verificationMailer;
